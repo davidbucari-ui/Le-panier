@@ -10,3 +10,7 @@ Recettes, stock et liste de courses dans une seule page web.
 ## Import d'une recette depuis un site
 
 Le bouton « Importer depuis un site » (onglet Recettes) appelle la fonction `import-recette` (`supabase/functions/import-recette`), réservée aux utilisateurs connectés. Elle lit les données structurées de la page ; sinon, l'utilisateur colle le texte de la recette.
+
+## Dictionnaire d'ingrédients
+
+`ingredients.json` (≈ 4 200 ingrédients, noms français, synonymes, hiérarchie, rayon, code Ciqual) est généré à partir de la taxonomie des ingrédients d'[Open Food Facts](https://world.openfoodfacts.org) (licence ODbL). Les codes Ciqual renvoient à la table de composition nutritionnelle de l'Anses. Il sert à l'autocomplétion, au rapprochement stock/recettes (synonymes, « tomate concassée » couvre « tomate ») et au classement par rayon. Sans ce fichier (par ex. dans Claude), l'appli fonctionne comme avant.

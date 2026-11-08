@@ -285,6 +285,7 @@ input[type=file]{padding:8px}
     <div id="stock-list"></div>
     <div class="row-actions" style="margin-top:12px"><button class="btn danger sm" data-act="stock-clear" id="stock-clear">Vider le stock</button><span class="hint">Une quantité à zéro signifie « quantité inconnue » : l'ingrédient est alors considéré comme disponible.</span></div>
   </section>
+  <p class="hint" id="credit" hidden style="margin-top:32px">Dictionnaire d'ingrédients : Open Food Facts (licence ODbL). Codes Ciqual : Anses.</p>
 </main>
 
 <datalist id="dl-ing"></datalist>
@@ -364,6 +365,7 @@ const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36).slic
 const norm=s=>{s=String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();return s.length>3?s.replace(/[sx]$/,''):s};
 const use=n=>{try{return window.claude&&window.claude.use?window.claude.use(n):Promise.resolve(null)}catch(e){return Promise.resolve(null)}};
 
+let DICT=null; // dictionnaire d'ingrédients (ingredients.json), chargé au démarrage s'il est disponible
 const RAYONS=['Fruits et légumes','Boucherie et poissonnerie','Crèmerie','Épicerie','Boulangerie','Surgelés','Autres'];
 const KW={
  'Fruits et légumes':['tomate','carotte','oignon','ail','pomme','courgette','poireau','salade','citron','banane','champignon','poivron','aubergine','patate','basilic','persil','coriandre','epinard','brocoli','haricot vert','concombre','orange','echalote','gingembre','avocat','courge','potiron','chou','celeri','navet','radis','fenouil','ciboulette','menthe','thym','romarin','poire','fraise','mangue'],
@@ -372,7 +374,19 @@ const KW={
  'Boulangerie':['pain','baguette','brioche','tortilla','pita'],
  'Surgelés':['surgele','glace','petit pois surgele']
 };
-function guessRayon(n){n=norm(n);for(const r of Object.keys(KW))if(KW[r].some(k=>n.includes(k)))return r;return 'Épicerie'}
+function ckey(name){const k=norm(name);return(DICT&&DICT.byName.get(k))||k}
+// un stock couvre un besoin s'il s'agit du même ingrédient, ou d'un ingrédient plus précis (ex. « tomate concassée » couvre « tomate »)
+function covers(stockName,needKey){const sk=ckey(stockName);if(sk===needKey)return true;const e=DICT&&DICT.ent.get(sk);return!!(e&&e.anc.has(needKey))}
+function guessRayon(n){
+  if(DICT){const e=DICT.ent.get(ckey(n));if(e&&e.r>=0)return DICT.rayons[e.r]}
+  n=norm(n);for(const r of Object.keys(KW))if(KW[r].some(k=>n.includes(k)))return r;return 'Épicerie'}
+function buildDict(j){
+  const byName=new Map(),ent=new Map();
+  j.e.forEach((x,i)=>{ent.set('#'+i,{n:x[0],anc:new Set(x[2].map(a=>'#'+a)),r:x[3],c:x[4]});const k=norm(x[0]);if(k&&!byName.has(k))byName.set(k,'#'+i)});
+  j.e.forEach((x,i)=>{for(const nm of x[1]){const k=norm(nm);if(k&&!byName.has(k))byName.set(k,'#'+i)}});
+  const names=j.e.map(x=>x[0]);
+  DICT={byName,ent,names,rayons:j.rayons,opts:names.map(n=>`<option value="${esc(n)}">`).join('')};
+}
 
 /* ---------- état ---------- */
 const LS='lepanier-v1';
@@ -450,7 +464,7 @@ function matches(r){
   if(F.stockOnly){const [h,t]=stockCover(r);if(!t||h/t<0.7)return false}
   return true;
 }
-function stockCover(r){const ks=new Set(S.stock.map(s=>s.k));return[r.ingredients.filter(i=>ks.has(norm(i.n))).length,r.ingredients.length]}
+function stockCover(r){return[r.ingredients.filter(i=>{const k=ckey(i.n);return S.stock.some(s=>covers(s.n,k))}).length,r.ingredients.length]}
 
 /* ---------- liste de courses ---------- */
 function shoppingItems(){
@@ -459,7 +473,7 @@ function shoppingItems(){
     const r=S.recipes.find(x=>x.id===rid);if(!r)continue;
     const f=(Number(por)||1)/(r.servings||Number(por)||1);
     for(const ing of r.ingredients){
-      const nk=norm(ing.n);
+      const nk=ckey(ing.n);
       const [q,u]=normQty((Number(ing.q)||0)*f,ing.u);
       const key=nk+'|'+u;
       let it=map.get(key);
@@ -469,7 +483,7 @@ function shoppingItems(){
   }
   const out=[];
   for(const it of map.values()){
-    const have=S.stock.filter(s=>s.k===it.nk);
+    const have=S.stock.filter(s=>covers(s.n,it.nk));
     if(have.some(s=>!s.q))continue;                       // quantité inconnue : considéré disponible
     if(!it.q&&have.length)continue;                       // « au goût » et déjà en stock
     const hq=have.filter(s=>(s.u||'')===it.u).reduce((a,s)=>a+s.q,0);
@@ -534,7 +548,7 @@ function renderRecipes(){
   $('#recipe-count').textContent=`${list.length} recette${list.length>1?'s':''} affichée${list.length>1?'s':''} sur ${S.recipes.length}`+(hidden?` · ${hidden} masquée${hidden>1?'s':''} par vos exclusions`:'');
   $('#recipe-list').innerHTML=list.length?list.map(recipeCard).join(''):`<div class="empty">${S.recipes.length?'Aucune recette ne correspond à ces filtres.':'Aucune recette pour le moment. Ajoutez la vôtre ou demandez des idées à Claude.'}</div>`;
   const names=new Set();S.recipes.forEach(r=>r.ingredients.forEach(i=>names.add(i.n.toLowerCase())));
-  $('#dl-ing').innerHTML=[...names].sort().map(n=>`<option value="${esc(n)}">`).join('');
+  $('#dl-ing').innerHTML=[...names].sort().map(n=>`<option value="${esc(n)}">`).join('')+(DICT?DICT.opts:'');
 }
 
 /* ---------- rendu : idées ---------- */
@@ -696,7 +710,7 @@ function cookCalc(r,por){
   const f=por/(r.servings||por||1);
   return r.ingredients.map(i=>{
     const [need,u]=normQty((Number(i.q)||0)*f,i.u);
-    const have=S.stock.filter(s=>s.k===norm(i.n));
+    const have=S.stock.filter(s=>covers(s.n,ckey(i.n)));
     if(!have.length)return{i,need,u,st:'absent'};
     if(!need)return{i,need,u,st:'gout'};
     const same=have.find(s=>(s.u||'')===u&&s.q>0);
@@ -891,7 +905,7 @@ document.addEventListener('click',e=>{
     case 'signout':if(sb)sb.auth.signOut();break;
     case 'ia-drop':A.results.splice(+b.dataset.i,1);renderIA();break;
     case 'bought':{const k=b.dataset.k,i=S.bought.indexOf(k);i>=0?S.bought.splice(i,1):S.bought.push(k);persist();renderCourses();break}
-    case 'stock':{if(!S.stock.some(s=>s.k===b.dataset.k))S.stock.push({k:b.dataset.k,n:b.dataset.n,q:0,u:'',r:guessRayon(b.dataset.n)});stockChanged();break}
+    case 'stock':{const nm=b.dataset.n;if(!S.stock.some(s=>covers(s.n,ckey(nm))))S.stock.push({k:norm(nm),n:nm,q:0,u:'',r:guessRayon(nm)});stockChanged();break}
     case 'uncheck':S.bought=[];persist();renderCourses();break;
     case 'reset':if(b.dataset.arm!=='1'){b.dataset.arm='1';b.textContent='Confirmer ?';setTimeout(()=>{if(b.isConnected){b.dataset.arm='';b.textContent='Vider le menu'}},3000)}else{S.plan={};S.days={};S.bought=[];persist();renderRecipes();renderCourses()}break;
     case 'copy':copyList();break;
@@ -945,6 +959,7 @@ setSync('wait');
 document.body.classList.add('loading');
 const ready=()=>document.body.classList.remove('loading');
 setTimeout(ready,12000);
+if(typeof fetch==='function')fetch('ingredients.json').then(r=>r.ok?r.json():null).then(j=>{if(j&&Array.isArray(j.e)){buildDict(j);$('#credit').hidden=false;renderAll()}}).catch(()=>{});
 let unsub=null,sb=null,sbUid=null;
 function attach(ref){
   if(unsub){try{unsub()}catch(e){}unsub=null}
