@@ -299,12 +299,12 @@ input[type=file]{padding:8px}
   <!-- STOCK -->
   <section class="panel" id="p-stock" role="tabpanel" aria-labelledby="tab-stock" hidden>
     <h2>Mon stock</h2>
-    <p class="lead-p">Après vos courses, importez le ticket téléchargé depuis l'application ou l'e-mail du magasin (PDF) : les articles sont lus et vous les vérifiez avant de les mettre au stock. Les recettes et la liste de courses en tiennent compte.</p>
+    <p class="lead-p">Après vos courses, importez le ticket depuis l'application ou l'e-mail du magasin (capture d'écran du ticket Lidl Plus, PDF…) : les articles sont lus et vous les vérifiez avant de les mettre au stock. Les recettes et la liste de courses en tiennent compte.</p>
     <div class="row-actions" style="margin-bottom:12px"><button class="btn" data-act="scan-open">Scanner un code-barres</button></div>
     <div class="ia-form">
       <div class="field wide">
-        <label for="tk-doc">Ticket téléchargé (PDF ou texte)</label>
-        <input type="file" id="tk-doc" accept=".pdf,application/pdf,.txt,text/plain">
+        <label for="tk-doc">Ticket téléchargé (capture d'écran, PDF ou texte)</label>
+        <input type="file" id="tk-doc" accept="image/*,.pdf,application/pdf,.txt,text/plain">
       </div>
       <div class="field wide" id="tk-file-field">
         <label for="tk-file">Photo du ticket</label>
@@ -938,8 +938,8 @@ const SHOPS=['Lidl','Carrefour','E.Leclerc','Leclerc','Auchan','Intermarché','S
 const TK_STOP=/^(sous[ -]?)?total\b|^a payer|^montant (du|a payer|total)|^net a payer|^somme\b/;
 const TK_SKIP=/\b(tva|cb|carte bancaire|carte de fidelite|visa|mastercard|especes|rendu|monnaie|paiement|payer|ticket|caisse|caissier|merci|siret|tel|telephone|articles?|nombre|points?|cagnotte|solde|total|montant|transaction|autorisation|client|facture|fidelite|euro?s?)\b/;
 const TK_DISC=/^(remise|reduc|reduction|promo|coupon|bon d|avantage|lidl plus|offre|economie|rabais|immediate)/;
-const TK_NONFOOD=/\b(sac|sachet cabas|cabas|lessive|liquide vaisselle|vaisselle|essuie|papier toilette|mouchoir|shampo|shampoing|dentifrice|deodorant|gel douche|savon|eponge|piles?|ampoule|consigne|nettoyant|javel|adoucissant|couche|lingette|sopalin|aluminium|film etirable|bougie|journal)\b/;
-const TK_ABBR={ecr:'ecreme',nat:'nature',choc:'chocolat',jbn:'jambon',jamb:'jambon',fro:'fromage',from:'fromage',yaou:'yaourt',yt:'yaourt',yrt:'yaourt',pdt:'pomme de terre',pdterre:'pomme de terre',vol:'volaille',emment:'emmental',gruy:'gruyere',moz:'mozzarella',bche:'boeuf',bf:'boeuf',pll:'poulet',poul:'poulet',fil:'filet',sauc:'saucisse',cr:'creme',crm:'creme',fr:'fraiche',leg:'legume',lgm:'legume',tom:'tomate',pom:'pomme',bana:'banane',past:'pate',spag:'spaghetti',farin:'farine',sucr:'sucre',oeu:'oeuf'};
+const TK_NONFOOD=/\b(sac|sachet cabas|cabas|lessive|liquide vaisselle|vaisselle|essuie|papier toilette|mouchoir|shampo|shampoing|dentifrice|deodorant|gel douche|savon|eponge|piles?|ampoule|consigne|nettoyant|javel|adoucissant|couche|lingette|sopalin|aluminium|film etirable|bougie|journal|rasoir|lame|dentaire|parodontax|colgate|brosse a dent|litiere)\b/;
+const TK_ABBR={ecr:'ecreme',nat:'nature',choc:'chocolat',jbn:'jambon',jamb:'jambon',fro:'fromage',from:'fromage',yaou:'yaourt',yt:'yaourt',yrt:'yaourt',pdt:'pomme de terre',pdterre:'pomme de terre',vol:'volaille',emment:'emmental',gruy:'gruyere',moz:'mozzarella',bche:'boeuf',bf:'boeuf',pll:'poulet',poul:'poulet',fil:'filet',sauc:'saucisse',cr:'creme',crm:'creme',fr:'fraiche',leg:'legume',lgm:'legume',tom:'tomate',pom:'pomme',bana:'banane',past:'pate',spag:'spaghetti',farin:'farine',sucr:'sucre',oeu:'oeuf',porme:'pomme',pornme:'pomme',pomrne:'pomme'};
 const tkNum=s=>parseFloat(String(s).replace(',','.'))||0;
 // lignes d'un PDF : regroupe les morceaux de texte de même hauteur, de gauche à droite
 async function pdfText(file){
@@ -961,13 +961,22 @@ async function pdfText(file){
   }
   return out.join('\n');
 }
-// nom générique : abréviations courantes, puis plus longue suite de mots connue du dictionnaire
+// mots qui signalent un aliment même hors dictionnaire
+const TK_FOOD=/\b(cookie|biscuit|gateau|gaufre|compote|jus|sirop|confiture|chocolat|cafe|the|tisane|cereale|muesli|chips|soda|eau|vin|biere|pate|linguine|spaghetti|tagliatelle|penne|fusilli|macaroni|riz|sauce|soupe|glace|pain|levain|brioche|fromage|creme|yaourt|dessert|bonbon|miel|epice|herbe|conserve|surgele|pizza|quiche|salade|legume|fruit|mais doux|olive|thon|sardine)/;
+// nom affiché : celui du ticket (abréviations développées, quantités retirées) ; nom générique du dictionnaire
+// seulement s'il en est le début exact (« sirop de grenadine » reste tel quel, « Vinaigre d'alcool bl » devient « vinaigre d'alcool »)
 function tkName(raw){
-  let w=norm(raw.replace(/\d+([.,]\d+)?\s*(kg|g|gr|cl|ml|l|%)\b/gi,' ').replace(/\b\d+\s*[x*]\s*\d*|\bx\s*\d+\b/gi,' ')).split(' ').filter(t=>t&&!/^\d+$/.test(t)).map(t=>TK_ABBR[t]||t);
-  w=w.join(' ').split(' ');
-  if(DICT)for(let len=Math.min(w.length,5);len>0;len--)for(let i=0;i+len<=w.length;i++){const id=DICT.byName.get(norm(w.slice(i,i+len).join(' ')));if(id){const e=DICT.ent.get(id);if(e)return{n:e.n,known:true}}}
-  const n=w.join(' ');
-  return{n,known:!DICT||Object.values(KW).some(l=>l.some(k=>n.includes(k)))};
+  const toks=raw.replace(/\d+([.,]\d+)?\s*(kg|g|gr|cl|ml|l|%)\b/gi,' ').replace(/\b\d+\s*[x*]\s*\d*|\bx\s*\d+\b|-?\d+\s*%|\b\d+\b/gi,' ').split(/\s+/).filter(Boolean)
+    .map(t=>{const k=norm(t);return TK_ABBR[k]||TK_ABBR[k.replace(/s$/,'')]||t.toLowerCase()});
+  while(toks.length>1&&/^(le|la|les|l'|l’|un|une|du|des)$/.test(toks[0]))toks.shift();
+  if(toks[0])toks[0]=toks[0].replace(/^l['’]/,'');
+  const n=toks.join(' ').trim(),w=norm(n).split(' ');
+  if(DICT&&!DICT.byName.get(norm(n)))for(let len=Math.min(w.length-1,5);len>0;len--){
+    const span=w.slice(0,len).join(' '),id=DICT.byName.get(span),e=id&&DICT.ent.get(id);
+    if(e&&(len>1||norm(e.n)===span)&&w.length-len<=2){if(/^(de|d|du|des|a|au|aux)$/.test(w[len]))break;return{n:e.n,known:true}}
+  }
+  const nn=norm(n),known=!DICT||!!DICT.byName.get(nn)||w.some(x=>x.length>3&&DICT.byName.get(x))||TK_FOOD.test(nn)||Object.values(KW).some(l=>l.some(k=>nn.includes(k)));
+  return{n,known};
 }
 function tkQty(raw){
   const s=raw.toLowerCase().replace(/(\d),(\d)/g,'$1.$2');
@@ -985,7 +994,7 @@ function parseTicketText(txt){
   const shop=SHOPS.find(s=>head.includes(s.toLowerCase()))||SHOPS.find(s=>norm(lines.join(' ')).includes(norm(s)))||'';
   let date='';
   for(const dm of lines.join(' ').matchAll(/\b(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4}|\d{2})\b/g)){const d=(dm[3].length===2?'20'+dm[3]:dm[3])+'-'+dm[2].padStart(2,'0')+'-'+dm[1].padStart(2,'0');if(/^20\d\d-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(d)){date=d;break}}
-  const PRICE=/^(.*?)\s*(-?\s?\d{1,4}[.,]\d{2})(-?)\s*(?:€|eur)?\s*(?:[a-z]\d?|\d|\*{1,2})?$/i;
+  const PRICE=/^(.*?)\s*(-?\s?\d{1,4}[.,]\d{2})\d?(-?)\s*(?:€|eur)?((?:\s*(?:[a-zà]\d?|\d|\*{1,2})){0,2})\s*$/i;
   const WEIGHT=/(\d+[.,]\d+)\s*kg\s*[x*]\s*\d+[.,]\d{2}\s*(?:€|eur)?\s*\/\s*kg/i;
   const COUNT=/^(\d+)\s*[x*]\s*(\d+[.,]\d{2})\s*(?:€|eur)?$/i;
   const items=[];let last=null,pending='';
@@ -1007,12 +1016,15 @@ function parseTicketText(txt){
     let lab=m[1].trim(),c=1;
     const ic=lab.match(/(?:^|\s)(\d+)\s*[x*]\s*\d+[.,]\d{2}\s*(?:€|eur)?$/i);
     if(ic){c=+ic[1];lab=lab.slice(0,ic.index).trim()}
+    const pq=lab.match(/\s\d{1,4}[.,]\d{2}\s+(\d{1,3})\s*$/); // colonnes « prix unitaire, quantité » (Lidl)
+    if(pq){c=+pq[1];lab=lab.slice(0,pq.index).trim()}
+    lab=lab.replace(/[\s=:;|—–_-]+$/,'');
     if(!/[a-z]{2}/i.test(lab)){if(!pending)continue;lab=pending}
     pending='';
     let p=tkNum(m[2].replace(/\s/g,''));if(m[3])p=-p;
     if(p<0||TK_DISC.test(norm(lab))){if(last)last.p=Math.max(0,Math.round((last.p-Math.abs(p))*100)/100);continue}
     if(TK_SKIP.test(norm(lab)))continue;
-    last={raw:lab,p,c};items.push(last);
+    last={raw:lab,p,c,tax:(m[4]||'').trim().charAt(0).toUpperCase()};items.push(last);
   }
   const merged=new Map();
   for(const it of items){
@@ -1021,7 +1033,7 @@ function parseTicketText(txt){
     const key=norm(g.n)+'|'+u;
     const ex=merged.get(key);
     if(ex){ex.q+=q;ex.p=Math.round((ex.p+it.p)*100)/100;continue}
-    const food=g.known&&!TK_NONFOOD.test(norm(it.raw));
+    const food=g.known&&!TK_NONFOOD.test(norm(it.raw))&&!(shop==='Lidl'&&it.tax==='B'); // chez Lidl, B = TVA 20 % : surtout du non alimentaire
     merged.set(key,{id:uid(),n:g.n,q:Math.round(q*1000)/1000,u,p:it.p,r:guessRayon(g.n),on:food,raw:it.raw});
   }
   return{shop,date:date||todayISO(),items:[...merged.values()]};
@@ -1032,16 +1044,26 @@ function showTicket(res,from){
   $('#tk-status').textContent=res.items.length?`${res.items.length} ligne${res.items.length>1?'s':''} lue${res.items.length>1?'s':''} ${from}.${off?` ${off} non reconnue${off>1?'s':''} ou non alimentaire${off>1?'s':''} : décochée${off>1?'s':''}.`:''}`:'Aucun article reconnu dans ce ticket. Vérifiez qu\'il s\'agit bien du ticket détaillé.';
   renderReview();
 }
+// image (capture d'écran du ticket) : reconnaissance de caractères par Tesseract, chargé à la demande
+async function imgText(file,progress){
+  if(!window.Tesseract)await new Promise((ok,ko)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';sc.onload=ok;sc.onerror=ko;document.head.appendChild(sc)});
+  const bmp=await createImageBitmap(file),s=bmp.width<1000?Math.min(4,1200/bmp.width):1;
+  const c=document.createElement('canvas');c.width=Math.round(bmp.width*s);c.height=Math.round(bmp.height*s);
+  const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.imageSmoothingQuality='high';g.drawImage(bmp,0,0,c.width,c.height);
+  const w=await Tesseract.createWorker('fra',1,{logger:m=>{if(m.status==='recognizing text')progress(Math.round(m.progress*100))}});
+  try{await w.setParameters({preserve_interword_spaces:'1'});return(await w.recognize(c)).data.text}
+  finally{w.terminate()}
+}
 async function readTicketDoc(file){
   const st=$('#tk-status');if(!file)return;
   st.textContent='Lecture du ticket…';
+  const pdf=/pdf$/i.test(file.type)||/\.pdf$/i.test(file.name),img=/^image\//.test(file.type);
   try{
-    const pdf=/pdf$/i.test(file.type)||/\.pdf$/i.test(file.name);
-    const txt=pdf?await pdfText(file):await file.text();
-    if(!txt.trim()){st.textContent=pdf?'Ce PDF ne contient pas de texte (ticket scanné ou photographié) : utilisez la lecture par Claude.':'Fichier vide.';return}
+    const txt=pdf?await pdfText(file):img?await imgText(file,p=>{st.textContent=`Lecture de l'image… ${p} %`}):await file.text();
+    if(!txt.trim()){st.textContent=pdf?'Ce PDF ne contient pas de texte (ticket scanné) : importez plutôt une capture d\'écran du ticket.':'Aucun texte trouvé dans ce fichier.';return}
     $('#tk-text').value=txt.slice(0,20000);
     showTicket(parseTicketText(txt),'dans le fichier');
-  }catch(e){st.textContent=window.pdfjsLib||!navigator.onLine?'Impossible de lire ce fichier. Ouvrez le ticket et copiez son texte dans le champ ci-dessous.':'Le lecteur de PDF n\'a pas pu être chargé (réseau). Réessayez plus tard.'}
+  }catch(e){st.textContent=(pdf?window.pdfjsLib:img?window.Tesseract:true)&&navigator.onLine!==false?'Impossible de lire ce fichier. Essayez une capture d\'écran plus nette, ou collez le texte du ticket ci-dessous.':'Le lecteur n\'a pas pu être chargé (réseau). Réessayez avec une connexion.'}
 }
 async function copyText(txt,sel){
   const m=$(sel);

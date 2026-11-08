@@ -9,7 +9,7 @@ Recettes, stock et liste de courses dans une seule page web.
 
 ## Import d'un ticket téléchargé
 
-Onglet **Stock**, champ « Ticket téléchargé » : un ticket au format PDF (application ou e-mail du magasin) ou texte est lu directement dans la page, sans IA. Le texte du PDF est extrait par pdf.js (chargé à la demande), puis chaque ligne est analysée : prix, poids (« 1,094 kg x 1,48 EUR/kg »), quantités (« 2 x 1,79 », « 4x125g », « 1L »), remises déduites de l'article précédent, magasin et date. Les noms sont rapprochés du dictionnaire ; les lignes non reconnues ou non alimentaires sont décochées. On vérifie avant d'ajouter au stock (les prix sont notés en même temps). Un PDF scanné (sans texte) n'est pas lisible ainsi.
+Onglet **Stock**, champ « Ticket téléchargé » : une capture d'écran du ticket (par ex. le ticket de l'application Lidl Plus), un PDF (application ou e-mail du magasin) ou un texte est lu directement dans la page, sans IA. Le texte est extrait par Tesseract.js (reconnaissance de caractères, pour les images) ou pdf.js (pour les PDF), chargés à la demande, puis chaque ligne est analysée : prix, colonnes prix unitaire/quantité de Lidl, poids (« 1,094 kg x 1,48 EUR/kg »), quantités (« 2 x 1,79 », « 4x125g », « 1L »), remises déduites de l'article précédent, magasin et date. Les noms sont rapprochés du dictionnaire ; les lignes non reconnues ou non alimentaires sont décochées. On vérifie avant d'ajouter au stock (les prix sont notés en même temps). Un PDF scanné (sans texte) n'est pas lisible ainsi.
 
 ## Import d'une recette depuis un site
 
