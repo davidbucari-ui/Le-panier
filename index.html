@@ -158,6 +158,8 @@ input[type=file]{padding:8px}
 .sc-cam{position:relative;border-radius:12px;overflow:hidden;background:#000;margin:8px 0}
 .sc-cam video{display:block;width:100%;max-height:260px;object-fit:cover}
 .sc-cam .sc-line{position:absolute;left:10%;right:10%;top:50%;height:2px;background:rgba(255,60,60,.85)}
+.pr-cat{margin:22px 0 8px;font-size:1.05rem;border-bottom:1px solid var(--line,#ccc);padding-bottom:4px}
+.mini-sel{width:auto;min-height:28px;font-size:.8rem;padding:2px 6px;margin-left:8px;font-weight:400}
 </style>
 </head>
 <body>
@@ -446,8 +448,10 @@ function ckey(name){const k=norm(name);return(DICT&&DICT.byName.get(k))||k}
 // un stock couvre un besoin s'il s'agit du même ingrédient, ou d'un ingrédient plus précis (ex. « tomate concassée » couvre « tomate »)
 function covers(stockName,needKey){const sk=ckey(stockName);if(sk===needKey)return true;const e=DICT&&DICT.ent.get(sk);return!!(e&&e.anc.has(needKey))}
 function guessRayon(n){
+  const nn=norm(n);if(/compote|\bjus\b|confiture|sirop|conserve|lyophilis|\bsec\b|seche|gateau|biscuit|cookie|chocolat|capsule/.test(nn))return'Épicerie';
   if(DICT){const e=DICT.ent.get(ckey(n));if(e&&e.r>=0)return DICT.rayons[e.r]}
-  n=norm(n);for(const r of Object.keys(KW))if(KW[r].some(k=>n.includes(k)))return r;return 'Épicerie'}
+  n=nn;
+  for(const r of Object.keys(KW))if(KW[r].some(k=>n.includes(k)))return r;return 'Épicerie'}
 function buildDict(j){
   const byName=new Map(),ent=new Map();
   j.e.forEach((x,i)=>{ent.set('#'+i,{n:x[0],anc:new Set(x[2].map(a=>'#'+a)),r:x[3],c:x[4]});const k=norm(x[0]);if(k&&!byName.has(k))byName.set(k,'#'+i)});
@@ -472,7 +476,7 @@ function examples(){return[
 ]}
 const DAYS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
 function fresh(){return{v:1,rev:0,recipes:examples(),plan:{},days:{},stock:[],extras:[],prices:[],barcodes:{},bought:[],exclude:[]}}
-function fix(d){d=d||{};return{v:1,rev:Number(d.rev)||0,days:d.days&&typeof d.days==='object'&&!Array.isArray(d.days)?d.days:{},recipes:Array.isArray(d.recipes)?d.recipes:[],plan:d.plan&&typeof d.plan==='object'&&!Array.isArray(d.plan)?d.plan:{},stock:Array.isArray(d.stock)?d.stock.map(s=>({k:s.k||norm(s.n),n:s.n,q:Number(s.q)||0,u:s.u||'',r:s.r||guessRayon(s.n)})):[],barcodes:d.barcodes&&typeof d.barcodes==='object'&&!Array.isArray(d.barcodes)?d.barcodes:{},prices:Array.isArray(d.prices)?d.prices.filter(x=>x&&x.n&&Number(x.p)>0&&x.shop).map(x=>({id:x.id||uid(),k:x.k||norm(x.n),n:String(x.n),p:Number(x.p),q:Number(x.q)||1,u:x.u||'',shop:String(x.shop),d:String(x.d||'')})):[],extras:Array.isArray(d.extras)?d.extras.filter(x=>x&&x.n).map(x=>({id:x.id||uid(),n:String(x.n),q:Number(x.q)||0,u:x.u||'',r:x.r||guessRayon(x.n)})):[],bought:Array.isArray(d.bought)?d.bought:[],exclude:Array.isArray(d.exclude)?d.exclude:[]}}
+function fix(d){d=d||{};return{v:1,rev:Number(d.rev)||0,days:d.days&&typeof d.days==='object'&&!Array.isArray(d.days)?d.days:{},recipes:Array.isArray(d.recipes)?d.recipes:[],plan:d.plan&&typeof d.plan==='object'&&!Array.isArray(d.plan)?d.plan:{},stock:Array.isArray(d.stock)?d.stock.map(s=>({k:s.k||norm(s.n),n:s.n,q:Number(s.q)||0,u:s.u||'',r:s.r||guessRayon(s.n)})):[],barcodes:d.barcodes&&typeof d.barcodes==='object'&&!Array.isArray(d.barcodes)?d.barcodes:{},prices:Array.isArray(d.prices)?d.prices.filter(x=>x&&x.n&&Number(x.p)>0&&x.shop).map(x=>({id:x.id||uid(),k:x.k||norm(x.n),n:String(x.n),p:Number(x.p),q:Number(x.q)||1,u:x.u||'',shop:String(x.shop),d:String(x.d||''),r:RAYONS.includes(x.r)?x.r:''})):[],extras:Array.isArray(d.extras)?d.extras.filter(x=>x&&x.n).map(x=>({id:x.id||uid(),n:String(x.n),q:Number(x.q)||0,u:x.u||'',r:x.r||guessRayon(x.n)})):[],bought:Array.isArray(d.bought)?d.bought:[],exclude:Array.isArray(d.exclude)?d.exclude:[]}}
 let S;
 try{const raw=localStorage.getItem(LS);S=raw?fix(JSON.parse(raw)):fresh()}catch(e){S=fresh()}
 const F={text:'',with:[],stockOnly:false};      // filtres éphémères
@@ -854,11 +858,11 @@ const eur=n=>(Math.round(n*100)/100).toFixed(2).replace('.',',')+' €';
 const PBASE={g:1000,ml:1000};
 function unitPrice(e){return e.p/(e.q||1)*(PBASE[e.u]||1)}
 function unitLabel(u){return u==='g'?'kg':u==='ml'?'l':u?u:'pièce'}
-function addPrice(n,p,q,u,shop,d){
+function addPrice(n,p,q,u,shop,d,r){
   n=String(n||'').trim();shop=String(shop||'').trim();p=Number(p)||0;
   if(!n||!shop||p<=0)return false;
   let [qq,uu]=normQty(q,u);if(!qq){qq=1;uu=''}
-  S.prices.push({id:uid(),k:norm(n),n,p,q:qq,u:uu,shop,d:d||todayISO()});return true;
+  S.prices.push({id:uid(),k:norm(n),n,p,q:qq,u:uu,shop,d:d||todayISO(),r:RAYONS.includes(r)?r:''});return true;
 }
 function recordTicketPrices(items){
   if(!R.shop.trim())return 0;
@@ -1100,13 +1104,15 @@ function renderPrix(){
   // détail par article
   const f=norm($('#pr-filter').value||'');
   const groups=new Map();
-  for(const e of S.prices){const ek=ckey(e.n),g=ek+'|'+(e.u||'');if(!groups.has(g))groups.set(g,{k:ek,u:e.u||'',n:e.n,all:[]});groups.get(g).all.push(e)}
+  for(const e of S.prices){const ek=ckey(e.n),g=ek+'|'+(e.u||'');if(!groups.has(g))groups.set(g,{k:ek,u:e.u||'',n:e.n,all:[],r:''});const gg=groups.get(g);gg.all.push(e);if(!gg.r&&e.r)gg.r=e.r}
   const list=[...groups.values()].filter(g=>!f||norm(g.n).includes(f)).sort((a,b)=>a.n.localeCompare(b.n,'fr'));
   if(!list.length){$('#pr-list').innerHTML=`<div class="empty">${S.prices.length?'Aucun article ne correspond.':'Aucun prix noté pour le moment. Lisez un ticket en indiquant le magasin, ou saisissez un prix ci-dessus.'}</div>`;return}
-  $('#pr-list').innerHTML=list.map(g=>{
+  const card=g=>{
     const best=priceByShop(g.k,g.u),multi=best.length>1;
     const hist=[...g.all].sort((a,b)=>b.d.localeCompare(a.d));
-    return`<div class="box" style="margin-bottom:12px"><h3>${esc(g.n)} <span class="hint">(par ${esc(unitLabel(g.u))})</span></h3>${best.map((e,i)=>`<div class="srow"><span class="nm">${esc(e.shop)}${multi&&i===0?' <span class="chip">le moins cher</span>':''}</span><span class="dots"></span><b>${eur(unitPrice(e))}/${esc(unitLabel(g.u))}</b><span class="hint" style="margin-left:8px">${esc(fmtQty(e.q,e.u)||'1')} à ${eur(e.p)}${e.d?' · '+esc(new Date(e.d+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'})):''}</span></div>`).join('')}<details><summary class="hint">Historique et suppression (${hist.length})</summary>${hist.map(e=>`<div class="srow"><span class="nm">${esc(e.shop)} · ${esc(e.d)}</span><span class="dots"></span><span>${eur(unitPrice(e))}/${esc(unitLabel(g.u))}</span><button class="btn sm danger" data-act="pr-del" data-id="${esc(e.id)}" aria-label="Supprimer ce prix">×</button></div>`).join('')}</details></div>`}).join('');
+    return`<div class="box" style="margin-bottom:12px"><h3>${esc(g.n)} <span class="hint">(par ${esc(unitLabel(g.u))})</span> <select class="mini-sel" data-prr="${esc(g.k+'|'+g.u)}" aria-label="Rayon de ${esc(g.n)}">${RAYONS.map(r=>`<option${r===g.r?' selected':''}>${esc(r)}</option>`).join('')}</select></h3>${best.map((e,i)=>`<div class="srow"><span class="nm">${esc(e.shop)}${multi&&i===0?' <span class="chip">le moins cher</span>':''}</span><span class="dots"></span><b>${eur(unitPrice(e))}/${esc(unitLabel(g.u))}</b><span class="hint" style="margin-left:8px">${esc(fmtQty(e.q,e.u)||'1')} à ${eur(e.p)}${e.d?' · '+esc(new Date(e.d+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'})):''}</span></div>`).join('')}<details><summary class="hint">Historique et suppression (${hist.length})</summary>${hist.map(e=>`<div class="srow"><span class="nm">${esc(e.shop)} · ${esc(e.d)}</span><span class="dots"></span><span>${eur(unitPrice(e))}/${esc(unitLabel(g.u))}</span><button class="btn sm danger" data-act="pr-del" data-id="${esc(e.id)}" aria-label="Supprimer ce prix">×</button></div>`).join('')}</details></div>`};
+  for(const g of list)if(!RAYONS.includes(g.r))g.r=guessRayon(g.n);
+  $('#pr-list').innerHTML=RAYONS.map(r=>{const l=list.filter(g=>g.r===r);return l.length?`<h3 class="pr-cat">${esc(r)} <span class="hint">${l.length} article${l.length>1?'s':''}</span></h3>${l.map(card).join('')}`:''}).join('');
 }
 function renderAll(){renderChips();renderRecipes();renderIA();renderCourses();renderStock();renderReview();renderPrix()}
 
@@ -1169,7 +1175,7 @@ document.addEventListener('click',e=>{
     case 'sc-list':{const x=scRead();if(!x)break;S.extras.push({id:uid(),n:x.n,q:x.q*x.c,u:x.u,r:x.r});renderCourses();scDone(x.n+' ajouté à la liste.');break}
     case 'sc-price':{const x=scRead();if(!x)break;const pr=Number($('#sc-p').value)||0,shop=$('#sc-shop').value.trim();
       if(pr<=0||!shop){$('#sc-st').textContent='Pour noter un prix, indiquez le prix et le magasin.';break}
-      addPrice(x.n,pr,x.q,x.u,shop,todayISO());renderPrix();renderCourses();scDone('Prix noté : '+x.n+' chez '+shop+'.');break}
+      addPrice(x.n,pr,x.q,x.u,shop,todayISO(),x.r);renderPrix();renderCourses();scDone('Prix noté : '+x.n+' chez '+shop+'.');break}
     case 'toggle-list':UI.hideList=!UI.hideList;saveUI();renderCourses();break;
     case 'extra-pick':exAdd(b.dataset.n,b.dataset.r);break;
     case 'extra-del':{S.extras=S.extras.filter(x=>x.id!==b.dataset.id);persist();renderCourses();break}
@@ -1217,6 +1223,8 @@ function chipKey(e,el){
 }
 document.addEventListener('keydown',e=>{const el=e.target.closest&&e.target.closest('[data-chipin]');if(el)chipKey(e,el);if(e.key==='Escape'){if(!$('#sc').hidden)scClose();if(!$('#ck').hidden){$('#ck').hidden=true;COOK=null}if(!$('#nr').hidden)$('#nr').hidden=true;if(!$('#imp').hidden)$('#imp').hidden=true}});
 document.addEventListener('change',e=>{
+  const psel=e.target.closest&&e.target.closest('[data-prr]');
+  if(psel){const [k,u]=psel.dataset.prr.split('|');S.prices.forEach(x=>{if(ckey(x.n)===k&&(x.u||'')===u)x.r=psel.value});persist();renderPrix();return}
   const dsel=e.target.closest&&e.target.closest('[data-day]');
   if(dsel){const id=dsel.dataset.day;if(dsel.value)S.days[id]=dsel.value;else delete S.days[id];persist();renderCourses();return}const el=e.target.closest&&e.target.closest('[data-chipin]');if(el&&el.value.trim())chipKey(e,el)});
 $('#f-text').addEventListener('input',e=>{F.text=e.target.value;renderRecipes()});
