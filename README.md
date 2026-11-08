@@ -5,7 +5,7 @@ Recettes, stock et liste de courses dans une seule page web.
 - Version hébergée : https://davidbucari-ui.github.io/Le-panier/
 - Sans compte, les données restent dans le navigateur de l'appareil.
 - Avec un compte (Supabase), elles se synchronisent entre appareils : voir `supabase.sql` et la constante `SB` en haut du script de `index.html`.
-- Les idées de recettes et la lecture de tickets passent par une conversation Claude (copier la demande, coller la réponse).
+- Les idées de recettes passent par une conversation Claude (copier la demande, coller la réponse).
 
 ## Ranger les courses
 
@@ -21,7 +21,7 @@ Le bouton « Importer depuis un site » (onglet Recettes) appelle la fonction `i
 
 ## Prix et magasins
 
-Onglet **Prix** : les prix viennent des tickets (magasin, date et prix par ligne sont lus avec le ticket) ou d'une saisie manuelle. Chaque prix est ramené au kilo, au litre ou à la pièce. L'onglet compare les magasins article par article et estime le total de la liste de courses par magasin. Le meilleur prix connu s'affiche aussi sous chaque article de la liste.
+Onglet **Prix** : les prix sont saisis à la main (article, prix payé, quantité, magasin, date). Chaque prix est ramené au kilo, au litre ou à la pièce. L'onglet compare les magasins article par article et estime le total de la liste de courses par magasin. Le meilleur prix connu s'affiche aussi sous chaque article de la liste.
 
 ## Code-barres
 

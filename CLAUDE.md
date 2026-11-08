@@ -15,7 +15,8 @@ Application web personnelle (français) de gestion des courses : recettes, idée
 - Supabase : projet `uwowtbninyoylwqgrqby` (eu-west-1). La clé *publishable* dans `index.html` est publique par conception ; ne jamais y mettre de clé secrète.
 
 ## Deux modes d'exécution
-1. **Hors Claude** (GitHub Pages) : connexion e-mail + mot de passe Supabase, synchro realtime, dictionnaire, scanner, import d'URL via l'Edge Function. Pas d'IA intégrée : les « idées » et la lecture de ticket passent par un copier-coller de prompt vers une conversation Claude (`ideasPrompt`/`ingestIdeas`, `ticketPrompt`/`ingestTicket`, `recipePrompt`/`ingestRecipe`).
+1. **Hors Claude** (GitHub Pages) : connexion e-mail + mot de passe Supabase, synchro realtime, dictionnaire, scanner, import d'URL via l'Edge Function. Pas d'IA intégrée : les « idées » passent par un copier-coller de prompt vers une conversation Claude (`ideasPrompt`/`ingestIdeas`, `recipePrompt`/`ingestRecipe`).
+- Pas de lecture de ticket de caisse dans l'appli (retirée à la demande de David) : le stock se remplit avec « Ranger les courses » (`storeBought`, articles cochés de la liste → stock) ou à la main.
 2. **Dans Claude** (artifact) : `claude.use("db"|"user"|"sample")`, stockage par utilisateur `data/users/<id>/app`, IA via `sample`. Cette version n'est **pas** republiée à chaque changement : elle date d'avant le stock/les prix/le scanner. Ne pas la considérer comme à jour.
 Le code doit rester compatible avec les deux : tout accès réseau ou dictionnaire est optionnel et dégrade proprement.
 
