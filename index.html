@@ -158,6 +158,9 @@ input[type=file]{padding:8px}
 .sc-cam{position:relative;border-radius:12px;overflow:hidden;background:#000;margin:8px 0}
 .sc-cam video{display:block;width:100%;max-height:260px;object-fit:cover}
 .sc-cam .sc-line{position:absolute;left:10%;right:10%;top:50%;height:2px;background:rgba(255,60,60,.85)}
+.pr-tabs{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;margin-bottom:4px;-webkit-overflow-scrolling:touch}
+.pr-tabs .tab{flex:0 0 auto;border:1px solid var(--line,#ccc);white-space:nowrap}
+.pr-tabs .tab .badge{margin-left:2px}
 .pr-cat{margin:22px 0 8px;font-size:1.05rem;border-bottom:1px solid var(--line,#ccc);padding-bottom:4px}
 .mini-sel{width:auto;min-height:28px;font-size:.8rem;padding:2px 6px;margin-left:8px;font-weight:400}
 </style>
@@ -288,7 +291,8 @@ input[type=file]{padding:8px}
     </div>
     <div id="pr-cmp"></div>
     <div class="bar" style="margin:16px 0 8px"><div class="field"><label for="pr-filter">Rechercher un article</label><input type="search" id="pr-filter" placeholder="ex. lait" autocomplete="off"></div></div>
-    <div id="pr-list"></div>
+    <div class="pr-tabs" id="pr-tabs" role="tablist" aria-label="Catégories" hidden></div>
+    <div id="pr-list" role="tabpanel"></div>
     <datalist id="dl-shop"></datalist>
   </section>
 
@@ -1088,6 +1092,7 @@ function showTab(t){
   try{if(location.hash!=='#'+t)history.replaceState(null,'','#'+t)}catch(e){}
   renderAll();
 }
+let PR_TAB='';
 function renderPrix(){
   const dl=$('#dl-shop');if(!dl)return;
   const shops=[...new Map(S.prices.map(e=>[norm(e.shop),e.shop])).values()].sort((a,b)=>a.localeCompare(b,'fr'));
@@ -1106,13 +1111,17 @@ function renderPrix(){
   const groups=new Map();
   for(const e of S.prices){const ek=ckey(e.n),g=ek+'|'+(e.u||'');if(!groups.has(g))groups.set(g,{k:ek,u:e.u||'',n:e.n,all:[],r:''});const gg=groups.get(g);gg.all.push(e);if(!gg.r&&e.r)gg.r=e.r}
   const list=[...groups.values()].filter(g=>!f||norm(g.n).includes(f)).sort((a,b)=>a.n.localeCompare(b.n,'fr'));
-  if(!list.length){$('#pr-list').innerHTML=`<div class="empty">${S.prices.length?'Aucun article ne correspond.':'Aucun prix noté pour le moment. Lisez un ticket en indiquant le magasin, ou saisissez un prix ci-dessus.'}</div>`;return}
+  if(!list.length){$('#pr-tabs').hidden=true;$('#pr-list').innerHTML=`<div class="empty">${S.prices.length?'Aucun article ne correspond.':'Aucun prix noté pour le moment. Lisez un ticket en indiquant le magasin, ou saisissez un prix ci-dessus.'}</div>`;return}
   const card=g=>{
     const best=priceByShop(g.k,g.u),multi=best.length>1;
     const hist=[...g.all].sort((a,b)=>b.d.localeCompare(a.d));
     return`<div class="box" style="margin-bottom:12px"><h3>${esc(g.n)} <span class="hint">(par ${esc(unitLabel(g.u))})</span> <select class="mini-sel" data-prr="${esc(g.k+'|'+g.u)}" aria-label="Rayon de ${esc(g.n)}">${RAYONS.map(r=>`<option${r===g.r?' selected':''}>${esc(r)}</option>`).join('')}</select></h3>${best.map((e,i)=>`<div class="srow"><span class="nm">${esc(e.shop)}${multi&&i===0?' <span class="chip">le moins cher</span>':''}</span><span class="dots"></span><b>${eur(unitPrice(e))}/${esc(unitLabel(g.u))}</b><span class="hint" style="margin-left:8px">${esc(fmtQty(e.q,e.u)||'1')} à ${eur(e.p)}${e.d?' · '+esc(new Date(e.d+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'})):''}</span></div>`).join('')}<details><summary class="hint">Historique et suppression (${hist.length})</summary>${hist.map(e=>`<div class="srow"><span class="nm">${esc(e.shop)} · ${esc(e.d)}</span><span class="dots"></span><span>${eur(unitPrice(e))}/${esc(unitLabel(g.u))}</span><button class="btn sm danger" data-act="pr-del" data-id="${esc(e.id)}" aria-label="Supprimer ce prix">×</button></div>`).join('')}</details></div>`};
   for(const g of list)if(!RAYONS.includes(g.r))g.r=guessRayon(g.n);
-  $('#pr-list').innerHTML=RAYONS.map(r=>{const l=list.filter(g=>g.r===r);return l.length?`<h3 class="pr-cat">${esc(r)} <span class="hint">${l.length} article${l.length>1?'s':''}</span></h3>${l.map(card).join('')}`:''}).join('');
+  const cats=RAYONS.map(r=>[r,list.filter(g=>g.r===r)]).filter(c=>c[1].length);
+  if(PR_TAB!=='*'&&!cats.some(c=>c[0]===PR_TAB))PR_TAB=cats.length?cats[0][0]:'*';
+  const tb=$('#pr-tabs');tb.hidden=false;
+  tb.innerHTML=cats.map(([r,l])=>`<button class="tab" role="tab" data-act="pr-tab" data-r="${esc(r)}" aria-selected="${PR_TAB===r}">${esc(r)} <span class="badge">${l.length}</span></button>`).join('')+`<button class="tab" role="tab" data-act="pr-tab" data-r="*" aria-selected="${PR_TAB==='*'}">Tous <span class="badge">${list.length}</span></button>`;
+  $('#pr-list').innerHTML=PR_TAB==='*'?cats.map(([r,l])=>`<h3 class="pr-cat">${esc(r)}</h3>${l.map(card).join('')}`).join(''):(cats.find(c=>c[0]===PR_TAB)||[0,[]])[1].map(card).join('');
 }
 function renderAll(){renderChips();renderRecipes();renderIA();renderCourses();renderStock();renderReview();renderPrix()}
 
@@ -1163,6 +1172,7 @@ document.addEventListener('click',e=>{
     case 'auth-open':showAuth('');break;
     case 'signout':if(sb)sb.auth.signOut();break;
     case 'ia-drop':A.results.splice(+b.dataset.i,1);renderIA();break;
+    case 'pr-tab':PR_TAB=b.dataset.r;renderPrix();break;
     case 'pr-add':{const m=$('#pr-msg');const ok=addPrice($('#pr-name').value,$('#pr-p').value,parseFloat($('#pr-q').value)||0,$('#pr-u').value,$('#pr-shop').value,$('#pr-d').value);
       if(!ok){m.textContent='Renseignez au minimum l\'article, le prix et le magasin.';break}
       persist();m.textContent='Prix enregistré pour « '+$('#pr-name').value.trim()+' ».';$('#pr-name').value='';$('#pr-p').value='';$('#pr-q').value='';renderPrix();renderCourses();break}
