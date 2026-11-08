@@ -149,6 +149,9 @@ input[type=file]{padding:8px}
 .ck-row .fx{font-size:13px;text-align:right}
 .ck-row.dim .fx{color:var(--muted)}
 @media (prefers-reduced-motion:no-preference){.card,.btn{transition:border-color .15s}}
+.ex-res{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.ex-res button{border:1px solid var(--line,#ccc);background:var(--paper,#fff);border-radius:999px;padding:6px 12px;min-height:36px;font:inherit;cursor:pointer}
+.ex-res button small{color:var(--muted,#777);margin-left:6px}
 </style>
 </head>
 <body>
@@ -244,6 +247,16 @@ input[type=file]{padding:8px}
   <section class="panel" id="p-courses" role="tabpanel" aria-labelledby="tab-courses" hidden>
     <h2>Liste de courses</h2>
     <p class="lead-p">Les quantités des recettes au menu sont additionnées. Marquez « en stock » ce que vous avez déjà : l'article disparaît de la liste.</p>
+    <div class="box" id="ex-box" style="margin-bottom:16px">
+      <h3>Ajouter un article</h3>
+      <div class="bar">
+        <div class="field"><label for="ex-q">Chercher un article</label><input type="search" id="ex-q" placeholder="ex. yaourt, riz, citron" autocomplete="off"></div>
+        <div class="field"><label for="ex-ray">Rayon</label><select id="ex-ray"><option value="">Tous</option></select></div>
+        <div class="field"><label for="ex-qty">Quantité</label><div class="two"><input type="number" id="ex-qty" min="0" step="any" placeholder="facultatif"><select id="ex-unit" aria-label="Unité"><option value="">pièce(s)</option><option>g</option><option>kg</option><option>ml</option><option>cl</option><option>l</option></select></div></div>
+      </div>
+      <div id="ex-res" class="ex-res" role="list"></div>
+      <p class="hint" style="margin:8px 0 0" id="ex-hint">Touchez un article pour l'ajouter à la liste. Entrée ajoute le texte tapé tel quel.</p>
+    </div>
     <div class="cols" id="courses"></div>
   </section>
 
@@ -403,8 +416,8 @@ function examples(){return[
   steps:['Disposer poulet et légumes en morceaux dans un plat.','Ajouter beurre et thym, saler, poivrer.','Enfourner 55 minutes à 200 °C en arrosant à mi-cuisson.']}
 ]}
 const DAYS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
-function fresh(){return{v:1,rev:0,recipes:examples(),plan:{},days:{},stock:[],bought:[],exclude:[]}}
-function fix(d){d=d||{};return{v:1,rev:Number(d.rev)||0,days:d.days&&typeof d.days==='object'&&!Array.isArray(d.days)?d.days:{},recipes:Array.isArray(d.recipes)?d.recipes:[],plan:d.plan&&typeof d.plan==='object'&&!Array.isArray(d.plan)?d.plan:{},stock:Array.isArray(d.stock)?d.stock.map(s=>({k:s.k||norm(s.n),n:s.n,q:Number(s.q)||0,u:s.u||'',r:s.r||guessRayon(s.n)})):[],bought:Array.isArray(d.bought)?d.bought:[],exclude:Array.isArray(d.exclude)?d.exclude:[]}}
+function fresh(){return{v:1,rev:0,recipes:examples(),plan:{},days:{},stock:[],extras:[],bought:[],exclude:[]}}
+function fix(d){d=d||{};return{v:1,rev:Number(d.rev)||0,days:d.days&&typeof d.days==='object'&&!Array.isArray(d.days)?d.days:{},recipes:Array.isArray(d.recipes)?d.recipes:[],plan:d.plan&&typeof d.plan==='object'&&!Array.isArray(d.plan)?d.plan:{},stock:Array.isArray(d.stock)?d.stock.map(s=>({k:s.k||norm(s.n),n:s.n,q:Number(s.q)||0,u:s.u||'',r:s.r||guessRayon(s.n)})):[],extras:Array.isArray(d.extras)?d.extras.filter(x=>x&&x.n).map(x=>({id:x.id||uid(),n:String(x.n),q:Number(x.q)||0,u:x.u||'',r:x.r||guessRayon(x.n)})):[],bought:Array.isArray(d.bought)?d.bought:[],exclude:Array.isArray(d.exclude)?d.exclude:[]}}
 let S;
 try{const raw=localStorage.getItem(LS);S=raw?fix(JSON.parse(raw)):fresh()}catch(e){S=fresh()}
 const F={text:'',with:[],stockOnly:false};      // filtres éphémères
@@ -490,6 +503,7 @@ function shoppingItems(){
     if(it.q>0&&hq>0){it.have=hq;it.q=Math.round((it.q-hq)*100)/100;if(it.q<=0)continue}
     out.push(it);
   }
+  for(const x of S.extras){const [q,u]=normQty(Number(x.q)||0,x.u);out.push({key:'x|'+x.id,nk:ckey(x.n),name:x.n,u,q,rayon:RAYONS.includes(x.r)?x.r:guessRayon(x.n),from:['ajouté à la main'],extra:x.id})}
   return out.sort((a,b)=>a.name.localeCompare(b.name,'fr'));
 }
 
@@ -611,6 +625,34 @@ async function generate(){
 }
 
 /* ---------- rendu : courses ---------- */
+function exAdd(n,r){
+  n=String(n||'').trim();if(!n)return;
+  const q=parseFloat($('#ex-qty').value)||0,u=q?$('#ex-unit').value:'';
+  S.extras.push({id:uid(),n,q,u,r:r||guessRayon(n)});
+  persist();renderCourses();$('#ex-qty').value='';
+  const m=$('#ex-hint');if(m)m.textContent='« '+n+' » ajouté à la liste.';
+}
+function exSearch(){
+  const el=$('#ex-res');if(!el)return;
+  const q=norm($('#ex-q').value.trim()),ray=$('#ex-ray').value;
+  if(!DICT){el.innerHTML='';return}
+  if(!q&&!ray){el.innerHTML='';return}
+  const hits=[];
+  for(const [k,id] of DICT.byName){
+    const e=DICT.ent.get(id);if(!e)continue;
+    const rn=e.r>=0?DICT.rayons[e.r]:'';
+    if(ray&&rn!==ray)continue;
+    let sc=0;
+    if(q){if(k===q)sc=0;else if(k.startsWith(q))sc=1;else if(k.split(' ').some(w=>w.startsWith(q)))sc=2;else if(k.includes(q))sc=3;else continue}
+    else sc=1;
+    if(k!==norm(e.n))sc+=0.5;
+    hits.push([sc,k.length,e.n,rn])
+  }
+  hits.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+  const seen=new Set(),out=[];
+  for(const h of hits){if(seen.has(h[2]))continue;seen.add(h[2]);out.push(h);if(out.length>=40)break}
+  el.innerHTML=out.length?out.map(h=>`<button type="button" role="listitem" data-act="extra-pick" data-n="${esc(h[2])}" data-r="${esc(h[3])}">${esc(h[2])}${h[3]&&!ray?`<small>${esc(h[3])}</small>`:''}</button>`).join(''):'<span class="hint">Aucun résultat dans le dictionnaire. Entrée ajoute le texte tapé.</span>';
+}
 function renderCourses(){
   const items=shoppingItems(),done=new Set(S.bought);
   const left=items.filter(i=>!done.has(i.key)).length;
@@ -618,13 +660,13 @@ function renderCourses(){
   const date=new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
   let rec='';
   if(!items.length){
-    rec=`<div class="receipt"><h3>Le Panier</h3><div class="sub">${esc(date)}</div><p style="font-family:var(--body);color:var(--muted)">${Object.keys(S.plan).length?'Tout est déjà en stock : rien à acheter.':'La liste est vide. Ajoutez des recettes au menu depuis l\'onglet Recettes.'}</p></div>`;
+    rec=`<div class="receipt"><h3>Le Panier</h3><div class="sub">${esc(date)}</div><p style="font-family:var(--body);color:var(--muted)">${Object.keys(S.plan).length?'Tout est déjà en stock : rien à acheter.':'La liste est vide. Ajoutez des recettes au menu depuis l\'onglet Recettes, ou des articles à la main ci-dessus.'}</p></div>`;
   }else{
     const groups=RAYONS.map(r=>[r,items.filter(i=>i.rayon===r)]).filter(g=>g[1].length);
     rec=`<div class="receipt"><h3>Le Panier</h3><div class="sub">${esc(date)}</div>`+
       groups.map(([r,list])=>`<div class="rayon">${esc(r)}</div><ul class="items">${list.map(i=>{
         const d=done.has(i.key);
-        return`<li class="item ${d?'done':''}"><div class="line"><button class="chk" role="checkbox" aria-checked="${d}" aria-label="${esc(i.name)}" data-act="bought" data-k="${esc(i.key)}"></button><span class="nm">${esc(i.name)}</span><span class="dots"></span><span class="qty">${esc(fmtQty(i.q,i.u)||'au goût')}</span><button class="mini" data-act="stock" data-k="${esc(i.nk)}" data-n="${esc(i.name)}" title="Je l'ai déjà à la maison">en stock</button></div><p class="from">${esc(i.from.join(', '))}${i.have?esc(' · déjà '+fmtQty(i.have,i.u)+' en stock'):''}</p></li>`}).join('')}</ul>`).join('')+
+        return`<li class="item ${d?'done':''}"><div class="line"><button class="chk" role="checkbox" aria-checked="${d}" aria-label="${esc(i.name)}" data-act="bought" data-k="${esc(i.key)}"></button><span class="nm">${esc(i.name)}</span><span class="dots"></span><span class="qty">${esc(fmtQty(i.q,i.u)||(i.extra?'':'au goût'))}</span>${i.extra?`<button class="mini" data-act="extra-del" data-id="${esc(i.extra)}" title="Retirer de la liste">retirer</button>`:`<button class="mini" data-act="stock" data-k="${esc(i.nk)}" data-n="${esc(i.name)}" title="Je l'ai déjà à la maison">en stock</button>`}</div><p class="from">${esc(i.from.join(', '))}${i.have?esc(' · déjà '+fmtQty(i.have,i.u)+' en stock'):''}</p></li>`}).join('')}</ul>`).join('')+
       `<div class="total"><span>${items.length} article${items.length>1?'s':''}</span><span>${items.length-left} coché${items.length-left>1?'s':''}</span></div></div>`;
   }
   const dayIdx=id=>{const i=DAYS.indexOf(S.days[id]);return i<0?99:i};
@@ -635,7 +677,7 @@ function renderCourses(){
       <p class="hint" style="margin:0">${S.stock.length} ingrédient${S.stock.length>1?'s':''} en stock. Les quantités connues sont déduites de la liste.</p><div class="row-actions"><button class="btn sm" data-act="tab" data-t="stock">Gérer mon stock</button></div>
       <input type="text" id="in-stock" list="dl-ing" data-chipin="stock" placeholder="Ajouter un ingrédient en stock" autocomplete="off" aria-label="Ajouter un ingrédient en stock">
       <p class="hint" style="margin:0">Ajouté ici sans quantité, un ingrédient est considéré comme déjà disponible.</p></div>
-    <div class="row-actions"><button class="btn" data-act="copy" ${items.length?'':'disabled'}>Copier la liste</button><button class="btn" data-act="uncheck" ${S.bought.length?'':'disabled'}>Tout décocher</button><button class="btn danger" data-act="reset" ${Object.keys(S.plan).length?'':'disabled'}>Vider le menu</button></div>
+    <div class="row-actions"><button class="btn" data-act="copy" ${items.length?'':'disabled'}>Copier la liste</button><button class="btn" data-act="uncheck" ${S.bought.length?'':'disabled'}>Tout décocher</button><button class="btn danger" data-act="reset" ${Object.keys(S.plan).length||S.extras.length?'':'disabled'}>Vider la liste</button></div>
     <span class="hint" id="copy-msg" aria-live="polite"></span>
   </div>`;
   const keep=document.activeElement&&document.activeElement.id==='in-stock';
@@ -841,6 +883,9 @@ document.addEventListener('change',e=>{
   s.q=Math.max(0,Number(el.value)||0);stockChanged();
 });
 $('#sk-filter').addEventListener('input',renderStock);
+$('#ex-q').addEventListener('input',exSearch);
+$('#ex-ray').addEventListener('change',exSearch);
+$('#ex-q').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const v=e.target.value;if(v.trim()){exAdd(v);e.target.value='';exSearch()}}});
 $('#ck-por').addEventListener('input',renderCook);
 $('#f-stock').addEventListener('change',e=>{F.stockOnly=e.target.checked;renderRecipes()});
 
@@ -904,10 +949,12 @@ document.addEventListener('click',e=>{
     case 'auth-open':showAuth('');break;
     case 'signout':if(sb)sb.auth.signOut();break;
     case 'ia-drop':A.results.splice(+b.dataset.i,1);renderIA();break;
+    case 'extra-pick':exAdd(b.dataset.n,b.dataset.r);break;
+    case 'extra-del':{S.extras=S.extras.filter(x=>x.id!==b.dataset.id);persist();renderCourses();break}
     case 'bought':{const k=b.dataset.k,i=S.bought.indexOf(k);i>=0?S.bought.splice(i,1):S.bought.push(k);persist();renderCourses();break}
     case 'stock':{const nm=b.dataset.n;if(!S.stock.some(s=>covers(s.n,ckey(nm))))S.stock.push({k:norm(nm),n:nm,q:0,u:'',r:guessRayon(nm)});stockChanged();break}
     case 'uncheck':S.bought=[];persist();renderCourses();break;
-    case 'reset':if(b.dataset.arm!=='1'){b.dataset.arm='1';b.textContent='Confirmer ?';setTimeout(()=>{if(b.isConnected){b.dataset.arm='';b.textContent='Vider le menu'}},3000)}else{S.plan={};S.days={};S.bought=[];persist();renderRecipes();renderCourses()}break;
+    case 'reset':if(b.dataset.arm!=='1'){b.dataset.arm='1';b.textContent='Confirmer ?';setTimeout(()=>{if(b.isConnected){b.dataset.arm='';b.textContent='Vider la liste'}},3000)}else{S.plan={};S.days={};S.extras=[];S.bought=[];persist();renderRecipes();renderCourses()}break;
     case 'copy':copyList();break;
   }
 });
@@ -959,7 +1006,7 @@ setSync('wait');
 document.body.classList.add('loading');
 const ready=()=>document.body.classList.remove('loading');
 setTimeout(ready,12000);
-if(typeof fetch==='function')fetch('ingredients.json').then(r=>r.ok?r.json():null).then(j=>{if(j&&Array.isArray(j.e)){buildDict(j);$('#credit').hidden=false;renderAll()}}).catch(()=>{});
+if(typeof fetch==='function')fetch('ingredients.json').then(r=>r.ok?r.json():null).then(j=>{if(j&&Array.isArray(j.e)){buildDict(j);$('#ex-ray').innerHTML='<option value="">Tous</option>'+DICT.rayons.slice(0,5).map(r=>`<option>${esc(r)}</option>`).join('');$('#credit').hidden=false;renderAll();exSearch()}}).catch(()=>{});
 let unsub=null,sb=null,sbUid=null;
 function attach(ref){
   if(unsub){try{unsub()}catch(e){}unsub=null}
