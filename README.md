@@ -14,3 +14,7 @@ Le bouton « Importer depuis un site » (onglet Recettes) appelle la fonction `i
 ## Dictionnaire d'ingrédients
 
 `ingredients.json` (≈ 4 200 ingrédients, noms français, synonymes, hiérarchie, rayon, code Ciqual) est généré à partir de la taxonomie des ingrédients d'[Open Food Facts](https://world.openfoodfacts.org) (licence ODbL). Les codes Ciqual renvoient à la table de composition nutritionnelle de l'Anses. Il sert à l'autocomplétion, au rapprochement stock/recettes (synonymes, « tomate concassée » couvre « tomate ») et au classement par rayon. Sans ce fichier (par ex. dans Claude), l'appli fonctionne comme avant.
+
+## Prix et magasins
+
+Onglet **Prix** : les prix viennent des tickets (magasin, date et prix par ligne sont lus avec le ticket) ou d'une saisie manuelle. Chaque prix est ramené au kilo, au litre ou à la pièce. L'onglet compare les magasins article par article et estime le total de la liste de courses par magasin. Le meilleur prix connu s'affiche aussi sous chaque article de la liste.
