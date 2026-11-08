@@ -1123,7 +1123,9 @@ function renderPrix(){
   tb.innerHTML=cats.map(([r,l])=>`<button class="tab" role="tab" data-act="pr-tab" data-r="${esc(r)}" aria-selected="${PR_TAB===r}">${esc(r)} <span class="badge">${l.length}</span></button>`).join('')+`<button class="tab" role="tab" data-act="pr-tab" data-r="*" aria-selected="${PR_TAB==='*'}">Tous <span class="badge">${list.length}</span></button>`;
   $('#pr-list').innerHTML=PR_TAB==='*'?cats.map(([r,l])=>`<h3 class="pr-cat">${esc(r)}</h3>${l.map(card).join('')}`).join(''):(cats.find(c=>c[0]===PR_TAB)||[0,[]])[1].map(card).join('');
 }
-function renderAll(){renderChips();renderRecipes();renderIA();renderCourses();renderStock();renderReview();renderPrix()}
+function safe(fn,name){try{fn()}catch(e){console.error(name,e);try{toast('Erreur d\'affichage ('+name+') : '+(e&&e.message||e))}catch(_){}}}
+function renderAll(){[['chips',renderChips],['recettes',renderRecipes],['idées',renderIA],['courses',renderCourses],['stock',renderStock],['ticket',renderReview],['prix',renderPrix]].forEach(([n,f])=>safe(f,n))}
+window.addEventListener('error',e=>{try{toast('Erreur : '+e.message)}catch(_){}})
 
 /* ---------- actions ---------- */
 function planChange(id,fn){fn();persist();renderRecipes();renderCourses()}
