@@ -299,9 +299,13 @@ input[type=file]{padding:8px}
   <!-- STOCK -->
   <section class="panel" id="p-stock" role="tabpanel" aria-labelledby="tab-stock" hidden>
     <h2>Mon stock</h2>
-    <p class="lead-p">Après vos courses, ajoutez le ticket : Claude en lit les produits alimentaires et vous les vérifiez avant de les mettre au stock. Les recettes et la liste de courses en tiennent compte.</p>
+    <p class="lead-p">Après vos courses, importez le ticket téléchargé depuis l'application ou l'e-mail du magasin (PDF) : les articles sont lus et vous les vérifiez avant de les mettre au stock. Les recettes et la liste de courses en tiennent compte.</p>
     <div class="row-actions" style="margin-bottom:12px"><button class="btn" data-act="scan-open">Scanner un code-barres</button></div>
     <div class="ia-form">
+      <div class="field wide">
+        <label for="tk-doc">Ticket téléchargé (PDF ou texte)</label>
+        <input type="file" id="tk-doc" accept=".pdf,application/pdf,.txt,text/plain">
+      </div>
       <div class="field wide" id="tk-file-field">
         <label for="tk-file">Photo du ticket</label>
         <input type="file" id="tk-file" accept="image/*">
@@ -896,7 +900,7 @@ function renderReview(){
   const el=$('#tk-review');
   if(!R.items.length){el.innerHTML='';return}
   const n=R.items.length;
-  el.innerHTML=`<div class="box" style="margin-top:12px"><h3>${n} article${n>1?'s':''} trouvé${n>1?'s':''}</h3><p class="hint" style="margin:0">Vérifiez les noms, les quantités et les prix. Décochez ce qui ne doit pas entrer au stock.</p><div class="bar" style="margin:10px 0"><div class="field"><label for="rv-shop">Magasin</label><input type="text" id="rv-shop" list="dl-shop" value="${esc(R.shop)}" placeholder="ex. Carrefour" autocomplete="off"></div><div class="field"><label for="rv-date">Date</label><input type="date" id="rv-date" value="${esc(R.date)}"></div></div>${R.items.map(i=>`<div class="rv"><input type="checkbox" data-rv="on" data-id="${esc(i.id)}" ${i.on?'checked':''} aria-label="Ajouter ${esc(i.n)}"><input type="text" data-rv="n" data-id="${esc(i.id)}" value="${esc(i.n)}" aria-label="Nom"><input type="number" data-rv="q" data-id="${esc(i.id)}" min="0" step="any" value="${esc(i.q)}" aria-label="Quantité"><input type="text" data-rv="u" data-id="${esc(i.id)}" value="${esc(i.u)}" aria-label="Unité" placeholder="unité"><input type="number" data-rv="p" data-id="${esc(i.id)}" min="0" step="any" value="${i.p?esc(i.p):''}" aria-label="Prix payé en euros" placeholder="€"></div>`).join('')}<div class="row-actions"><button class="btn primary" data-act="tk-add">Ajouter au stock</button><button class="btn" data-act="tk-cancel">Annuler</button></div></div>`;
+  el.innerHTML=`<div class="box" style="margin-top:12px"><h3>${n} article${n>1?'s':''} trouvé${n>1?'s':''}</h3><p class="hint" style="margin:0">Vérifiez les noms, les quantités et les prix. Décochez ce qui ne doit pas entrer au stock.</p><div class="bar" style="margin:10px 0"><div class="field"><label for="rv-shop">Magasin</label><input type="text" id="rv-shop" list="dl-shop" value="${esc(R.shop)}" placeholder="ex. Carrefour" autocomplete="off"></div><div class="field"><label for="rv-date">Date</label><input type="date" id="rv-date" value="${esc(R.date)}"></div></div>${R.items.map(i=>`<div class="rv"><input type="checkbox" data-rv="on" data-id="${esc(i.id)}" ${i.on?'checked':''} aria-label="Ajouter ${esc(i.n)}"><input type="text" data-rv="n" data-id="${esc(i.id)}" value="${esc(i.n)}" aria-label="Nom"${i.raw?` title="Sur le ticket : ${esc(i.raw)}"`:''}><input type="number" data-rv="q" data-id="${esc(i.id)}" min="0" step="any" value="${esc(i.q)}" aria-label="Quantité"><input type="text" data-rv="u" data-id="${esc(i.id)}" value="${esc(i.u)}" aria-label="Unité" placeholder="unité"><input type="number" data-rv="p" data-id="${esc(i.id)}" min="0" step="any" value="${i.p?esc(i.p):''}" aria-label="Prix payé en euros" placeholder="€"></div>`).join('')}<div class="row-actions"><button class="btn primary" data-act="tk-add">Ajouter au stock</button><button class="btn" data-act="tk-cancel">Annuler</button></div></div>`;
 }
 async function shrink(file){
   try{
@@ -928,6 +932,116 @@ function parsePasted(t){
   const a=t.indexOf('{'),b=t.lastIndexOf('}');
   if(a<0||b<a)throw new Error('json');
   return JSON.parse(t.slice(a,b+1));
+}
+/* ---------- ticket téléchargé (PDF ou texte), lu sans IA ---------- */
+const SHOPS=['Lidl','Carrefour','E.Leclerc','Leclerc','Auchan','Intermarché','Super U','Hyper U','Système U','Monoprix','Franprix','Casino','Aldi','Netto','Grand Frais','Picard','Biocoop','Naturalia','Cora','Match','Spar','Leader Price'];
+const TK_STOP=/^(sous[ -]?)?total\b|^a payer|^montant (du|a payer|total)|^net a payer|^somme\b/;
+const TK_SKIP=/\b(tva|cb|carte bancaire|carte de fidelite|visa|mastercard|especes|rendu|monnaie|paiement|payer|ticket|caisse|caissier|merci|siret|tel|telephone|articles?|nombre|points?|cagnotte|solde|total|montant|transaction|autorisation|client|facture|fidelite|euro?s?)\b/;
+const TK_DISC=/^(remise|reduc|reduction|promo|coupon|bon d|avantage|lidl plus|offre|economie|rabais|immediate)/;
+const TK_NONFOOD=/\b(sac|sachet cabas|cabas|lessive|liquide vaisselle|vaisselle|essuie|papier toilette|mouchoir|shampo|shampoing|dentifrice|deodorant|gel douche|savon|eponge|piles?|ampoule|consigne|nettoyant|javel|adoucissant|couche|lingette|sopalin|aluminium|film etirable|bougie|journal)\b/;
+const TK_ABBR={ecr:'ecreme',nat:'nature',choc:'chocolat',jbn:'jambon',jamb:'jambon',fro:'fromage',from:'fromage',yaou:'yaourt',yt:'yaourt',yrt:'yaourt',pdt:'pomme de terre',pdterre:'pomme de terre',vol:'volaille',emment:'emmental',gruy:'gruyere',moz:'mozzarella',bche:'boeuf',bf:'boeuf',pll:'poulet',poul:'poulet',fil:'filet',sauc:'saucisse',cr:'creme',crm:'creme',fr:'fraiche',leg:'legume',lgm:'legume',tom:'tomate',pom:'pomme',bana:'banane',past:'pate',spag:'spaghetti',farin:'farine',sucr:'sucre',oeu:'oeuf'};
+const tkNum=s=>parseFloat(String(s).replace(',','.'))||0;
+// lignes d'un PDF : regroupe les morceaux de texte de même hauteur, de gauche à droite
+async function pdfText(file){
+  if(!window.pdfjsLib)await new Promise((ok,ko)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js';sc.onload=ok;sc.onerror=ko;document.head.appendChild(sc)});
+  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+  const pdf=await pdfjsLib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
+  const out=[];
+  for(let p=1;p<=Math.min(pdf.numPages,10);p++){
+    const tc=await (await pdf.getPage(p)).getTextContent();
+    const rows=[];
+    for(const it of tc.items){
+      if(!it.str||!it.str.trim())continue;
+      const x=it.transform[4],y=it.transform[5],h=Math.abs(it.transform[3])||8;
+      let r=rows.find(r=>Math.abs(r.y-y)<h*0.5);
+      if(!r){r={y,c:[]};rows.push(r)}
+      r.c.push({x,s:it.str});
+    }
+    rows.sort((a,b)=>b.y-a.y).forEach(r=>out.push(r.c.sort((a,b)=>a.x-b.x).map(c=>c.s).join('   ')));
+  }
+  return out.join('\n');
+}
+// nom générique : abréviations courantes, puis plus longue suite de mots connue du dictionnaire
+function tkName(raw){
+  let w=norm(raw.replace(/\d+([.,]\d+)?\s*(kg|g|gr|cl|ml|l|%)\b/gi,' ').replace(/\b\d+\s*[x*]\s*\d*|\bx\s*\d+\b/gi,' ')).split(' ').filter(t=>t&&!/^\d+$/.test(t)).map(t=>TK_ABBR[t]||t);
+  w=w.join(' ').split(' ');
+  if(DICT)for(let len=Math.min(w.length,5);len>0;len--)for(let i=0;i+len<=w.length;i++){const id=DICT.byName.get(norm(w.slice(i,i+len).join(' ')));if(id){const e=DICT.ent.get(id);if(e)return{n:e.n,known:true}}}
+  const n=w.join(' ');
+  return{n,known:!DICT||Object.values(KW).some(l=>l.some(k=>n.includes(k)))};
+}
+function tkQty(raw){
+  const s=raw.toLowerCase().replace(/(\d),(\d)/g,'$1.$2');
+  let m=s.match(/(\d+)\s*[x*]\s*(\d+(?:\.\d+)?)\s*(kg|g|gr|cl|ml|l)\b/);
+  if(m)return[+m[1]*+m[2],m[3]==='gr'?'g':m[3]];
+  m=s.match(/(\d+(?:\.\d+)?)\s*(kg|g|gr|cl|ml|l)\b/);
+  let q=0,u='';if(m){q=+m[1];u=m[2]==='gr'?'g':m[2]}
+  const k=s.match(/\bx\s*(\d+)\b|\b(\d+)\s*x\b(?!\s*\d)|\b(\d+)\s*(?:pcs|pc|pieces?|tr|tranches?)\b/);
+  if(k&&!u)q=+(k[1]||k[2]||k[3]);
+  return[q,u];
+}
+function parseTicketText(txt){
+  const lines=String(txt||'').split(/\r?\n/).map(l=>l.replace(/ /g,' ').replace(/\s+/g,' ').trim()).filter(Boolean);
+  const head=lines.slice(0,12).join(' ').toLowerCase();
+  const shop=SHOPS.find(s=>head.includes(s.toLowerCase()))||SHOPS.find(s=>norm(lines.join(' ')).includes(norm(s)))||'';
+  let date='';
+  for(const dm of lines.join(' ').matchAll(/\b(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4}|\d{2})\b/g)){const d=(dm[3].length===2?'20'+dm[3]:dm[3])+'-'+dm[2].padStart(2,'0')+'-'+dm[1].padStart(2,'0');if(/^20\d\d-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(d)){date=d;break}}
+  const PRICE=/^(.*?)\s*(-?\s?\d{1,4}[.,]\d{2})(-?)\s*(?:€|eur)?\s*(?:[a-z]\d?|\d|\*{1,2})?$/i;
+  const WEIGHT=/(\d+[.,]\d+)\s*kg\s*[x*]\s*\d+[.,]\d{2}\s*(?:€|eur)?\s*\/\s*kg/i;
+  const COUNT=/^(\d+)\s*[x*]\s*(\d+[.,]\d{2})\s*(?:€|eur)?$/i;
+  const items=[];let last=null,pending='';
+  for(const l of lines){
+    const nl=norm(l);
+    if(TK_STOP.test(nl)){if(items.length)break;continue}
+    const wm=l.match(WEIGHT);
+    if(wm){
+      const before=l.slice(0,wm.index).trim(),pm=l.slice(wm.index+wm[0].length).match(/(\d{1,4}[.,]\d{2})/);
+      const lab=/[a-z]{2}/i.test(before)?before:pending;
+      if(lab&&pm){last={raw:lab,p:tkNum(pm[1]),w:tkNum(wm[1])*1000,c:1};items.push(last);pending=''}
+      else if(last&&!last.w)last.w=tkNum(wm[1])*1000;
+      continue;
+    }
+    const cm=l.match(COUNT);
+    if(cm){if(last)last.c=+cm[1];continue}
+    const m=l.match(PRICE);
+    if(!m){if(/[a-z]{3}/i.test(l)&&!TK_SKIP.test(nl)&&!/\d{5}/.test(l))pending=l;continue}
+    let lab=m[1].trim(),c=1;
+    const ic=lab.match(/(?:^|\s)(\d+)\s*[x*]\s*\d+[.,]\d{2}\s*(?:€|eur)?$/i);
+    if(ic){c=+ic[1];lab=lab.slice(0,ic.index).trim()}
+    if(!/[a-z]{2}/i.test(lab)){if(!pending)continue;lab=pending}
+    pending='';
+    let p=tkNum(m[2].replace(/\s/g,''));if(m[3])p=-p;
+    if(p<0||TK_DISC.test(norm(lab))){if(last)last.p=Math.max(0,Math.round((last.p-Math.abs(p))*100)/100);continue}
+    if(TK_SKIP.test(norm(lab)))continue;
+    last={raw:lab,p,c};items.push(last);
+  }
+  const merged=new Map();
+  for(const it of items){
+    const g=tkName(it.raw);let q,u;
+    if(it.w){q=it.w;u='g'}else{[q,u]=tkQty(it.raw);if(q&&u)q*=it.c;else{q=(q||1)*it.c;u=''}}
+    const key=norm(g.n)+'|'+u;
+    const ex=merged.get(key);
+    if(ex){ex.q+=q;ex.p=Math.round((ex.p+it.p)*100)/100;continue}
+    const food=g.known&&!TK_NONFOOD.test(norm(it.raw));
+    merged.set(key,{id:uid(),n:g.n,q:Math.round(q*1000)/1000,u,p:it.p,r:guessRayon(g.n),on:food,raw:it.raw});
+  }
+  return{shop,date:date||todayISO(),items:[...merged.values()]};
+}
+function showTicket(res,from){
+  R.shop=res.shop;R.date=res.date;R.items=res.items;
+  const off=res.items.filter(i=>!i.on).length;
+  $('#tk-status').textContent=res.items.length?`${res.items.length} ligne${res.items.length>1?'s':''} lue${res.items.length>1?'s':''} ${from}.${off?` ${off} non reconnue${off>1?'s':''} ou non alimentaire${off>1?'s':''} : décochée${off>1?'s':''}.`:''}`:'Aucun article reconnu dans ce ticket. Vérifiez qu\'il s\'agit bien du ticket détaillé.';
+  renderReview();
+}
+async function readTicketDoc(file){
+  const st=$('#tk-status');if(!file)return;
+  st.textContent='Lecture du ticket…';
+  try{
+    const pdf=/pdf$/i.test(file.type)||/\.pdf$/i.test(file.name);
+    const txt=pdf?await pdfText(file):await file.text();
+    if(!txt.trim()){st.textContent=pdf?'Ce PDF ne contient pas de texte (ticket scanné ou photographié) : utilisez la lecture par Claude.':'Fichier vide.';return}
+    $('#tk-text').value=txt.slice(0,20000);
+    showTicket(parseTicketText(txt),'dans le fichier');
+  }catch(e){st.textContent=window.pdfjsLib||!navigator.onLine?'Impossible de lire ce fichier. Ouvrez le ticket et copiez son texte dans le champ ci-dessous.':'Le lecteur de PDF n\'a pas pu être chargé (réseau). Réessayez plus tard.'}
 }
 async function copyText(txt,sel){
   const m=$(sel);
@@ -1039,9 +1153,9 @@ async function importText(){
 async function readTicket(){
   const st=$('#tk-status'),btn=$('#tk-go');
   const file=$('#tk-file').files[0],txt=$('#tk-text').value.trim();
-  if(!file&&!txt){st.textContent='Ajoutez une photo ou collez le texte du ticket.';return}
   const sm=sampleNs||await use('sample');sampleNs=sm;
-  if(!sm){st.textContent='Hors de Claude, utilisez la méthode manuelle ci-dessous.';return}
+  if(!sm){if(txt)showTicket(parseTicketText(txt),'dans le texte');else st.textContent='Importez le ticket téléchargé ou collez son texte.';return}
+  if(!file&&!txt){st.textContent='Ajoutez une photo ou collez le texte du ticket.';return}
   let lim={};try{lim=await sm.limits()}catch(e){}
   if(file&&!lim.images){st.textContent='La lecture de photos n\'est pas disponible ici. Collez le texte du ticket à la place.';return}
   btn.disabled=true;st.textContent='Claude lit le ticket…';
@@ -1071,6 +1185,7 @@ document.addEventListener('change',e=>{
   s.q=Math.max(0,Number(el.value)||0);stockChanged();
 });
 $('#sk-filter').addEventListener('input',renderStock);
+$('#tk-doc').addEventListener('change',e=>readTicketDoc(e.target.files[0]));
 $('#ex-q').addEventListener('input',exSearch);
 $('#sc-code').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();scLookup(e.target.value)}});
 $('#pr-filter').addEventListener('input',renderPrix);
@@ -1151,7 +1266,7 @@ document.addEventListener('click',e=>{
     case 'ia-save-plan':{const p=A.results[+b.dataset.i];if(p){S.recipes.unshift({id:p.id,title:p.title,time:p.time,servings:p.servings,tags:p.tags,source:'ia',ingredients:p.ingredients,steps:p.steps});S.plan[p.id]=p.servings||4;A.notice={title:p.title,bad:excludedIn(p),planned:true};A.results.splice(+b.dataset.i,1);persist();renderIA();renderRecipes();renderCourses()}break}
     case 'tk-go':readTicket();break;
     case 'tk-cancel':R.items=[];renderReview();break;
-    case 'tk-add':{const ok=R.items.filter(i=>i.on&&i.n.trim());ok.forEach(addStock);const np=recordTicketPrices(ok);R.items=[];renderReview();$('#tk-status').textContent=ok.length?`${ok.length} article${ok.length>1?'s':''} ajouté${ok.length>1?'s':''} au stock${np?` · ${np} prix noté${np>1?'s':''} (${R.shop.trim()})`:''}.`:'Aucun article coché.';if(ok.length){$('#tk-file').value='';$('#tk-text').value='';stockChanged();renderPrix()}break}
+    case 'tk-add':{const ok=R.items.filter(i=>i.on&&i.n.trim());ok.forEach(addStock);const np=recordTicketPrices(ok);R.items=[];renderReview();$('#tk-status').textContent=ok.length?`${ok.length} article${ok.length>1?'s':''} ajouté${ok.length>1?'s':''} au stock${np?` · ${np} prix noté${np>1?'s':''} (${R.shop.trim()})`:''}.`:'Aucun article coché.';if(ok.length){$('#tk-file').value='';$('#tk-doc').value='';$('#tk-text').value='';stockChanged();renderPrix()}break}
     case 'stock-add':{const n=$('#sk-name').value.trim();if(n){addStock({n,q:parseFloat($('#sk-qty').value)||0,u:$('#sk-unit').value});$('#sk-name').value='';$('#sk-qty').value='';stockChanged()}break}
     case 'stock-del':S.stock=S.stock.filter(s=>sid(s)!==b.dataset.sid);stockChanged();break;
     case 'stock-clear':if(b.dataset.arm!=='1'){b.dataset.arm='1';b.textContent='Confirmer ?';setTimeout(()=>{if(b.isConnected){b.dataset.arm='';b.textContent='Vider le stock'}},3000)}else{S.stock=[];stockChanged();b.dataset.arm='';b.textContent='Vider le stock'}break;
@@ -1330,7 +1445,7 @@ async function startSupabase(){
   const [db,user,sm]=await Promise.all([use('db'),use('user'),use('sample')]);
   sampleNs=sm;
   if(!sm){
-    $('#ia-manual').hidden=false;$('#tk-manual').hidden=false;$('#ia-go').hidden=true;$('#tk-go').hidden=true;$('#tk-file-field').hidden=true;
+    $('#ia-manual').hidden=false;$('#tk-manual').hidden=false;$('#ia-go').hidden=true;$('#tk-go').textContent='Analyser le texte';$('#tk-file-field').hidden=true;
     $('#ia-note').hidden=false;$('#ia-note').textContent='Hors de Claude : copiez la demande ci-dessous dans une conversation Claude, puis collez sa réponse ici.';
   }
   let id=null;try{id=user?await user.id():null}catch(e){}

@@ -5,7 +5,11 @@ Recettes, stock et liste de courses dans une seule page web.
 - Version hébergée : https://davidbucari-ui.github.io/Le-panier/
 - Sans compte, les données restent dans le navigateur de l'appareil.
 - Avec un compte (Supabase), elles se synchronisent entre appareils : voir `supabase.sql` et la constante `SB` en haut du script de `index.html`.
-- Les idées de recettes et la lecture de tickets passent par une conversation Claude (copier la demande, coller la réponse).
+- Les idées de recettes et la lecture de photos de tickets passent par une conversation Claude (copier la demande, coller la réponse).
+
+## Import d'un ticket téléchargé
+
+Onglet **Stock**, champ « Ticket téléchargé » : un ticket au format PDF (application ou e-mail du magasin) ou texte est lu directement dans la page, sans IA. Le texte du PDF est extrait par pdf.js (chargé à la demande), puis chaque ligne est analysée : prix, poids (« 1,094 kg x 1,48 EUR/kg »), quantités (« 2 x 1,79 », « 4x125g », « 1L »), remises déduites de l'article précédent, magasin et date. Les noms sont rapprochés du dictionnaire ; les lignes non reconnues ou non alimentaires sont décochées. On vérifie avant d'ajouter au stock (les prix sont notés en même temps). Un PDF scanné (sans texte) n'est pas lisible ainsi.
 
 ## Import d'une recette depuis un site
 

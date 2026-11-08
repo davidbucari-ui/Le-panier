@@ -43,7 +43,8 @@ prices   : {id, k, n, p, q, u, shop, d, r?} p = prix payé pour q·u ; d = AAAA-
 - Les champs de formulaire statiques (hors `#courses`) ne perdent pas le focus au rendu ; ce qui est dans `#courses` est réécrit à chaque rendu.
 - Préférences d'affichage propres à l'appareil : `lepanier-ui` (localStorage), non synchronisées.
 - Accessibilité : rôles/`aria-*` sur onglets et boutons, cibles tactiles ≥ 36 px. Thème clair/sombre via variables CSS.
-- Pas de dépendance ajoutée sans nécessité (supabase-js 2.45.4 via jsDelivr ; ZXing chargé à la demande pour le scanner).
+- Pas de dépendance ajoutée sans nécessité (supabase-js 2.45.4 via jsDelivr ; ZXing chargé à la demande pour le scanner ; pdf.js 3.11.174 chargé à la demande pour les tickets PDF).
+- Ticket téléchargé : `readTicketDoc` → `pdfText` (lignes reconstruites par position) → `parseTicketText` (analyse locale, sans IA) → revue `R.items`.
 
 ## Tester
 Il n'y a pas de suite de tests dans le dépôt. Méthode utilisée : **jsdom** avec `window.fetch` simulé (dictionnaire, Open Food Facts), on charge `index.html` (en retirant la balise `<script src=...supabase...>`), on clique via `data-act` et on lit le DOM. Vérifier au minimum : `node --check` du script extrait, puis les parcours stock / courses / cuisiner (déduction) / prix / scanner. La caméra, Supabase et Open Food Facts réels ne sont testables que sur appareil.
