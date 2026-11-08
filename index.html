@@ -149,7 +149,10 @@ input[type=file]{padding:8px}
 .ck-row .fx{font-size:13px;text-align:right}
 .ck-row.dim .fx{color:var(--muted)}
 @media (prefers-reduced-motion:no-preference){.card,.btn{transition:border-color .15s}}
-.ex-res{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.ex-res{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;max-height:128px;overflow-y:auto;padding:2px}
+.ex-res:empty{display:none}
+.ex-res button.free{background:var(--ink,#1c2b22);color:#fff;border-color:transparent}
+.ex-ok{color:var(--leaf,#2a7a4b);font-weight:600}
 .ex-res button{border:1px solid var(--line,#ccc);background:var(--paper,#fff);border-radius:999px;padding:6px 12px;min-height:36px;font:inherit;cursor:pointer}
 .ex-res button small{color:var(--muted,#777);margin-left:6px}
 </style>
@@ -250,12 +253,12 @@ input[type=file]{padding:8px}
     <div class="box" id="ex-box" style="margin-bottom:16px">
       <h3>Ajouter un article</h3>
       <div class="bar">
-        <div class="field"><label for="ex-q">Chercher un article</label><input type="search" id="ex-q" placeholder="ex. yaourt, riz, citron" autocomplete="off"></div>
+        <div class="field"><label for="ex-q">Chercher un article</label><input type="search" id="ex-q" placeholder="ex. yaourt, riz, citron" autocomplete="off" enterkeyhint="done"></div>
         <div class="field"><label for="ex-ray">Rayon</label><select id="ex-ray"><option value="">Tous</option></select></div>
         <div class="field"><label for="ex-qty">Quantité</label><div class="two"><input type="number" id="ex-qty" min="0" step="any" placeholder="facultatif"><select id="ex-unit" aria-label="Unité"><option value="">pièce(s)</option><option>g</option><option>kg</option><option>ml</option><option>cl</option><option>l</option></select></div></div>
       </div>
       <div id="ex-res" class="ex-res" role="list"></div>
-      <p class="hint" style="margin:8px 0 0" id="ex-hint">Touchez un article pour l'ajouter à la liste. Entrée ajoute le texte tapé tel quel.</p>
+      <p class="hint" style="margin:8px 0 0" id="ex-hint">Tapez 2 lettres ou choisissez un rayon, puis touchez l'article : il s'ajoute à la liste.</p>
     </div>
     <div class="cols" id="courses"></div>
   </section>
@@ -629,14 +632,14 @@ function exAdd(n,r){
   n=String(n||'').trim();if(!n)return;
   const q=parseFloat($('#ex-qty').value)||0,u=q?$('#ex-unit').value:'';
   S.extras.push({id:uid(),n,q,u,r:r||guessRayon(n)});
-  persist();renderCourses();$('#ex-qty').value='';
-  const m=$('#ex-hint');if(m)m.textContent='« '+n+' » ajouté à la liste.';
+  persist();renderCourses();$('#ex-qty').value='';$('#ex-q').value='';exSearch();$('#ex-q').focus();
+  const m=$('#ex-hint');if(m)m.innerHTML='<span class="ex-ok">✓ '+esc(n)+' ajouté</span> · '+S.extras.length+' article'+(S.extras.length>1?'s':'')+' ajouté'+(S.extras.length>1?'s':'')+' à la main. Continuez ou consultez la liste ci-dessous.';
 }
 function exSearch(){
   const el=$('#ex-res');if(!el)return;
   const q=norm($('#ex-q').value.trim()),ray=$('#ex-ray').value;
-  if(!DICT){el.innerHTML='';return}
-  if(!q&&!ray){el.innerHTML='';return}
+  const raw=$('#ex-q').value.trim();
+  if(!DICT||(!ray&&q.length<2)){el.innerHTML=raw&&q.length>=1?`<button type="button" class="free" data-act="extra-pick" data-n="${esc(raw)}" data-r="">Ajouter « ${esc(raw)} »</button>`:'';return}
   const hits=[];
   for(const [k,id] of DICT.byName){
     const e=DICT.ent.get(id);if(!e)continue;
@@ -646,12 +649,13 @@ function exSearch(){
     if(q){if(k===q)sc=0;else if(k.startsWith(q))sc=1;else if(k.split(' ').some(w=>w.startsWith(q)))sc=2;else if(k.includes(q))sc=3;else continue}
     else sc=1;
     if(k!==norm(e.n))sc+=0.5;
-    hits.push([sc,k.length,e.n,rn])
+    if(k.length>38)continue;hits.push([sc,0,k.length-(e.c?6:0),e.n,rn])
   }
-  hits.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+  hits.sort((a,b)=>a[0]-b[0]||a[1]-b[1]||a[2]-b[2]);
   const seen=new Set(),out=[];
-  for(const h of hits){if(seen.has(h[2]))continue;seen.add(h[2]);out.push(h);if(out.length>=40)break}
-  el.innerHTML=out.length?out.map(h=>`<button type="button" role="listitem" data-act="extra-pick" data-n="${esc(h[2])}" data-r="${esc(h[3])}">${esc(h[2])}${h[3]&&!ray?`<small>${esc(h[3])}</small>`:''}</button>`).join(''):'<span class="hint">Aucun résultat dans le dictionnaire. Entrée ajoute le texte tapé.</span>';
+  for(const h of hits){if(seen.has(h[3]))continue;seen.add(h[3]);out.push(h);if(out.length>=30)break}
+  const free=raw&&!out.some(h=>norm(h[3])===q)?`<button type="button" class="free" data-act="extra-pick" data-n="${esc(raw)}" data-r="">Ajouter « ${esc(raw)} »</button>`:'';
+  el.innerHTML=(out.length?'':free)+out.map(h=>`<button type="button" role="listitem" data-act="extra-pick" data-n="${esc(h[3])}" data-r="${esc(h[4])}">${esc(h[3])}${h[4]&&!ray?`<small>${esc(h[4])}</small>`:''}</button>`).join('')+(out.length?free:'');
 }
 function renderCourses(){
   const items=shoppingItems(),done=new Set(S.bought);
