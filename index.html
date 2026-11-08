@@ -730,7 +730,7 @@ function addPrice(n,p,q,u,shop,d){
   n=String(n||'').trim();shop=String(shop||'').trim();p=Number(p)||0;
   if(!n||!shop||p<=0)return false;
   let [qq,uu]=normQty(q,u);if(!qq){qq=1;uu=''}
-  S.prices.push({id:uid(),k:ckey(n),n,p,q:qq,u:uu,shop,d:d||todayISO()});return true;
+  S.prices.push({id:uid(),k:norm(n),n,p,q:qq,u:uu,shop,d:d||todayISO()});return true;
 }
 function recordTicketPrices(items){
   if(!R.shop.trim())return 0;
@@ -740,7 +740,7 @@ function recordTicketPrices(items){
 // dernier prix connu par magasin pour un article (même unité de base)
 function priceByShop(k,u){
   const m=new Map();
-  for(const e of S.prices){if(e.k!==k||(e.u||'')!==(u||''))continue;const sk=norm(e.shop),o=m.get(sk);if(!o||e.d>=o.d)m.set(sk,e)}
+  for(const e of S.prices){if(ckey(e.n)!==k||(e.u||'')!==(u||''))continue;const sk=norm(e.shop),o=m.get(sk);if(!o||e.d>=o.d)m.set(sk,e)}
   return[...m.values()].sort((a,b)=>unitPrice(a)-unitPrice(b));
 }
 function bestPrice(k,u){const l=priceByShop(k,u);return l.length?l[0]:null}
@@ -971,7 +971,7 @@ function renderPrix(){
   // détail par article
   const f=norm($('#pr-filter').value||'');
   const groups=new Map();
-  for(const e of S.prices){const g=e.k+'|'+(e.u||'');if(!groups.has(g))groups.set(g,{k:e.k,u:e.u||'',n:e.n,all:[]});groups.get(g).all.push(e)}
+  for(const e of S.prices){const ek=ckey(e.n),g=ek+'|'+(e.u||'');if(!groups.has(g))groups.set(g,{k:ek,u:e.u||'',n:e.n,all:[]});groups.get(g).all.push(e)}
   const list=[...groups.values()].filter(g=>!f||norm(g.n).includes(f)).sort((a,b)=>a.n.localeCompare(b.n,'fr'));
   if(!list.length){$('#pr-list').innerHTML=`<div class="empty">${S.prices.length?'Aucun article ne correspond.':'Aucun prix noté pour le moment. Lisez un ticket en indiquant le magasin, ou saisissez un prix ci-dessus.'}</div>`;return}
   $('#pr-list').innerHTML=list.map(g=>{
