@@ -18,3 +18,7 @@ Le bouton « Importer depuis un site » (onglet Recettes) appelle la fonction `i
 ## Prix et magasins
 
 Onglet **Prix** : les prix viennent des tickets (magasin, date et prix par ligne sont lus avec le ticket) ou d'une saisie manuelle. Chaque prix est ramené au kilo, au litre ou à la pièce. L'onglet compare les magasins article par article et estime le total de la liste de courses par magasin. Le meilleur prix connu s'affiche aussi sous chaque article de la liste.
+
+## Code-barres
+
+Le bouton « Scanner un code-barres » (onglets Courses et Stock) lit un EAN avec la caméra (détecteur natif du navigateur, sinon bibliothèque ZXing chargée à la demande) ou à la saisie. Le produit est recherché sur Open Food Facts (nom, contenu, rayon d'après ses catégories) puis mémorisé dans vos données : un produit déjà scanné est reconnu sans réseau. Le bouton « Masquer la liste » replie la liste de courses sur l'appareil.

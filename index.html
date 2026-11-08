@@ -155,6 +155,9 @@ input[type=file]{padding:8px}
 .ex-ok{color:var(--leaf,#2a7a4b);font-weight:600}
 .ex-res button{border:1px solid var(--line,#ccc);background:var(--paper,#fff);border-radius:999px;padding:6px 12px;min-height:36px;font:inherit;cursor:pointer}
 .ex-res button small{color:var(--muted,#777);margin-left:6px}
+.sc-cam{position:relative;border-radius:12px;overflow:hidden;background:#000;margin:8px 0}
+.sc-cam video{display:block;width:100%;max-height:260px;object-fit:cover}
+.sc-cam .sc-line{position:absolute;left:10%;right:10%;top:50%;height:2px;background:rgba(255,60,60,.85)}
 </style>
 </head>
 <body>
@@ -251,6 +254,7 @@ input[type=file]{padding:8px}
   <section class="panel" id="p-courses" role="tabpanel" aria-labelledby="tab-courses" hidden>
     <h2>Liste de courses</h2>
     <p class="lead-p">Les quantités des recettes au menu sont additionnées. Marquez « en stock » ce que vous avez déjà : l'article disparaît de la liste.</p>
+    <div class="row-actions" style="margin-bottom:12px"><button class="btn" data-act="scan-open">Scanner un code-barres</button><button class="btn" id="btn-hide" data-act="toggle-list" aria-pressed="false">Masquer la liste</button></div>
     <div class="box" id="ex-box" style="margin-bottom:16px">
       <h3>Ajouter un article</h3>
       <div class="bar">
@@ -290,6 +294,7 @@ input[type=file]{padding:8px}
   <section class="panel" id="p-stock" role="tabpanel" aria-labelledby="tab-stock" hidden>
     <h2>Mon stock</h2>
     <p class="lead-p">Après vos courses, ajoutez le ticket : Claude en lit les produits alimentaires et vous les vérifiez avant de les mettre au stock. Les recettes et la liste de courses en tiennent compte.</p>
+    <div class="row-actions" style="margin-bottom:12px"><button class="btn" data-act="scan-open">Scanner un code-barres</button></div>
     <div class="ia-form">
       <div class="field wide" id="tk-file-field">
         <label for="tk-file">Photo du ticket</label>
@@ -347,6 +352,30 @@ input[type=file]{padding:8px}
     <div id="ck-list"></div>
     <label class="check" id="ck-plan-l"><input type="checkbox" id="ck-plan" checked> Retirer du menu et de la liste de courses</label>
     <div class="row-actions"><button class="btn primary" data-act="ck-ok">Déduire du stock</button><button class="btn" data-act="ck-close">Annuler</button></div>
+  </div>
+</div>
+<div class="overlay" id="sc" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sc-h">
+    <h3 id="sc-h">Scanner un produit</h3>
+    <div class="row-actions"><button class="btn primary" data-act="scan-cam" id="sc-camb">Démarrer la caméra</button></div>
+    <div class="sc-cam" id="sc-cam" hidden><video id="sc-video" playsinline muted></video><div class="sc-line"></div></div>
+    <div class="bar" style="margin-top:8px"><div class="field"><label for="sc-code">Ou saisir le code-barres</label><input type="text" id="sc-code" inputmode="numeric" placeholder="ex. 3017620422003" autocomplete="off"></div><div class="field" style="justify-content:flex-end"><button class="btn" data-act="scan-find">Chercher</button></div></div>
+    <p class="hint" id="sc-st" aria-live="polite" style="margin:6px 0"></p>
+    <div id="sc-res" hidden>
+      <div class="field"><label for="sc-n">Produit</label><input type="text" id="sc-n" list="dl-ing" autocomplete="off"></div>
+      <div class="bar">
+        <div class="field"><label for="sc-r">Rayon</label><select id="sc-r"></select></div>
+        <div class="field"><label for="sc-q">Contenu d'un produit</label><div class="two"><input type="number" id="sc-q" min="0" step="any" placeholder="250"><select id="sc-u" aria-label="Unité"><option value="">pièce(s)</option><option>g</option><option>kg</option><option>ml</option><option>cl</option><option>l</option></select></div></div>
+        <div class="field"><label for="sc-c">Nombre</label><input type="number" id="sc-c" min="1" step="1" value="1"></div>
+      </div>
+      <div class="bar">
+        <div class="field"><label for="sc-p">Prix d'un produit (€)</label><input type="number" id="sc-p" min="0" step="any" placeholder="facultatif"></div>
+        <div class="field"><label for="sc-shop">Magasin</label><input type="text" id="sc-shop" list="dl-shop" placeholder="ex. Lidl" autocomplete="off"></div>
+      </div>
+      <div class="row-actions"><button class="btn primary" data-act="sc-stock">Ajouter au stock</button><button class="btn" data-act="sc-list">Ajouter à la liste</button><button class="btn" data-act="sc-price">Noter le prix</button></div>
+    </div>
+    <div class="row-actions" style="margin-top:12px"><button class="btn" data-act="scan-close">Fermer</button></div>
+    <p class="hint" style="margin:8px 0 0">Les produits sont reconnus grâce à Open Food Facts. Un produit inconnu est mémorisé avec le nom et le rayon que vous indiquez.</p>
   </div>
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
@@ -442,8 +471,8 @@ function examples(){return[
   steps:['Disposer poulet et légumes en morceaux dans un plat.','Ajouter beurre et thym, saler, poivrer.','Enfourner 55 minutes à 200 °C en arrosant à mi-cuisson.']}
 ]}
 const DAYS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
-function fresh(){return{v:1,rev:0,recipes:examples(),plan:{},days:{},stock:[],extras:[],prices:[],bought:[],exclude:[]}}
-function fix(d){d=d||{};return{v:1,rev:Number(d.rev)||0,days:d.days&&typeof d.days==='object'&&!Array.isArray(d.days)?d.days:{},recipes:Array.isArray(d.recipes)?d.recipes:[],plan:d.plan&&typeof d.plan==='object'&&!Array.isArray(d.plan)?d.plan:{},stock:Array.isArray(d.stock)?d.stock.map(s=>({k:s.k||norm(s.n),n:s.n,q:Number(s.q)||0,u:s.u||'',r:s.r||guessRayon(s.n)})):[],prices:Array.isArray(d.prices)?d.prices.filter(x=>x&&x.n&&Number(x.p)>0&&x.shop).map(x=>({id:x.id||uid(),k:x.k||norm(x.n),n:String(x.n),p:Number(x.p),q:Number(x.q)||1,u:x.u||'',shop:String(x.shop),d:String(x.d||'')})):[],extras:Array.isArray(d.extras)?d.extras.filter(x=>x&&x.n).map(x=>({id:x.id||uid(),n:String(x.n),q:Number(x.q)||0,u:x.u||'',r:x.r||guessRayon(x.n)})):[],bought:Array.isArray(d.bought)?d.bought:[],exclude:Array.isArray(d.exclude)?d.exclude:[]}}
+function fresh(){return{v:1,rev:0,recipes:examples(),plan:{},days:{},stock:[],extras:[],prices:[],barcodes:{},bought:[],exclude:[]}}
+function fix(d){d=d||{};return{v:1,rev:Number(d.rev)||0,days:d.days&&typeof d.days==='object'&&!Array.isArray(d.days)?d.days:{},recipes:Array.isArray(d.recipes)?d.recipes:[],plan:d.plan&&typeof d.plan==='object'&&!Array.isArray(d.plan)?d.plan:{},stock:Array.isArray(d.stock)?d.stock.map(s=>({k:s.k||norm(s.n),n:s.n,q:Number(s.q)||0,u:s.u||'',r:s.r||guessRayon(s.n)})):[],barcodes:d.barcodes&&typeof d.barcodes==='object'&&!Array.isArray(d.barcodes)?d.barcodes:{},prices:Array.isArray(d.prices)?d.prices.filter(x=>x&&x.n&&Number(x.p)>0&&x.shop).map(x=>({id:x.id||uid(),k:x.k||norm(x.n),n:String(x.n),p:Number(x.p),q:Number(x.q)||1,u:x.u||'',shop:String(x.shop),d:String(x.d||'')})):[],extras:Array.isArray(d.extras)?d.extras.filter(x=>x&&x.n).map(x=>({id:x.id||uid(),n:String(x.n),q:Number(x.q)||0,u:x.u||'',r:x.r||guessRayon(x.n)})):[],bought:Array.isArray(d.bought)?d.bought:[],exclude:Array.isArray(d.exclude)?d.exclude:[]}}
 let S;
 try{const raw=localStorage.getItem(LS);S=raw?fix(JSON.parse(raw)):fresh()}catch(e){S=fresh()}
 const F={text:'',with:[],stockOnly:false};      // filtres éphémères
@@ -680,13 +709,112 @@ function exSearch(){
   const free=raw&&!out.some(h=>norm(h[3])===q)?`<button type="button" class="free" data-act="extra-pick" data-n="${esc(raw)}" data-r="">Ajouter « ${esc(raw)} »</button>`:'';
   el.innerHTML=(out.length?'':free)+out.map(h=>`<button type="button" role="listitem" data-act="extra-pick" data-n="${esc(h[3])}" data-r="${esc(h[4])}">${esc(h[3])}${h[4]&&!ray?`<small>${esc(h[4])}</small>`:''}</button>`).join('')+(out.length?free:'');
 }
+/* ---------- code-barres ---------- */
+const SC={stream:null,timer:null,zx:null,last:'',t:0,code:''};
+function offRayon(tags,name){
+  const t=(tags||[]).join(' ');
+  if(/frozen/.test(t))return'Surgelés';
+  if(/canned|plant-based-milk|long-life/.test(t))return'Épicerie';
+  if(/\b(meats|poultries|fishes|seafood|charcuteries|sausages|hams)\b/.test(t))return'Boucherie et poissonnerie';
+  if(/dairies|cheeses|yogurts|butters|creams|\bmilks\b|\beggs\b/.test(t))return'Crèmerie';
+  if(/fresh-(fruits|vegetables|plant-based)/.test(t))return'Fruits et légumes';
+  if(/\bbreads\b|viennoiseries|\bbakery\b/.test(t))return'Boulangerie';
+  return guessRayon(name);
+}
+function offQty(str){
+  const x=String(str||'').toLowerCase().replace(',','.');
+  let m=x.match(/(\d+)\s*x\s*([\d.]+)\s*(kg|g|l|cl|ml)\b/);
+  if(m)return normQty(Number(m[1])*Number(m[2]),m[3]);
+  m=x.match(/([\d.]+)\s*(kg|g|l|cl|ml)\b/);
+  if(m)return normQty(Number(m[1]),m[2]);
+  return[1,''];
+}
+function scFill(code,v,msg){
+  SC.code=code;$('#sc-res').hidden=false;
+  $('#sc-n').value=v.n||'';$('#sc-r').value=RAYONS.includes(v.r)?v.r:guessRayon(v.n||'');
+  $('#sc-q').value=v.q||'';$('#sc-u').value=v.u||'';$('#sc-c').value=1;$('#sc-p').value='';
+  $('#sc-st').textContent=msg;
+}
+async function scLookup(code){
+  code=String(code||'').replace(/\D/g,'');
+  const st=$('#sc-st');
+  if(code.length<8||code.length>14){st.textContent='Code invalide : 8 à 14 chiffres.';return}
+  $('#sc-code').value=code;
+  if(S.barcodes[code]){scFill(code,S.barcodes[code],'Produit déjà connu.');return}
+  st.textContent='Recherche du produit…';
+  try{
+    const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),8000);
+    const r=await fetch('https://world.openfoodfacts.org/api/v2/product/'+code+'.json?fields=product_name,product_name_fr,generic_name_fr,brands,quantity,categories_tags',{signal:ctl.signal});
+    clearTimeout(to);
+    const j=await r.json();
+    if(j&&j.status===1&&j.product){
+      const pr=j.product,name=String(pr.generic_name_fr||pr.product_name_fr||pr.product_name||'').trim();
+      const [q,u]=offQty(pr.quantity);
+      scFill(code,{n:name,r:offRayon(pr.categories_tags,name),q,u},'Produit trouvé'+(pr.brands?' ('+String(pr.brands).split(',')[0]+')':'')+'. Vérifiez le nom et le rayon.');
+      return;
+    }
+  }catch(e){}
+  scFill(code,{n:'',r:'',q:1,u:''},'Produit inconnu : indiquez son nom, il sera retenu pour la prochaine fois.');
+}
+function scRead(){
+  const n=$('#sc-n').value.trim();if(!n){$('#sc-st').textContent='Indiquez le nom du produit.';return null}
+  const q=Number($('#sc-q').value)||0,u=$('#sc-u').value,r=$('#sc-r').value,c=Math.max(1,parseInt($('#sc-c').value)||1);
+  if(SC.code){S.barcodes[SC.code]={n,r,q,u}}
+  return{n,q,u,r,c};
+}
+function scDone(msg){
+  persist();toast(msg);$('#sc-res').hidden=true;$('#sc-code').value='';SC.code='';$('#sc-st').textContent='Prêt pour le produit suivant.';
+}
+function scFound(code){
+  if(code===SC.last&&Date.now()-SC.t<4000)return;
+  SC.last=code;SC.t=Date.now();try{navigator.vibrate&&navigator.vibrate(60)}catch(e){}
+  scLookup(code);
+}
+function scStop(){
+  clearInterval(SC.timer);SC.timer=null;
+  try{SC.zx&&SC.zx.reset()}catch(e){}SC.zx=null;
+  if(SC.stream){SC.stream.getTracks().forEach(t=>t.stop());SC.stream=null}
+  const c=$('#sc-cam');if(c)c.hidden=true;
+  const b=$('#sc-camb');if(b)b.textContent='Démarrer la caméra';
+}
+async function scStart(){
+  const st=$('#sc-st');
+  if(SC.stream){scStop();return}
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){st.textContent='Caméra indisponible ici : saisissez le code à la main.';return}
+  try{SC.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false})}
+  catch(e){st.textContent='Accès à la caméra refusé : saisissez le code à la main.';return}
+  const v=$('#sc-video');v.srcObject=SC.stream;try{await v.play()}catch(e){}
+  $('#sc-cam').hidden=false;$('#sc-camb').textContent='Arrêter la caméra';st.textContent='Visez le code-barres.';
+  if('BarcodeDetector' in window){
+    const det=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e']});
+    SC.timer=setInterval(async()=>{try{const r=await det.detect(v);if(r.length)scFound(r[0].rawValue)}catch(e){}},300);
+  }else{
+    try{
+      if(!window.ZXing)await new Promise((ok,ko)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js';sc.onload=ok;sc.onerror=ko;document.head.appendChild(sc)});
+      SC.zx=new ZXing.BrowserMultiFormatReader();
+      SC.zx.decodeFromStream(SC.stream,v,res=>{if(res)scFound(res.getText())});
+    }catch(e){st.textContent='Lecture automatique indisponible sur ce navigateur : saisissez le code à la main.'}
+  }
+}
+function scOpen(){
+  $('#sc-r').innerHTML=RAYONS.map(r=>`<option>${esc(r)}</option>`).join('');
+  $('#sc-res').hidden=true;$('#sc-code').value='';$('#sc-st').textContent='';SC.code='';SC.last='';
+  $('#sc').hidden=false;
+}
+function scClose(){scStop();$('#sc').hidden=true}
+/* préférence d'affichage (propre à l'appareil) */
+let UI={};try{UI=JSON.parse(localStorage.getItem('lepanier-ui')||'{}')||{}}catch(e){}
+function saveUI(){try{localStorage.setItem('lepanier-ui',JSON.stringify(UI))}catch(e){}}
 function renderCourses(){
   const items=shoppingItems(),done=new Set(S.bought);
   const left=items.filter(i=>!done.has(i.key)).length;
   const b=$('#badge');b.textContent=left;b.hidden=!left;
   const date=new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
   let rec='';
-  if(!items.length){
+  const hb=$('#btn-hide');if(hb){hb.textContent=UI.hideList?'Afficher la liste':'Masquer la liste';hb.setAttribute('aria-pressed',String(!!UI.hideList))}
+  if(UI.hideList){
+    rec=`<div class="receipt"><h3>Le Panier</h3><div class="sub">${esc(date)}</div><p style="font-family:var(--body);color:var(--muted)">Liste masquée · ${left} article${left>1?'s':''} à acheter.</p></div>`;
+  }else if(!items.length){
     rec=`<div class="receipt"><h3>Le Panier</h3><div class="sub">${esc(date)}</div><p style="font-family:var(--body);color:var(--muted)">${Object.keys(S.plan).length?'Tout est déjà en stock : rien à acheter.':'La liste est vide. Ajoutez des recettes au menu depuis l\'onglet Recettes, ou des articles à la main ci-dessus.'}</p></div>`;
   }else{
     const groups=RAYONS.map(r=>[r,items.filter(i=>i.rayon===r)]).filter(g=>g[1].length);
@@ -936,6 +1064,7 @@ document.addEventListener('change',e=>{
 });
 $('#sk-filter').addEventListener('input',renderStock);
 $('#ex-q').addEventListener('input',exSearch);
+$('#sc-code').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();scLookup(e.target.value)}});
 $('#pr-filter').addEventListener('input',renderPrix);
 $('#pr-d').value=todayISO();
 document.addEventListener('input',e=>{if(e.target.id==='rv-shop')R.shop=e.target.value;if(e.target.id==='rv-date')R.date=e.target.value});
@@ -1032,6 +1161,16 @@ document.addEventListener('click',e=>{
       if(!ok){m.textContent='Renseignez au minimum l\'article, le prix et le magasin.';break}
       persist();m.textContent='Prix enregistré pour « '+$('#pr-name').value.trim()+' ».';$('#pr-name').value='';$('#pr-p').value='';$('#pr-q').value='';renderPrix();renderCourses();break}
     case 'pr-del':S.prices=S.prices.filter(x=>x.id!==b.dataset.id);persist();renderPrix();renderCourses();break;
+    case 'scan-open':scOpen();break;
+    case 'scan-close':scClose();break;
+    case 'scan-cam':scStart();break;
+    case 'scan-find':scLookup($('#sc-code').value);break;
+    case 'sc-stock':{const x=scRead();if(!x)break;addStock({n:x.n,q:x.q*x.c,u:x.u,r:x.r});stockChanged();scDone(x.n+' ajouté au stock.');break}
+    case 'sc-list':{const x=scRead();if(!x)break;S.extras.push({id:uid(),n:x.n,q:x.q*x.c,u:x.u,r:x.r});renderCourses();scDone(x.n+' ajouté à la liste.');break}
+    case 'sc-price':{const x=scRead();if(!x)break;const pr=Number($('#sc-p').value)||0,shop=$('#sc-shop').value.trim();
+      if(pr<=0||!shop){$('#sc-st').textContent='Pour noter un prix, indiquez le prix et le magasin.';break}
+      addPrice(x.n,pr,x.q,x.u,shop,todayISO());renderPrix();renderCourses();scDone('Prix noté : '+x.n+' chez '+shop+'.');break}
+    case 'toggle-list':UI.hideList=!UI.hideList;saveUI();renderCourses();break;
     case 'extra-pick':exAdd(b.dataset.n,b.dataset.r);break;
     case 'extra-del':{S.extras=S.extras.filter(x=>x.id!==b.dataset.id);persist();renderCourses();break}
     case 'bought':{const k=b.dataset.k,i=S.bought.indexOf(k);i>=0?S.bought.splice(i,1):S.bought.push(k);persist();renderCourses();break}
@@ -1076,7 +1215,7 @@ function chipKey(e,el){
   if(e.type==='keydown'){if(e.key!=='Enter'&&e.key!==',')return;e.preventDefault()}
   addChip(kind,el.value);el.value='';
 }
-document.addEventListener('keydown',e=>{const el=e.target.closest&&e.target.closest('[data-chipin]');if(el)chipKey(e,el);if(e.key==='Escape'){if(!$('#ck').hidden){$('#ck').hidden=true;COOK=null}if(!$('#nr').hidden)$('#nr').hidden=true;if(!$('#imp').hidden)$('#imp').hidden=true}});
+document.addEventListener('keydown',e=>{const el=e.target.closest&&e.target.closest('[data-chipin]');if(el)chipKey(e,el);if(e.key==='Escape'){if(!$('#sc').hidden)scClose();if(!$('#ck').hidden){$('#ck').hidden=true;COOK=null}if(!$('#nr').hidden)$('#nr').hidden=true;if(!$('#imp').hidden)$('#imp').hidden=true}});
 document.addEventListener('change',e=>{
   const dsel=e.target.closest&&e.target.closest('[data-day]');
   if(dsel){const id=dsel.dataset.day;if(dsel.value)S.days[id]=dsel.value;else delete S.days[id];persist();renderCourses();return}const el=e.target.closest&&e.target.closest('[data-chipin]');if(el&&el.value.trim())chipKey(e,el)});
