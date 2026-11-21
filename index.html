@@ -420,7 +420,8 @@ input[type=file]{padding:8px}
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="tk-h" style="max-width:720px">
     <h3 id="tk-h">Mon ticket de caisse</h3>
     <p class="hint" style="margin:0">Importez le ticket (capture d'écran du ticket Lidl Plus, PDF ou texte collé) : chaque ligne est rapprochée de votre liste de courses.</p>
-    <div class="field"><label for="tk-doc">Ticket (capture d'écran, PDF ou texte)</label><input type="file" id="tk-doc" accept="image/*,.pdf,application/pdf,.txt,text/plain"></div>
+    <div class="field"><label for="tk-doc">Image du ticket (capture d'écran, depuis la Galerie)</label><input type="file" id="tk-doc" accept="image/*"></div>
+    <div class="field"><label for="tk-pdf">Ou un PDF / fichier texte (depuis Fichiers)</label><input type="file" id="tk-pdf" accept=".pdf,application/pdf,.txt,text/plain"></div>
     <div class="field"><label for="tk-text">Ou collez le texte du ticket</label><textarea id="tk-text" placeholder="Texte d'un ticket numérique"></textarea></div>
     <div class="row-actions"><button class="btn" data-act="tk-go">Lire le texte collé</button><span id="tk-status" class="hint" aria-live="polite"></span></div>
     <div id="tk-review"></div>
@@ -1402,7 +1403,7 @@ document.addEventListener('click',e=>{
     case 'bought':{const k=b.dataset.k,i=S.bought.indexOf(k);i>=0?S.bought.splice(i,1):S.bought.push(k);persist();renderCourses();break}
     case 'stock':{const nm=b.dataset.n;if(!S.stock.some(s=>covers(s.n,ckey(nm))))S.stock.push({k:norm(nm),n:nm,q:0,u:'',r:guessRayon(nm)});stockChanged();break}
     case 'uncheck':S.bought=[];persist();renderCourses();break;
-    case 'tk-open':R.items=[];R.shop='';R.date=todayISO();R.list=[];$('#tk-text').value='';$('#tk-doc').value='';$('#tk-status').textContent='';$('#tk-msg').textContent='';renderReview();$('#tk').hidden=false;break;
+    case 'tk-open':R.items=[];R.shop='';R.date=todayISO();R.list=[];$('#tk-text').value='';$('#tk-doc').value='';$('#tk-pdf').value='';$('#tk-status').textContent='';$('#tk-msg').textContent='';renderReview();$('#tk').hidden=false;break;
     case 'tk-close':$('#tk').hidden=true;break;
     case 'tk-go':{const t=$('#tk-text').value.trim();if(!t){$('#tk-status').textContent='Collez le texte du ticket ou importez un fichier.';break}showTicket(parseTicketText(t),'dans le texte collé');break}
     case 'tk-cancel':R.items=[];renderReview();$('#tk-status').textContent='';break;
@@ -1471,6 +1472,7 @@ $('#f-text').addEventListener('input',e=>{F.text=e.target.value;renderRecipes()}
 $('#nr-ing').addEventListener('input',nrCount);
 $('#nr-title').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#nr-ing').focus()}});
 $('#tk-doc').addEventListener('change',e=>readTicketDoc(e.target.files[0]));
+$('#tk-pdf').addEventListener('change',e=>readTicketDoc(e.target.files[0]));
 document.addEventListener('input',e=>{
   const el=e.target;
   if(el.id==='rv-shop')R.shop=el.value;else if(el.id==='rv-date')R.date=el.value;
