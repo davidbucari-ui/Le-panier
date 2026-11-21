@@ -1095,7 +1095,8 @@ function parseTicketText(txt){
   const WEIGHT=/(\d+[.,]\d+)\s*kg\s*[x*]\s*\d+[.,]\d{2}\s*(?:€|eur)?\s*\/\s*kg/i;
   const COUNT=/^(\d+)\s*[x*]\s*(\d+[.,]\d{2})\s*(?:€|eur)?$/i;
   const items=[];let last=null,pending='';
-  for(const l of lines){
+  const hi=lines.findIndex(l=>/^articles?\s.*(p\.?\s?u|eur|prix|qt)/i.test(l)); // en-tête du tableau (adresse, téléphone… sont avant)
+  for(const l of (hi>=0?lines.slice(hi+1):lines)){
     const nl=norm(l);
     if(TK_STOP.test(nl)){if(items.length)break;continue}
     const wm=l.match(WEIGHT);
@@ -1225,7 +1226,6 @@ async function readTicketDoc(file){
     const blob=new Blob([buf],{type:sn.mime||file.type||''});
     const txt=pdf?await pdfText(blob):img?await imgText(blob,p=>{st.textContent=`Lecture de l'image… ${p} %`}):new TextDecoder().decode(buf);
     if(!txt.trim()){st.textContent=pdf?'Ce PDF ne contient pas de texte (ticket scanné) : importez plutôt une capture d\'écran du ticket.':'Aucun texte trouvé dans ce fichier.';return}
-    $('#tk-text').value=txt.slice(0,20000);
     TK_STEP='analyse du ticket';
     showTicket(parseTicketText(txt),'dans le fichier');
   }catch(e){
@@ -1404,7 +1404,7 @@ document.addEventListener('click',e=>{
     case 'stock':{const nm=b.dataset.n;if(!S.stock.some(s=>covers(s.n,ckey(nm))))S.stock.push({k:norm(nm),n:nm,q:0,u:'',r:guessRayon(nm)});stockChanged();break}
     case 'uncheck':S.bought=[];persist();renderCourses();break;
     case 'tk-open':R.items=[];R.shop='';R.date=todayISO();R.list=[];$('#tk-text').value='';$('#tk-doc').value='';$('#tk-pdf').value='';$('#tk-status').textContent='';$('#tk-msg').textContent='';renderReview();$('#tk').hidden=false;break;
-    case 'tk-close':$('#tk').hidden=true;break;
+    case 'tk-close':$('#tk').hidden=true;R.items=[];$('#tk-text').value='';$('#tk-doc').value='';$('#tk-pdf').value='';renderReview();break;
     case 'tk-go':{const t=$('#tk-text').value.trim();if(!t){$('#tk-status').textContent='Collez le texte du ticket ou importez un fichier.';break}showTicket(parseTicketText(t),'dans le texte collé');break}
     case 'tk-cancel':R.items=[];renderReview();$('#tk-status').textContent='';break;
     case 'tk-add':{
@@ -1412,7 +1412,7 @@ document.addEventListener('click',e=>{
       if(r.noShop){$('#tk-msg').textContent='Indiquez le magasin (en haut) pour noter les prix.';break}
       if(!r.n){$('#tk-msg').textContent='Aucune ligne cochée.';break}
       const left=R.list.filter(l=>!R.items.some(i=>i.on&&i.m===l.key)).length;
-      R.items=[];$('#tk').hidden=true;stockChanged();renderPrix();
+      R.items=[];$('#tk').hidden=true;$('#tk-text').value='';$('#tk-doc').value='';$('#tk-pdf').value='';stockChanged();renderPrix();
       const m=$('#copy-msg');if(m)m.textContent=`Ticket enregistré : ${r.n} article${r.n>1?'s':''} au stock, ${r.np} prix noté${r.np>1?'s':''}.${left?` ${left} article${left>1?'s':''} reste${left>1?'nt':''} sur la liste.`:''}`;
       break}
     case 'store':{const n=storeBought();stockChanged();$('#copy-msg').textContent=n?`${n} article${n>1?'s':''} rangé${n>1?'s':''} dans le stock. Ajustez les quantités dans l'onglet Stock si besoin.`:'Aucun article coché.';break}
