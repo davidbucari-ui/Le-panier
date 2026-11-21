@@ -136,9 +136,24 @@ button.ing:hover{border-color:var(--radis)}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 #nr-msg{color:var(--radis-ink);font-size:14px;min-height:20px}
 body.loading main{opacity:.5;pointer-events:none}
-.srow{display:flex;align-items:center;gap:8px;padding:4px 0}
-.srow input[type=number]{width:96px;min-height:34px;padding:4px 8px}
-.srow .u{font-size:13px;color:var(--muted);min-width:56px}
+.sk-top{display:flex;align-items:center;gap:10px}
+.sk-top input{flex:1;min-width:0}
+.sk-top .hint{white-space:nowrap;margin:0}
+.sk-add{margin-bottom:6px}
+.sk-group{margin:16px 0 0}
+.sk-head{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;padding:6px 2px;background:none;border:0;border-bottom:2px solid var(--line);font:inherit;font-weight:700;color:var(--ink);text-align:left;cursor:pointer}
+.sk-head .n{margin-left:auto;font-size:.8rem;font-weight:600;color:var(--muted);background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:1px 9px}
+.sk-head .chev{color:var(--muted);width:1em;text-align:center}
+.srow{display:flex;align-items:center;gap:8px;padding:6px 2px;border-bottom:1px solid var(--line)}
+.srow .nm{flex:1 1 0;min-width:0;font-weight:600;line-height:1.2;overflow-wrap:anywhere}
+.srow .ctl{display:flex;align-items:center;gap:4px;flex:0 0 auto}
+.srow input[type=number]{width:66px;min-height:36px;padding:2px 2px;text-align:center;-moz-appearance:textfield;appearance:textfield}
+.srow input[type=number]::-webkit-inner-spin-button,.srow input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.srow .u{font-size:12px;color:var(--muted);min-width:0}
+.srow .stp,.srow .del{width:36px;height:36px;min-width:36px;padding:0;border:1px solid var(--line);background:var(--card);border-radius:8px;font-size:19px;font-weight:700;line-height:1;color:var(--ink);cursor:pointer}
+.srow .stp:disabled{opacity:.3;cursor:default}
+.srow .del{font-size:17px;color:var(--radis-ink);margin-left:6px}
+.srow .del.armed{width:auto;background:var(--radis-soft);border-color:var(--radis);font-size:12px;padding:0 8px}
 .tag.ok{background:var(--leaf-soft);border-color:transparent}
 input[type=file]{padding:8px}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:10px;font-size:14px;z-index:30;max-width:calc(100% - 32px)}
@@ -315,18 +330,22 @@ input[type=file]{padding:8px}
   <!-- STOCK -->
   <section class="panel" id="p-stock" role="tabpanel" aria-labelledby="tab-stock" hidden>
     <h2>Mon stock</h2>
-    <p class="lead-p">Après vos courses, lisez votre ticket depuis l'onglet Courses (« Lire mon ticket ») : les articles entrent au stock et leurs prix sont notés. Sans ticket, cochez les articles dans la liste puis « Ranger les courses ». Les recettes et la liste de courses en tiennent compte.</p>
-    <div class="row-actions" style="margin-bottom:12px"><button class="btn" data-act="scan-open">Scanner un code-barres</button></div>
-    <h3 style="margin:20px 0 8px">En stock</h3>
-    <div class="bar">
-      <div class="field"><label for="sk-filter">Rechercher</label><input type="search" id="sk-filter" placeholder="ex. riz" autocomplete="off"></div>
-      <div class="field"><label for="sk-name">Ajouter à la main</label><input type="text" id="sk-name" list="dl-ing" placeholder="ex. farine" autocomplete="off"></div>
-      <div class="field"><label for="sk-qty">Quantité</label>
-        <div class="two"><input type="number" id="sk-qty" min="0" step="any" placeholder="500"><select id="sk-unit" aria-label="Unité"><option value="">pièce(s)</option><option>g</option><option>kg</option><option>ml</option><option>cl</option><option>l</option></select></div></div>
-      <div class="field" style="justify-content:flex-end"><button class="btn" data-act="stock-add">Ajouter au stock</button></div>
+    <p class="hint" style="margin:0 0 10px">Se remplit avec « Lire mon ticket » (onglet Courses) ou à la main.</p>
+    <div class="sk-top">
+      <input type="search" id="sk-filter" placeholder="Rechercher dans le stock" autocomplete="off" aria-label="Rechercher dans le stock">
+      <span class="hint" id="sk-count" aria-live="polite"></span>
+    </div>
+    <div class="row-actions" style="margin:10px 0"><button class="btn primary" id="sk-add-btn" data-act="sk-add-toggle" aria-expanded="false" aria-controls="sk-add">＋ Ajouter</button><button class="btn" data-act="scan-open">Scanner un code-barres</button></div>
+    <div class="box sk-add" id="sk-add" hidden>
+      <div class="bar">
+        <div class="field"><label for="sk-name">Article</label><input type="text" id="sk-name" list="dl-ing" placeholder="ex. farine" autocomplete="off"></div>
+        <div class="field"><label for="sk-qty">Quantité</label>
+          <div class="two"><input type="number" id="sk-qty" inputmode="decimal" min="0" step="any" placeholder="500"><select id="sk-unit" aria-label="Unité"><option value="">pièce(s)</option><option>g</option><option>kg</option><option>ml</option><option>cl</option><option>l</option></select></div></div>
+        <div class="field" style="justify-content:flex-end"><button class="btn primary" data-act="stock-add">Ajouter au stock</button></div>
+      </div>
     </div>
     <div id="stock-list"></div>
-    <div class="row-actions" style="margin-top:12px"><button class="btn danger sm" data-act="stock-clear" id="stock-clear">Vider le stock</button><span class="hint">Une quantité à zéro signifie « quantité inconnue » : l'ingrédient est alors considéré comme disponible.</span></div>
+    <div class="row-actions" style="margin-top:12px"><button class="btn danger sm" data-act="stock-clear" id="stock-clear">Vider le stock</button><span class="hint">Case « dispo » (quantité vide) : l'article est considéré comme disponible, sans quantité précise.</span></div>
   </section>
   <p class="hint" id="credit" hidden style="margin-top:32px">Dictionnaire d'ingrédients : Open Food Facts (licence ODbL). Codes Ciqual : Anses.</p>
 </main>
@@ -899,15 +918,31 @@ function priceByShop(k,u){
 }
 function bestPrice(k,u){const l=priceByShop(k,u);return l.length?l[0]:null}
 function stockChanged(){persist();renderStock();renderRecipes();renderCourses()}
+// pas des boutons − / + : 1 pièce ; 100 g ou ml (500 au-delà d'un kilo / litre)
+function skStep(s){return s.u==='g'||s.u==='ml'?((s.q||0)>=1000?500:100):1}
+function skRow(s){
+  const id=esc(sid(s)),step=skStep(s),nm=esc(s.n);
+  return`<div class="srow"><span class="nm">${nm}</span><div class="ctl">`+
+    `<button type="button" class="stp" data-act="stock-step" data-d="-1" data-sid="${id}" aria-label="Moins de ${nm}" ${s.q>step?'':'disabled'}>−</button>`+
+    `<input type="number" inputmode="decimal" min="0" step="any" data-sq="${id}" value="${s.q?esc(Math.round(s.q*100)/100):''}" placeholder="dispo" aria-label="Quantité de ${nm}">`+
+    (s.u?`<span class="u">${esc(s.u)}</span>`:'')+
+    `<button type="button" class="stp" data-act="stock-step" data-d="1" data-sid="${id}" aria-label="Plus de ${nm}">+</button>`+
+    `<button type="button" class="del" data-act="stock-del" data-sid="${id}" aria-label="Retirer ${nm}">×</button>`+
+  `</div></div>`;
+}
 function renderStock(){
   const f=norm($('#sk-filter').value||'');
   const list=S.stock.filter(s=>!f||s.k.includes(f)).sort((a,b)=>a.n.localeCompare(b.n,'fr'));
   $('#stock-clear').disabled=!S.stock.length;
+  $('#sk-count').textContent=S.stock.length?(f?`${list.length} sur ${S.stock.length}`:`${S.stock.length} article${S.stock.length>1?'s':''}`):'';
   const el=$('#stock-list');
-  if(!list.length){el.innerHTML=`<div class="empty">${S.stock.length?'Aucun ingrédient ne correspond.':'Votre stock est vide. Rangez vos courses depuis la liste ou ajoutez un ingrédient à la main.'}</div>`;return}
+  if(!list.length){el.innerHTML=`<div class="empty">${S.stock.length?'Aucun article ne correspond.':'Votre stock est vide. Lisez votre ticket de courses depuis l\'onglet Courses, ou ajoutez un article à la main.'}</div>`;return}
+  const closed=new Set(UI.skClosed||[]);
   el.innerHTML=RAYONS.map(r=>{
     const l=list.filter(s=>(RAYONS.includes(s.r)?s.r:'Autres')===r);
-    return l.length?`<div class="box" style="margin-bottom:12px"><h3>${esc(r)}</h3>${l.map(s=>`<div class="srow"><span class="nm">${esc(s.n)}</span><span class="dots"></span>${s.q?`<input type="number" min="0" step="any" data-sq="${esc(sid(s))}" value="${esc(Math.round(s.q*100)/100)}" aria-label="Quantité de ${esc(s.n)}"><span class="u">${esc(s.u||'pièce(s)')}</span>`:'<span class="hint">quantité inconnue</span>'}<button class="btn sm danger" data-act="stock-del" data-sid="${esc(sid(s))}" aria-label="Retirer ${esc(s.n)}">Retirer</button></div>`).join('')}</div>`:'';
+    if(!l.length)return'';
+    const shut=closed.has(r)&&!f; // une recherche déplie tout
+    return`<section class="sk-group"><button type="button" class="sk-head" data-act="sk-toggle" data-r="${esc(r)}" aria-expanded="${!shut}"><span>${esc(r)}</span><span class="n">${l.length}</span><span class="chev" aria-hidden="true">${shut?'▸':'▾'}</span></button>${shut?'':l.map(skRow).join('')}</section>`;
   }).join('');
 }
 function parsePasted(t){
@@ -1374,7 +1409,13 @@ document.addEventListener('click',e=>{
     case 'ia-save':{const p=A.results[+b.dataset.i];if(p){S.recipes.unshift({id:uid(),title:p.title,time:p.time,servings:p.servings,tags:p.tags,source:'ia',ingredients:p.ingredients,steps:p.steps});A.notice={title:p.title,bad:excludedIn(p)};A.results.splice(+b.dataset.i,1);persist();renderIA();renderRecipes()}break}
     case 'ia-save-plan':{const p=A.results[+b.dataset.i];if(p){S.recipes.unshift({id:p.id,title:p.title,time:p.time,servings:p.servings,tags:p.tags,source:'ia',ingredients:p.ingredients,steps:p.steps});S.plan[p.id]=p.servings||4;A.notice={title:p.title,bad:excludedIn(p),planned:true};A.results.splice(+b.dataset.i,1);persist();renderIA();renderRecipes();renderCourses()}break}
     case 'stock-add':{const n=$('#sk-name').value.trim();if(n){addStock({n,q:parseFloat($('#sk-qty').value)||0,u:$('#sk-unit').value});$('#sk-name').value='';$('#sk-qty').value='';stockChanged()}break}
-    case 'stock-del':S.stock=S.stock.filter(s=>sid(s)!==b.dataset.sid);stockChanged();break;
+    case 'stock-del':
+      if(b.dataset.arm!=='1'){b.dataset.arm='1';b.classList.add('armed');b.textContent='Retirer ?';setTimeout(()=>{if(b.isConnected){b.dataset.arm='';b.classList.remove('armed');b.textContent='×'}},3000)}
+      else{S.stock=S.stock.filter(s=>sid(s)!==b.dataset.sid);stockChanged()}
+      break;
+    case 'sk-add-toggle':{const f=$('#sk-add'),open=f.hidden;f.hidden=!open;b.setAttribute('aria-expanded',String(open));if(open)$('#sk-name').focus();break}
+    case 'stock-step':{const it=S.stock.find(x=>sid(x)===b.dataset.sid);if(it){const st=skStep(it),d=Number(b.dataset.d)||0;it.q=Math.max(0,Math.round(((it.q||0)+d*st)*100)/100);stockChanged()}break}
+    case 'sk-toggle':{const r=b.dataset.r,c=new Set(UI.skClosed||[]);c.has(r)?c.delete(r):c.add(r);UI.skClosed=[...c];saveUI();renderStock();break}
     case 'stock-clear':if(b.dataset.arm!=='1'){b.dataset.arm='1';b.textContent='Confirmer ?';setTimeout(()=>{if(b.isConnected){b.dataset.arm='';b.textContent='Vider le stock'}},3000)}else{S.stock=[];stockChanged();b.dataset.arm='';b.textContent='Vider le stock'}break;
     case 'cook':openCook(id);break;
     case 'ck-close':$('#ck').hidden=true;COOK=null;break;

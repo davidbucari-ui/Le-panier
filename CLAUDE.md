@@ -35,6 +35,10 @@ prices   : {id, k, n, p, q, u, shop, d, r?} p = prix payé pour q·u ; d = AAAA-
 - **Conflits de synchro** : chaque `persist()` pose `rev = Date.now()` ; un état distant n'est accepté que si `remote.rev > local.rev`. Toute écriture directe en base doit **mettre `rev` à l'heure courante** (en ms), sinon elle sera ignorée ou écrasée.
 - Toujours passer les données lues par `fix()` (tolère les anciens formats) ; toute nouvelle clé de `S` doit être ajoutée dans `fresh()` **et** `fix()`.
 
+## Écran Stock
+- Une ligne par article (`skRow`) : nom, boutons − / + (`stock-step`, pas de 1 pièce, 100 g/ml, 500 au-delà d'un kilo/litre), quantité modifiable, × (retrait avec confirmation par second toucher). Quantité vide = « dispo » (`q=0`, considéré disponible). Le − est désactivé au minimum (le retrait passe par ×).
+- Catégories repliables (`sk-toggle`, état dans `UI.skClosed`, local à l'appareil) ; une recherche les déplie. L'ajout à la main est masqué derrière « ＋ Ajouter ».
+
 ## Rapprochement d'ingrédients (important)
 - `ckey(nom)` renvoie l'**identifiant interne du dictionnaire** (`'#123'`) ou, sans dictionnaire, le nom normalisé (`norm`). Ces identifiants changent si `ingredients.json` est régénéré : **ne jamais les stocker**. Comparer à l'exécution avec `ckey(x.n)` (c'est ce que font les prix), jamais avec une clé persistée.
 - `covers(nomStock, cléBesoin)` : un stock couvre un besoin s'il est identique ou **plus précis** (« tomate concassée » couvre « tomate », pas l'inverse).
