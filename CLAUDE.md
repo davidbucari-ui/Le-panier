@@ -85,7 +85,7 @@ Il n'y a pas de suite de tests dans le dépôt. Méthode utilisée : **jsdom** a
 - Prix saisis depuis des tickets Lidl : prix **net payé** (après remises), unité de base g/ml/pièce, articles non alimentaires inclus (rayons Hygiène, Entretien, Bébé et animaux, Autres).
 
 ## Icône de l'application
-- `icons/` (192, 512, 180 pour iOS, favicon 32) + `manifest.webmanifest`, liés dans `<head>` de `index.html` (chemins relatifs, pour le sous-dossier GitHub Pages). Panier d'osier avec légumes sur fond vert, généré par IA ; la même image sert d'icône « maskable » (le motif reste dans la zone sûre). Installation sur l'écran d'accueil à vérifier sur appareil.
+- `icons/` (192, 512, 180 pour iOS, favicon 32) + `manifest.webmanifest`, liés dans `<head>` de `index.html` (chemins relatifs, pour le sous-dossier GitHub Pages). Panier d'osier avec légumes sur fond vert, généré par IA, texte « Le Panier » ajouté en bas par script (police DejaVu Sans Bold) ; la même image sert d'icône « maskable » (le motif reste dans la zone sûre). Installation sur l'écran d'accueil à vérifier sur appareil.
 
 ## Sources et licences
 Dictionnaire : Open Food Facts (ODbL), codes Ciqual (Anses). Le crédit s'affiche en bas de page et dans le README ; le conserver.
