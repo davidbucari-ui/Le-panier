@@ -929,7 +929,7 @@ function renderCourses(){
 /* ---------- stock ---------- */
 const sid=s=>s.k+'|'+(s.u||'');
 function addStock(it){
-  const n=String(it.n||'').trim();if(!n)return;
+  const n=String(it.n||'').trim();if(!n||/@|https?:|www\./i.test(n))return;
   const k=norm(n),[q,u]=normQty(it.q,it.u);
   const ex=S.stock.find(s=>s.k===k&&(s.u||'')===u);
   if(ex)ex.q=(ex.q||0)+q;else S.stock.push({k,n,q,u,r:RAYONS.includes(it.r)?it.r:guessRayon(n)});
@@ -1121,8 +1121,10 @@ const TK_STOP=/^(sous[ -]?)?total\b|^a payer|^montant (du|a payer|total)|^net a 
 const TK_SKIP=/\b(tva|cb|carte bancaire|carte de fidelite|visa|mastercard|especes|rendu|monnaie|paiement|payer|ticket|caisse|caissier|merci|siret|tel|telephone|articles?|nombre|points?|cagnotte|solde|total|montant|transaction|autorisation|client|facture|fidelite|euro?s?)\b/;
 const TK_DISC=/^(remise|reduc|reduction|promo|coupon|bon d|avantage|lidl plus|offre|economie|rabais|immediate)/;
 const TK_NONFOOD=/\b(sac|sachet cabas|cabas|lessive|liquide vaisselle|vaisselle|essuie|papier toilette|mouchoir|shampo|shampoing|dentifrice|deodorant|gel douche|savon|eponge|piles?|ampoule|consigne|nettoyant|javel|adoucissant|couche|lingette|sopalin|aluminium|film etirable|bougie|journal|rasoir|lame|dentaire|parodontax|colgate|brosse a dent|litiere)\b/;
-const TK_ABBR={ecr:'ecreme',nat:'nature',choc:'chocolat',jbn:'jambon',jamb:'jambon',fro:'fromage',from:'fromage',yaou:'yaourt',yt:'yaourt',yrt:'yaourt',pdt:'pomme de terre',pdterre:'pomme de terre',vol:'volaille',emment:'emmental',gruy:'gruyere',moz:'mozzarella',bche:'boeuf',bf:'boeuf',pll:'poulet',poul:'poulet',fil:'filet',sauc:'saucisse',cr:'creme',crm:'creme',fr:'fraiche',leg:'legume',lgm:'legume',tom:'tomate',pom:'pomme',bana:'banane',past:'pate',spag:'spaghetti',farin:'farine',sucr:'sucre',oeu:'oeuf',porme:'pomme',pornme:'pomme',pomrne:'pomme'};
+const TK_ABBR={cho:'choix',ecr:'ecreme',nat:'nature',choc:'chocolat',jbn:'jambon',jamb:'jambon',fro:'fromage',from:'fromage',yaou:'yaourt',yt:'yaourt',yrt:'yaourt',pdt:'pomme de terre',pdterre:'pomme de terre',vol:'volaille',emment:'emmental',gruy:'gruyere',moz:'mozzarella',bche:'boeuf',bf:'boeuf',pll:'poulet',poul:'poulet',fil:'filet',sauc:'saucisse',cr:'creme',crm:'creme',fr:'fraiche',leg:'legume',lgm:'legume',tom:'tomate',pom:'pomme',bana:'banane',past:'pate',spag:'spaghetti',farin:'farine',sucr:'sucre',oeu:'oeuf',porme:'pomme',pornme:'pomme',pomrne:'pomme'};
 const tkNum=s=>parseFloat(String(s).replace(',','.'))||0;
+// coordonnées (e-mail, site, téléphone) : jamais un article
+const TK_CONTACT=/@|https?:|www\.|\.(com|fr|net|org|eu)\b|(?:\d[ .-]?){8,}/i;
 // lignes d'un PDF : regroupe les morceaux de texte de même hauteur, de gauche à droite
 async function pdfText(file){
   if(!window.pdfjsLib)await new Promise((ok,ko)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js';sc.onload=ok;sc.onerror=ko;document.head.appendChild(sc)});
@@ -1148,6 +1150,7 @@ const TK_FOOD=/\b(cookie|biscuit|gateau|gaufre|compote|jus|sirop|confiture|choco
 // nom affiché : celui du ticket (abréviations développées, quantités retirées) ; nom générique du dictionnaire
 // seulement s'il en est le début exact (« sirop de grenadine » reste tel quel, « Vinaigre d'alcool bl » devient « vinaigre d'alcool »)
 function tkName(raw){
+  raw=raw.replace(/\b(\d)\s*(?:ème|eme|er|ère|e)\b/gi,'$1e'); // 1er / 3ème choix → 1e / 3e
   const toks=raw.replace(/\d+([.,]\d+)?\s*(kg|g|gr|cl|ml|l|%)\b/gi,' ').replace(/\b\d+\s*[x*]\s*\d*|\bx\s*\d+\b|-?\d+\s*%|\b\d+\b/gi,' ').split(/\s+/).filter(Boolean)
     .map(t=>{const k=norm(t);return TK_ABBR[k]||TK_ABBR[k.replace(/s$/,'')]||t.toLowerCase()});
   while(toks.length>1&&/^(le|la|les|l'|l’|un|une|du|des)$/.test(toks[0]))toks.shift();
@@ -1195,7 +1198,7 @@ function parseTicketText(txt){
     const cm=l.match(COUNT);
     if(cm){if(last)last.c=+cm[1];continue}
     const m=l.match(PRICE);
-    if(!m){if(/[a-z]{3}/i.test(l)&&!TK_SKIP.test(nl)&&!/\d{5}/.test(l))pending=l;continue}
+    if(!m){if(/[a-z]{3}/i.test(l)&&!TK_SKIP.test(nl)&&!TK_CONTACT.test(l)&&!/\d{5}/.test(l))pending=l;continue}
     let lab=m[1].trim(),c=1;
     const ic=lab.match(/(?:^|\s)(\d+)\s*[x*]\s*\d+[.,]\d{2}\s*(?:€|eur)?$/i);
     if(ic){c=+ic[1];lab=lab.slice(0,ic.index).trim()}
@@ -1204,6 +1207,7 @@ function parseTicketText(txt){
     lab=lab.replace(/[\s=:;|—–_-]+$/,'');
     if(!/[a-z]{2}/i.test(lab)){if(!pending)continue;lab=pending}
     pending='';
+    if(TK_CONTACT.test(lab))continue;
     let p=tkNum(m[2].replace(/\s/g,''));if(m[3])p=-p;
     if(p<0||TK_DISC.test(norm(lab))){if(last)last.p=Math.max(0,Math.round((last.p-Math.abs(p))*100)/100);continue}
     if(TK_SKIP.test(norm(lab)))continue;
