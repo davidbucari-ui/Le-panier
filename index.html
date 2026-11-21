@@ -1090,7 +1090,7 @@ function parseTicketText(txt){
   const shop=SHOPS.find(s=>head.includes(s.toLowerCase()))||SHOPS.find(s=>norm(lines.join(' ')).includes(norm(s)))||'';
   let date='';
   for(const dm of lines.join(' ').matchAll(/\b(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4}|\d{2})\b/g)){const d=(dm[3].length===2?'20'+dm[3]:dm[3])+'-'+dm[2].padStart(2,'0')+'-'+dm[1].padStart(2,'0');if(/^20\d\d-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(d)){date=d;break}}
-  const PRICE=/^(.*?)\s*(-?\s?\d{1,4}[.,]\d{2})\d?(-?)\s*(?:€|eur)?((?:\s*(?:[a-zà]\d?|\d|\*{1,2})){0,2})\s*$/i;
+  const PRICE=/^(.*?)\s*(-?\s?\d{1,4}[.,]\d{2})\d?(-?)\s*(?:€|eur)?((?:\s*(?:[a-zà]\d?|\d|\*{1,2})){0,3})\s*$/i;
   const WEIGHT=/(\d+[.,]\d+)\s*kg\s*[x*]\s*\d+[.,]\d{2}\s*(?:€|eur)?\s*\/\s*kg/i;
   const COUNT=/^(\d+)\s*[x*]\s*(\d+[.,]\d{2})\s*(?:€|eur)?$/i;
   const items=[];let last=null,pending='';
@@ -1120,7 +1120,7 @@ function parseTicketText(txt){
     let p=tkNum(m[2].replace(/\s/g,''));if(m[3])p=-p;
     if(p<0||TK_DISC.test(norm(lab))){if(last)last.p=Math.max(0,Math.round((last.p-Math.abs(p))*100)/100);continue}
     if(TK_SKIP.test(norm(lab)))continue;
-    last={raw:lab,p,c,tax:(m[4]||'').trim().charAt(0).toUpperCase()};items.push(last);
+    last={raw:lab,p,c,tax:(m[4]||'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').charAt(0).toUpperCase()};items.push(last);
   }
   const merged=new Map();
   for(const it of items){
@@ -1129,7 +1129,9 @@ function parseTicketText(txt){
     const key=norm(g.n)+'|'+u;
     const ex=merged.get(key);
     if(ex){ex.q+=q;ex.p=Math.round((ex.p+it.p)*100)/100;continue}
-    const food=g.known&&!TK_NONFOOD.test(norm(it.raw))&&!(shop==='Lidl'&&it.tax==='B'); // chez Lidl, B = TVA 20 % : surtout du non alimentaire
+    const lidlTax=shop==='Lidl'&&(it.tax==='A'||it.tax==='B');
+    // chez Lidl, A = TVA 5,5 % (alimentaire) et B = 20 % (surtout du non alimentaire) ; ailleurs, on se fie au dictionnaire
+    const food=!TK_NONFOOD.test(norm(it.raw))&&(lidlTax?it.tax==='A':g.known);
     merged.set(key,{id:uid(),n:g.n,q:Math.round(q*1000)/1000,u,p:it.p,r:guessRayon(g.n),on:food,raw:it.raw});
   }
   return{shop,date:date||todayISO(),items:[...merged.values()]};
@@ -1143,25 +1145,48 @@ async function loadBitmap(file){
   try{return await new Promise((ok,ko)=>{const im=new Image();im.onload=()=>ok(im);im.onerror=()=>ko(new Error('image illisible'));im.src=url})}
   finally{setTimeout(()=>URL.revokeObjectURL(url),10000)}
 }
+// meilleure ligne de coupe en remontant depuis `from` : celle qui contient le moins d'encre (entre deux lignes de texte), la plus proche en cas d'égalité
+function quietRow(g,w,from,back){
+  let best=from,bestInk=Infinity;
+  for(let y=from;y>from-back&&y>0;y--){
+    const d=g.getImageData(0,y,w,1).data;let ink=0;
+    for(let i=0;i<d.length;i+=4)if((d[i]+d[i+1]+d[i+2])/3<170)ink++;
+    if(ink<bestInk){bestInk=ink;best=y;if(!ink)break}
+  }
+  return best;
+}
 async function imgText(file,progress){
   TK_STEP='chargement du lecteur d\'image';
   if(!window.Tesseract)await new Promise((ok,ko)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';sc.onload=ok;sc.onerror=()=>ko(new Error('téléchargement impossible'));document.head.appendChild(sc)});
   TK_STEP='ouverture de l\'image';
   const bmp=await loadBitmap(file),bw=bmp.width||bmp.naturalWidth,bh=bmp.height||bmp.naturalHeight,s=bw<1000?Math.min(4,1200/bw):1;
-  const c=document.createElement('canvas');c.width=Math.round(bw*s);c.height=Math.round(bh*s);
-  const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.imageSmoothingQuality='high';g.drawImage(bmp,0,0,c.width,c.height);
+  const src=document.createElement('canvas');src.width=bw;src.height=bh;
+  const sg=src.getContext('2d',{willReadFrequently:true});sg.fillStyle='#fff';sg.fillRect(0,0,bw,bh);sg.drawImage(bmp,0,0);
+  // un ticket est très haut (5 000 px et plus) : lecture par tranches d'environ 2 000 px, coupées entre deux lignes, pour ménager la mémoire
+  const step=Math.max(300,Math.round(2000/s)),bands=[];
+  for(let y0=0;y0<bh;){let y1=Math.min(bh,y0+step);if(y1<bh)y1=quietRow(sg,bw,y1,Math.min(150,step-100));bands.push([y0,y1]);y0=y1}
   // la bibliothèque ne rejette pas toujours ses erreurs (ex. langue non téléchargée) : errorHandler + délai évitent un écran figé
   let w=null;
   try{
     return await new Promise((ok,ko)=>{
-      const t=setTimeout(()=>ko(new Error('délai dépassé (2 min)')),120000);
+      const t=setTimeout(()=>ko(new Error('délai dépassé (4 min)')),240000);
       const fail=e=>{clearTimeout(t);ko(e instanceof Error?e:new Error(String(e&&e.message||e)))};
       (async()=>{
         TK_STEP='démarrage de la reconnaissance (téléchargement de la langue française)';
-        w=await Tesseract.createWorker('fra',1,{errorHandler:fail,logger:m=>{if(m.status==='recognizing text')progress(Math.round(m.progress*100))}});
-        TK_STEP='reconnaissance du texte';
+        let bi=0;
+        w=await Tesseract.createWorker('fra',1,{errorHandler:fail,logger:m=>{if(m.status==='recognizing text')progress(Math.round((bi+m.progress)/bands.length*100))}});
         await w.setParameters({preserve_interword_spaces:'1'});
-        const r=await w.recognize(c);clearTimeout(t);ok(r.data.text);
+        const out=[];
+        for(bi=0;bi<bands.length;bi++){
+          TK_STEP='reconnaissance du texte'+(bands.length>1?` (partie ${bi+1}/${bands.length})`:'');
+          const [y0,y1]=bands[bi],c=document.createElement('canvas');
+          c.width=Math.round(bw*s);c.height=Math.max(1,Math.round((y1-y0)*s));
+          const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.imageSmoothingQuality='high';
+          g.drawImage(src,0,y0,bw,y1-y0,0,0,c.width,c.height);
+          out.push((await w.recognize(c)).data.text);
+          c.width=c.height=0;
+        }
+        clearTimeout(t);ok(out.join('\n'));
       })().catch(fail);
     });
   }finally{if(w)try{w.terminate()}catch(e){}}
