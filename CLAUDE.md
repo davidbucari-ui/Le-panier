@@ -16,7 +16,8 @@ Application web personnelle (français) de gestion des courses : recettes, idée
 
 ## Deux modes d'exécution
 1. **Hors Claude** (GitHub Pages) : connexion e-mail + mot de passe Supabase, synchro realtime, dictionnaire, scanner, import d'URL via l'Edge Function. Pas d'IA intégrée : les « idées » passent par un copier-coller de prompt vers une conversation Claude (`ideasPrompt`/`ingestIdeas`, `recipePrompt`/`ingestRecipe`).
-- Pas de lecture de ticket de caisse dans l'appli (retirée à la demande de David) : le stock se remplit avec « Ranger les courses » (`storeBought`, articles cochés de la liste → stock) ou à la main.
+- **Ticket de caisse** (« Lire mon ticket » dans Courses) : lecture sans IA (PDF via pdf.js, capture d'écran via Tesseract, ou texte collé ; analyse locale `parseTicketText`, pensée pour Lidl Plus). Chaque ligne est **rapprochée de la liste** (`tkMatch` : `ckey`/`covers`, modifiable par une liste déroulante) ; `applyTicket` met au stock et note les prix, et les articles rapprochés sortent de la liste (lignes hors liste : ajoutées au stock et aux prix). Une ligne rapprochée vaut « acheté » (quantité = max ticket/liste, même unité). Le prix est noté sous le nom de la liste. Sans ticket : « Ranger les courses » (`storeBought`) ou saisie à la main. Retirée puis rétablie à la demande de David : ne pas la supprimer sans qu'il le demande.
+- Le ticket demande le magasin pour noter les prix ; pdf.js/Tesseract sont chargés à la demande depuis jsDelivr (réseau requis).
 2. **Dans Claude** (artifact) : `claude.use("db"|"user"|"sample")`, stockage par utilisateur `data/users/<id>/app`, IA via `sample`. Cette version n'est **pas** republiée à chaque changement : elle date d'avant le stock/les prix/le scanner. Ne pas la considérer comme à jour.
 Le code doit rester compatible avec les deux : tout accès réseau ou dictionnaire est optionnel et dégrade proprement.
 

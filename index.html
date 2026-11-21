@@ -161,6 +161,12 @@ input[type=file]{padding:8px}
 .pr-tabs .tab .badge{margin-left:2px}
 .pr-cat{margin:22px 0 8px;font-size:1.05rem;border-bottom:1px solid var(--line,#ccc);padding-bottom:4px}
 .mini-sel{width:auto;min-height:28px;font-size:.8rem;padding:2px 6px;margin-left:8px;font-weight:400}
+.tk-line{display:grid;grid-template-columns:26px minmax(0,1fr) 64px 56px 72px;gap:6px 8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.tk-line .m{grid-column:2/-1}
+.tk-line input[type=checkbox]{width:20px;height:20px}
+.tk-line select{width:100%;min-height:34px;font-size:.85rem}
+.tk-line.off{opacity:.55}
+.tk-sum{margin:10px 0}
 </style>
 </head>
 <body>
@@ -299,7 +305,7 @@ input[type=file]{padding:8px}
   <!-- STOCK -->
   <section class="panel" id="p-stock" role="tabpanel" aria-labelledby="tab-stock" hidden>
     <h2>Mon stock</h2>
-    <p class="lead-p">Après vos courses, cochez les articles achetés dans la liste puis appuyez sur « Ranger les courses » : ils entrent au stock avec la quantité de la liste. Les recettes et la liste de courses en tiennent compte.</p>
+    <p class="lead-p">Après vos courses, lisez votre ticket depuis l'onglet Courses (« Lire mon ticket ») : les articles entrent au stock et leurs prix sont notés. Sans ticket, cochez les articles dans la liste puis « Ranger les courses ». Les recettes et la liste de courses en tiennent compte.</p>
     <div class="row-actions" style="margin-bottom:12px"><button class="btn" data-act="scan-open">Scanner un code-barres</button></div>
     <h3 style="margin:20px 0 8px">En stock</h3>
     <div class="bar">
@@ -407,6 +413,19 @@ input[type=file]{padding:8px}
     </details>
     <div id="nr-msg" role="alert"></div>
     <div class="row-actions"><button class="btn primary" data-act="nr-save-plan" id="nr-save-plan">Enregistrer et ajouter aux courses</button><button class="btn" data-act="nr-save">Enregistrer seulement</button><button class="btn" data-act="nr-cancel">Annuler</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="tk" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="tk-h" style="max-width:720px">
+    <h3 id="tk-h">Mon ticket de caisse</h3>
+    <p class="hint" style="margin:0">Importez le ticket (capture d'écran du ticket Lidl Plus, PDF ou texte collé) : chaque ligne est rapprochée de votre liste de courses.</p>
+    <div class="field"><label for="tk-doc">Ticket (capture d'écran, PDF ou texte)</label><input type="file" id="tk-doc" accept="image/*,.pdf,application/pdf,.txt,text/plain"></div>
+    <div class="field"><label for="tk-text">Ou collez le texte du ticket</label><textarea id="tk-text" placeholder="Texte d'un ticket numérique"></textarea></div>
+    <div class="row-actions"><button class="btn" data-act="tk-go">Lire le texte collé</button><span id="tk-status" class="hint" aria-live="polite"></span></div>
+    <div id="tk-review"></div>
+    <div id="tk-msg" role="alert" style="color:var(--radis-ink);font-size:14px"></div>
+    <div class="row-actions"><button class="btn" data-act="tk-close">Fermer</button></div>
   </div>
 </div>
 
@@ -836,7 +855,7 @@ function renderCourses(){
       <p class="hint" style="margin:0">${Object.keys(S.plan).length?Object.keys(S.plan).length+' recette'+(Object.keys(S.plan).length>1?'s':'')+' dans la liste.':'Aucune recette : la liste ne contient que vos articles.'}</p><div class="row-actions"><button class="btn sm" data-act="tab" data-t="recettes">Voir les recettes</button></div></div>
     <div class="box"><h3>Déjà à la maison</h3>
       <p class="hint" style="margin:0">${S.stock.length} ingrédient${S.stock.length>1?'s':''} en stock. Les quantités connues sont déduites de la liste.</p><div class="row-actions"><button class="btn sm" data-act="tab" data-t="stock">Gérer mon stock</button></div></div>
-    <div class="row-actions"><button class="btn primary" data-act="store" ${items.length-left?'':'disabled'} title="Met les articles cochés dans le stock">Ranger les courses${items.length-left?` (${items.length-left})`:''}</button><button class="btn" data-act="copy" ${items.length?'':'disabled'}>Copier la liste</button><button class="btn" data-act="uncheck" ${S.bought.length?'':'disabled'}>Tout décocher</button><button class="btn danger" data-act="reset" ${Object.keys(S.plan).length||S.extras.length?'':'disabled'}>Vider la liste</button></div>
+    <div class="row-actions"><button class="btn primary" data-act="tk-open">Lire mon ticket</button><button class="btn" data-act="store" ${items.length-left?'':'disabled'} title="Met les articles cochés dans le stock">Ranger les courses${items.length-left?` (${items.length-left})`:''}</button><button class="btn" data-act="copy" ${items.length?'':'disabled'}>Copier la liste</button><button class="btn" data-act="uncheck" ${S.bought.length?'':'disabled'}>Tout décocher</button><button class="btn danger" data-act="reset" ${Object.keys(S.plan).length||S.extras.length?'':'disabled'}>Vider la liste</button></div>
     <span class="hint" id="copy-msg" aria-live="polite"></span>
   </div>`;
   $('#courses').innerHTML=rec+side;
@@ -1008,6 +1027,192 @@ $('#ex-q').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault()
 $('#ck-por').addEventListener('input',renderCook);
 $('#f-stock').addEventListener('change',e=>{F.stockOnly=e.target.checked;renderRecipes()});
 
+/* ---------- ticket de caisse : lecture + rapprochement avec la liste ---------- */
+const R={items:[],shop:'',date:'',list:[]};
+/* ---------- ticket téléchargé (PDF ou texte), lu sans IA ---------- */
+const SHOPS=['Lidl','Carrefour','E.Leclerc','Leclerc','Auchan','Intermarché','Super U','Hyper U','Système U','Monoprix','Franprix','Casino','Aldi','Netto','Grand Frais','Picard','Biocoop','Naturalia','Cora','Match','Spar','Leader Price'];
+const TK_STOP=/^(sous[ -]?)?total\b|^a payer|^montant (du|a payer|total)|^net a payer|^somme\b/;
+const TK_SKIP=/\b(tva|cb|carte bancaire|carte de fidelite|visa|mastercard|especes|rendu|monnaie|paiement|payer|ticket|caisse|caissier|merci|siret|tel|telephone|articles?|nombre|points?|cagnotte|solde|total|montant|transaction|autorisation|client|facture|fidelite|euro?s?)\b/;
+const TK_DISC=/^(remise|reduc|reduction|promo|coupon|bon d|avantage|lidl plus|offre|economie|rabais|immediate)/;
+const TK_NONFOOD=/\b(sac|sachet cabas|cabas|lessive|liquide vaisselle|vaisselle|essuie|papier toilette|mouchoir|shampo|shampoing|dentifrice|deodorant|gel douche|savon|eponge|piles?|ampoule|consigne|nettoyant|javel|adoucissant|couche|lingette|sopalin|aluminium|film etirable|bougie|journal|rasoir|lame|dentaire|parodontax|colgate|brosse a dent|litiere)\b/;
+const TK_ABBR={ecr:'ecreme',nat:'nature',choc:'chocolat',jbn:'jambon',jamb:'jambon',fro:'fromage',from:'fromage',yaou:'yaourt',yt:'yaourt',yrt:'yaourt',pdt:'pomme de terre',pdterre:'pomme de terre',vol:'volaille',emment:'emmental',gruy:'gruyere',moz:'mozzarella',bche:'boeuf',bf:'boeuf',pll:'poulet',poul:'poulet',fil:'filet',sauc:'saucisse',cr:'creme',crm:'creme',fr:'fraiche',leg:'legume',lgm:'legume',tom:'tomate',pom:'pomme',bana:'banane',past:'pate',spag:'spaghetti',farin:'farine',sucr:'sucre',oeu:'oeuf',porme:'pomme',pornme:'pomme',pomrne:'pomme'};
+const tkNum=s=>parseFloat(String(s).replace(',','.'))||0;
+// lignes d'un PDF : regroupe les morceaux de texte de même hauteur, de gauche à droite
+async function pdfText(file){
+  if(!window.pdfjsLib)await new Promise((ok,ko)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js';sc.onload=ok;sc.onerror=ko;document.head.appendChild(sc)});
+  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+  const pdf=await pdfjsLib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
+  const out=[];
+  for(let p=1;p<=Math.min(pdf.numPages,10);p++){
+    const tc=await (await pdf.getPage(p)).getTextContent();
+    const rows=[];
+    for(const it of tc.items){
+      if(!it.str||!it.str.trim())continue;
+      const x=it.transform[4],y=it.transform[5],h=Math.abs(it.transform[3])||8;
+      let r=rows.find(r=>Math.abs(r.y-y)<h*0.5);
+      if(!r){r={y,c:[]};rows.push(r)}
+      r.c.push({x,s:it.str});
+    }
+    rows.sort((a,b)=>b.y-a.y).forEach(r=>out.push(r.c.sort((a,b)=>a.x-b.x).map(c=>c.s).join('   ')));
+  }
+  return out.join('\n');
+}
+// mots qui signalent un aliment même hors dictionnaire
+const TK_FOOD=/\b(cookie|biscuit|gateau|gaufre|compote|jus|sirop|confiture|chocolat|cafe|the|tisane|cereale|muesli|chips|soda|eau|vin|biere|pate|linguine|spaghetti|tagliatelle|penne|fusilli|macaroni|riz|sauce|soupe|glace|pain|levain|brioche|fromage|creme|yaourt|dessert|bonbon|miel|epice|herbe|conserve|surgele|pizza|quiche|salade|legume|fruit|mais doux|olive|thon|sardine)/;
+// nom affiché : celui du ticket (abréviations développées, quantités retirées) ; nom générique du dictionnaire
+// seulement s'il en est le début exact (« sirop de grenadine » reste tel quel, « Vinaigre d'alcool bl » devient « vinaigre d'alcool »)
+function tkName(raw){
+  const toks=raw.replace(/\d+([.,]\d+)?\s*(kg|g|gr|cl|ml|l|%)\b/gi,' ').replace(/\b\d+\s*[x*]\s*\d*|\bx\s*\d+\b|-?\d+\s*%|\b\d+\b/gi,' ').split(/\s+/).filter(Boolean)
+    .map(t=>{const k=norm(t);return TK_ABBR[k]||TK_ABBR[k.replace(/s$/,'')]||t.toLowerCase()});
+  while(toks.length>1&&/^(le|la|les|l'|l’|un|une|du|des)$/.test(toks[0]))toks.shift();
+  if(toks[0])toks[0]=toks[0].replace(/^l['’]/,'');
+  const n=toks.join(' ').trim(),w=norm(n).split(' ');
+  if(DICT&&!DICT.byName.get(norm(n)))for(let len=Math.min(w.length-1,5);len>0;len--){
+    const span=w.slice(0,len).join(' '),id=DICT.byName.get(span),e=id&&DICT.ent.get(id);
+    if(e&&(len>1||norm(e.n)===span)&&w.length-len<=2){if(/^(de|d|du|des|a|au|aux)$/.test(w[len]))break;return{n:e.n,known:true}}
+  }
+  const nn=norm(n),known=!DICT||!!DICT.byName.get(nn)||w.some(x=>x.length>3&&DICT.byName.get(x))||TK_FOOD.test(nn)||Object.values(KW).some(l=>l.some(k=>nn.includes(k)));
+  return{n,known};
+}
+function tkQty(raw){
+  const s=raw.toLowerCase().replace(/(\d),(\d)/g,'$1.$2');
+  let m=s.match(/(\d+)\s*[x*]\s*(\d+(?:\.\d+)?)\s*(kg|g|gr|cl|ml|l)\b/);
+  if(m)return[+m[1]*+m[2],m[3]==='gr'?'g':m[3]];
+  m=s.match(/(\d+(?:\.\d+)?)\s*(kg|g|gr|cl|ml|l)\b/);
+  let q=0,u='';if(m){q=+m[1];u=m[2]==='gr'?'g':m[2]}
+  const k=s.match(/\bx\s*(\d+)\b|\b(\d+)\s*x\b(?!\s*\d)|\b(\d+)\s*(?:pcs|pc|pieces?|tr|tranches?)\b/);
+  if(k&&!u)q=+(k[1]||k[2]||k[3]);
+  return[q,u];
+}
+function parseTicketText(txt){
+  const lines=String(txt||'').split(/\r?\n/).map(l=>l.replace(/ /g,' ').replace(/\s+/g,' ').trim()).filter(Boolean);
+  const head=lines.slice(0,12).join(' ').toLowerCase();
+  const shop=SHOPS.find(s=>head.includes(s.toLowerCase()))||SHOPS.find(s=>norm(lines.join(' ')).includes(norm(s)))||'';
+  let date='';
+  for(const dm of lines.join(' ').matchAll(/\b(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4}|\d{2})\b/g)){const d=(dm[3].length===2?'20'+dm[3]:dm[3])+'-'+dm[2].padStart(2,'0')+'-'+dm[1].padStart(2,'0');if(/^20\d\d-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(d)){date=d;break}}
+  const PRICE=/^(.*?)\s*(-?\s?\d{1,4}[.,]\d{2})\d?(-?)\s*(?:€|eur)?((?:\s*(?:[a-zà]\d?|\d|\*{1,2})){0,2})\s*$/i;
+  const WEIGHT=/(\d+[.,]\d+)\s*kg\s*[x*]\s*\d+[.,]\d{2}\s*(?:€|eur)?\s*\/\s*kg/i;
+  const COUNT=/^(\d+)\s*[x*]\s*(\d+[.,]\d{2})\s*(?:€|eur)?$/i;
+  const items=[];let last=null,pending='';
+  for(const l of lines){
+    const nl=norm(l);
+    if(TK_STOP.test(nl)){if(items.length)break;continue}
+    const wm=l.match(WEIGHT);
+    if(wm){
+      const before=l.slice(0,wm.index).trim(),pm=l.slice(wm.index+wm[0].length).match(/(\d{1,4}[.,]\d{2})/);
+      const lab=/[a-z]{2}/i.test(before)?before:pending;
+      if(lab&&pm){last={raw:lab,p:tkNum(pm[1]),w:tkNum(wm[1])*1000,c:1};items.push(last);pending=''}
+      else if(last&&!last.w)last.w=tkNum(wm[1])*1000;
+      continue;
+    }
+    const cm=l.match(COUNT);
+    if(cm){if(last)last.c=+cm[1];continue}
+    const m=l.match(PRICE);
+    if(!m){if(/[a-z]{3}/i.test(l)&&!TK_SKIP.test(nl)&&!/\d{5}/.test(l))pending=l;continue}
+    let lab=m[1].trim(),c=1;
+    const ic=lab.match(/(?:^|\s)(\d+)\s*[x*]\s*\d+[.,]\d{2}\s*(?:€|eur)?$/i);
+    if(ic){c=+ic[1];lab=lab.slice(0,ic.index).trim()}
+    const pq=lab.match(/\s\d{1,4}[.,]\d{2}\s+(\d{1,3})\s*$/); // colonnes « prix unitaire, quantité » (Lidl)
+    if(pq){c=+pq[1];lab=lab.slice(0,pq.index).trim()}
+    lab=lab.replace(/[\s=:;|—–_-]+$/,'');
+    if(!/[a-z]{2}/i.test(lab)){if(!pending)continue;lab=pending}
+    pending='';
+    let p=tkNum(m[2].replace(/\s/g,''));if(m[3])p=-p;
+    if(p<0||TK_DISC.test(norm(lab))){if(last)last.p=Math.max(0,Math.round((last.p-Math.abs(p))*100)/100);continue}
+    if(TK_SKIP.test(norm(lab)))continue;
+    last={raw:lab,p,c,tax:(m[4]||'').trim().charAt(0).toUpperCase()};items.push(last);
+  }
+  const merged=new Map();
+  for(const it of items){
+    const g=tkName(it.raw);let q,u;
+    if(it.w){q=it.w;u='g'}else{[q,u]=tkQty(it.raw);if(q&&u)q*=it.c;else{q=(q||1)*it.c;u=''}}
+    const key=norm(g.n)+'|'+u;
+    const ex=merged.get(key);
+    if(ex){ex.q+=q;ex.p=Math.round((ex.p+it.p)*100)/100;continue}
+    const food=g.known&&!TK_NONFOOD.test(norm(it.raw))&&!(shop==='Lidl'&&it.tax==='B'); // chez Lidl, B = TVA 20 % : surtout du non alimentaire
+    merged.set(key,{id:uid(),n:g.n,q:Math.round(q*1000)/1000,u,p:it.p,r:guessRayon(g.n),on:food,raw:it.raw});
+  }
+  return{shop,date:date||todayISO(),items:[...merged.values()]};
+}
+// image (capture d'écran du ticket) : reconnaissance de caractères par Tesseract, chargé à la demande
+async function imgText(file,progress){
+  if(!window.Tesseract)await new Promise((ok,ko)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';sc.onload=ok;sc.onerror=ko;document.head.appendChild(sc)});
+  const bmp=await createImageBitmap(file),s=bmp.width<1000?Math.min(4,1200/bmp.width):1;
+  const c=document.createElement('canvas');c.width=Math.round(bmp.width*s);c.height=Math.round(bmp.height*s);
+  const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.imageSmoothingQuality='high';g.drawImage(bmp,0,0,c.width,c.height);
+  const w=await Tesseract.createWorker('fra',1,{logger:m=>{if(m.status==='recognizing text')progress(Math.round(m.progress*100))}});
+  try{await w.setParameters({preserve_interword_spaces:'1'});return(await w.recognize(c)).data.text}
+  finally{w.terminate()}
+}
+async function readTicketDoc(file){
+  const st=$('#tk-status');if(!file)return;
+  st.textContent='Lecture du ticket…';
+  const pdf=/pdf$/i.test(file.type)||/\.pdf$/i.test(file.name),img=/^image\//.test(file.type);
+  try{
+    const txt=pdf?await pdfText(file):img?await imgText(file,p=>{st.textContent=`Lecture de l'image… ${p} %`}):await file.text();
+    if(!txt.trim()){st.textContent=pdf?'Ce PDF ne contient pas de texte (ticket scanné) : importez plutôt une capture d\'écran du ticket.':'Aucun texte trouvé dans ce fichier.';return}
+    $('#tk-text').value=txt.slice(0,20000);
+    showTicket(parseTicketText(txt),'dans le fichier');
+  }catch(e){st.textContent=(pdf?window.pdfjsLib:img?window.Tesseract:true)&&navigator.onLine!==false?'Impossible de lire ce fichier. Essayez une capture d\'écran plus nette, ou collez le texte du ticket ci-dessous.':'Le lecteur n\'a pas pu être chargé (réseau). Réessayez avec une connexion.'}
+}
+
+// rapproche chaque ligne du ticket d'un article de la liste (un article de la liste ne sert qu'une fois)
+function tkMatch(){
+  R.list=shoppingItems();
+  const used=new Set();
+  for(const it of R.items){
+    it.m='';
+    const k=ckey(it.n),nn=norm(it.n);
+    const hit=R.list.find(l=>!used.has(l.key)&&(l.nk===k||covers(it.n,l.nk)))
+      ||R.list.find(l=>{const ln=norm(l.name);return!used.has(l.key)&&ln.length>3&&nn.length>3&&(nn.includes(ln)||ln.includes(nn))});
+    if(hit){it.m=hit.key;used.add(hit.key)}
+  }
+}
+function showTicket(res,from){
+  R.shop=res.shop;R.date=res.date;R.items=res.items;tkMatch();
+  const off=res.items.filter(i=>!i.on).length;
+  $('#tk-status').textContent=res.items.length?`${res.items.length} ligne${res.items.length>1?'s':''} lue${res.items.length>1?'s':''} ${from}.${off?` ${off} non reconnue${off>1?'s':''} ou non alimentaire${off>1?'s':''} : décochée${off>1?'s':''}.`:''}`:'Aucun article reconnu dans ce ticket. Vérifiez qu\'il s\'agit bien du ticket détaillé.';
+  renderReview();
+}
+function renderReview(){
+  const el=$('#tk-review');
+  if(!R.items.length){el.innerHTML='';return}
+  const on=R.items.filter(i=>i.on),used=new Set(on.map(i=>i.m).filter(Boolean));
+  const inList=on.filter(i=>i.m).length,extra=on.length-inList;
+  const left=R.list.filter(l=>!used.has(l.key));
+  const opts=m=>`<option value="">Hors liste (ajouté en plus)</option>`+R.list.map(l=>`<option value="${esc(l.key)}" ${l.key===m?'selected':''}>Liste : ${esc((fmtQty(l.q,l.u)+' '+l.name).trim())}</option>`).join('');
+  el.innerHTML=`<div class="box"><h3>${R.items.length} ligne${R.items.length>1?'s':''} du ticket</h3>
+    <p class="hint" style="margin:0">Vérifiez les noms, quantités et prix. Chaque ligne est rapprochée de votre liste ; vous pouvez changer le rapprochement. Une ligne hors liste est ajoutée au stock et aux prix comme les autres.</p>
+    <div class="bar" style="margin:10px 0"><div class="field"><label for="rv-shop">Magasin</label><input type="text" id="rv-shop" list="dl-shop" value="${esc(R.shop)}" placeholder="ex. Lidl" autocomplete="off"></div><div class="field"><label for="rv-date">Date</label><input type="date" id="rv-date" value="${esc(R.date)}"></div></div>
+    ${R.items.map(i=>`<div class="tk-line ${i.on?'':'off'}"><input type="checkbox" data-rv="on" data-id="${esc(i.id)}" ${i.on?'checked':''} aria-label="Garder ${esc(i.n)}"><input type="text" data-rv="n" data-id="${esc(i.id)}" value="${esc(i.n)}" aria-label="Nom"${i.raw?` title="Sur le ticket : ${esc(i.raw)}"`:''}><input type="number" data-rv="q" data-id="${esc(i.id)}" min="0" step="any" value="${esc(i.q)}" aria-label="Quantité"><input type="text" data-rv="u" data-id="${esc(i.id)}" value="${esc(i.u)}" aria-label="Unité" placeholder="unité"><input type="number" data-rv="p" data-id="${esc(i.id)}" min="0" step="any" value="${i.p?esc(i.p):''}" aria-label="Prix payé en euros" placeholder="€"><div class="m"><select data-rv="m" data-id="${esc(i.id)}" aria-label="Correspondance avec la liste" ${i.on?'':'disabled'}>${opts(i.m)}</select></div></div>`).join('')}
+    <p class="hint tk-sum"><b>${inList}</b> ligne${inList>1?'s':''} sur la liste · <b>${extra}</b> hors liste${left.length?` · <b>restent sur la liste</b> : ${esc(left.map(l=>l.name).join(', '))}`:' · rien ne reste à acheter'}.</p>
+    <div class="row-actions"><button class="btn primary" data-act="tk-add">Valider le ticket</button><button class="btn" data-act="tk-cancel">Annuler</button></div></div>`;
+}
+// valide : stock + prix pour chaque ligne gardée ; les articles de la liste rapprochés en sortent
+function applyTicket(){
+  const ok=R.items.filter(i=>i.on&&i.n.trim());
+  if(!ok.length)return{n:0,np:0,left:0,noShop:false};
+  const shop=R.shop.trim();
+  if(!shop&&ok.some(i=>i.p>0))return{n:0,np:0,left:0,noShop:true};
+  const matched=new Set();let np=0;
+  for(const i of ok){
+    const l=i.m&&R.list.find(x=>x.key===i.m);
+    let name=i.n,q=i.q,u=i.u;
+    if(l){
+      name=l.name;matched.add(l.key);
+      const [nq,nu]=normQty(i.q,i.u);
+      // une ligne rapprochée vaut « acheté » : même unité → la plus grande des deux quantités (le ticket n'indique pas toujours la quantité) ; sinon celle de la liste
+      if(nq>0&&nu===(l.u||'')){q=Math.max(nq,l.q);u=nu}else{q=l.q;u=l.u}
+      if(l.extra)S.extras=S.extras.filter(x=>x.id!==l.extra);
+    }
+    addStock({n:name,q,u,r:i.r});
+    if(shop&&addPrice(name,i.p,i.q,i.u,shop,R.date,i.r))np++;
+  }
+  S.bought=S.bought.filter(k=>!matched.has(k));
+  persist();
+  return{n:ok.length,np,left:0,noShop:false};
+}
+
 /* ---------- onglets ---------- */
 function showTab(t){
   if(!['recettes','idees','courses','stock','prix'].includes(t))t='courses';
@@ -1119,6 +1324,18 @@ document.addEventListener('click',e=>{
     case 'bought':{const k=b.dataset.k,i=S.bought.indexOf(k);i>=0?S.bought.splice(i,1):S.bought.push(k);persist();renderCourses();break}
     case 'stock':{const nm=b.dataset.n;if(!S.stock.some(s=>covers(s.n,ckey(nm))))S.stock.push({k:norm(nm),n:nm,q:0,u:'',r:guessRayon(nm)});stockChanged();break}
     case 'uncheck':S.bought=[];persist();renderCourses();break;
+    case 'tk-open':R.items=[];R.shop='';R.date=todayISO();R.list=[];$('#tk-text').value='';$('#tk-doc').value='';$('#tk-status').textContent='';$('#tk-msg').textContent='';renderReview();$('#tk').hidden=false;break;
+    case 'tk-close':$('#tk').hidden=true;break;
+    case 'tk-go':{const t=$('#tk-text').value.trim();if(!t){$('#tk-status').textContent='Collez le texte du ticket ou importez un fichier.';break}showTicket(parseTicketText(t),'dans le texte collé');break}
+    case 'tk-cancel':R.items=[];renderReview();$('#tk-status').textContent='';break;
+    case 'tk-add':{
+      const r=applyTicket();
+      if(r.noShop){$('#tk-msg').textContent='Indiquez le magasin (en haut) pour noter les prix.';break}
+      if(!r.n){$('#tk-msg').textContent='Aucune ligne cochée.';break}
+      const left=R.list.filter(l=>!R.items.some(i=>i.on&&i.m===l.key)).length;
+      R.items=[];$('#tk').hidden=true;stockChanged();renderPrix();
+      const m=$('#copy-msg');if(m)m.textContent=`Ticket enregistré : ${r.n} article${r.n>1?'s':''} au stock, ${r.np} prix noté${r.np>1?'s':''}.${left?` ${left} article${left>1?'s':''} reste${left>1?'nt':''} sur la liste.`:''}`;
+      break}
     case 'store':{const n=storeBought();stockChanged();$('#copy-msg').textContent=n?`${n} article${n>1?'s':''} rangé${n>1?'s':''} dans le stock. Ajustez les quantités dans l'onglet Stock si besoin.`:'Aucun article coché.';break}
     case 'reset':if(b.dataset.arm!=='1'){b.dataset.arm='1';b.textContent='Confirmer ?';setTimeout(()=>{if(b.isConnected){b.dataset.arm='';b.textContent='Vider la liste'}},3000)}else{S.plan={};S.days={};S.extras=[];S.bought=[];persist();renderRecipes();renderCourses()}break;
     case 'copy':copyList();break;
@@ -1175,6 +1392,18 @@ document.addEventListener('change',e=>{
 $('#f-text').addEventListener('input',e=>{F.text=e.target.value;renderRecipes()});
 $('#nr-ing').addEventListener('input',nrCount);
 $('#nr-title').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#nr-ing').focus()}});
+$('#tk-doc').addEventListener('change',e=>readTicketDoc(e.target.files[0]));
+document.addEventListener('input',e=>{
+  const el=e.target;
+  if(el.id==='rv-shop')R.shop=el.value;else if(el.id==='rv-date')R.date=el.value;
+  if(!el.dataset||!el.dataset.rv)return;
+  const it=R.items.find(x=>x.id===el.dataset.id);if(!it)return;
+  const f=el.dataset.rv;
+  if(f==='on'){it.on=el.checked;renderReview()}
+  else if(f==='m'){it.m=el.value;renderReview()}
+  else if(f==='q'||f==='p')it[f]=Number(el.value)||0;
+  else it[f]=el.value;
+});
 window.addEventListener('hashchange',()=>showTab(location.hash.slice(1)));
 
 /* ---------- démarrage ---------- */

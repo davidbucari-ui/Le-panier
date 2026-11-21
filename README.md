@@ -7,6 +7,9 @@ Recettes, stock et liste de courses dans une seule page web.
 - Avec un compte (Supabase), elles se synchronisent entre appareils : voir `supabase.sql` et la constante `SB` en haut du script de `index.html`.
 - Les idées de recettes passent par une conversation Claude (copier la demande, coller la réponse).
 
+## Lire mon ticket
+Après les courses, « Lire mon ticket » (onglet **Courses**) lit un ticket (capture d'écran du ticket Lidl Plus, PDF, ou texte collé), sans IA : la reconnaissance se fait dans la page (pdf.js et Tesseract, chargés à la demande). Chaque ligne est **rapprochée de la liste de courses** (modifiable) : les articles de la liste sont mis au stock et en sortent, les achats hors liste sont ajoutés au stock, et tous les prix sont notés avec le magasin et la date.
+
 ## Ranger les courses
 
 Dans l'onglet **Courses**, cochez les articles achetés puis « Ranger les courses » : ils entrent au stock avec la quantité de la liste (« au goût » = quantité inconnue, considérée disponible) et sortent de la liste. « Cuisiné » les déduit ensuite du stock.
