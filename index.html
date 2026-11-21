@@ -168,11 +168,10 @@ input[type=file]{padding:8px}
   <div class="top-in">
     <h1 class="brand">Le <span>Panier</span></h1>
     <nav class="tabs" role="tablist" aria-label="Sections">
-      <button class="tab" role="tab" id="tab-recettes" data-act="tab" data-t="recettes">Recettes</button>
-      <button class="tab" role="tab" id="tab-prix" data-act="tab" data-t="prix">Prix</button>
-      <button class="tab" role="tab" id="tab-idees" data-act="tab" data-t="idees">Idées de Claude</button>
       <button class="tab" role="tab" id="tab-courses" data-act="tab" data-t="courses">Courses <span class="badge" id="badge">0</span></button>
       <button class="tab" role="tab" id="tab-stock" data-act="tab" data-t="stock">Stock</button>
+      <button class="tab" role="tab" id="tab-recettes" data-act="tab" data-t="recettes">Recettes</button>
+      <button class="tab" role="tab" id="tab-prix" data-act="tab" data-t="prix">Prix</button>
     </nav>
     <div class="sync"><span id="sync" aria-live="polite"></span> <button class="mini" id="signout" data-act="signout" hidden>Se déconnecter</button><button class="mini" id="signin" data-act="auth-open" hidden>Se connecter</button></div>
   </div>
@@ -182,7 +181,8 @@ input[type=file]{padding:8px}
   <!-- RECETTES -->
   <section class="panel" id="p-recettes" role="tabpanel" aria-labelledby="tab-recettes">
     <h2>Mes recettes</h2>
-    <p class="lead-p">Gardez ici vos recettes, filtrez-les par ingrédient, puis envoyez celles du moment dans la liste de courses.</p>
+    <p class="lead-p">Un carnet facultatif : gardez ici vos recettes et ajoutez celles que vous voulez à la liste de courses. La liste fonctionne aussi sans aucune recette.</p>
+    <div class="box" id="menu-box" style="margin-bottom:16px"></div>
     <div class="bar">
       <div class="field">
         <label for="f-text">Titre</label>
@@ -201,6 +201,7 @@ input[type=file]{padding:8px}
     <div class="row-actions">
       <button class="btn primary" data-act="new-recipe">Ajouter une recette</button>
       <button class="btn" data-act="imp-open">Importer depuis un site</button>
+      <button class="btn" data-act="tab" data-t="idees">Idées de Claude</button>
       <span class="hint" id="recipe-count"></span>
     </div>
     <div class="grid" id="recipe-list"></div>
@@ -208,6 +209,7 @@ input[type=file]{padding:8px}
 
   <!-- IDEES -->
   <section class="panel" id="p-idees" role="tabpanel" aria-labelledby="tab-idees" hidden>
+    <div class="row-actions" style="margin-bottom:8px"><button class="btn sm" data-act="tab" data-t="recettes">← Retour aux recettes</button></div>
     <h2>Idées de Claude</h2>
     <p class="lead-p">Décrivez ce que vous voulez cuisiner. Claude propose des recettes qui respectent vos ingrédients à éviter ; vous gardez celles qui vous plaisent.</p>
     <div class="ia-form">
@@ -256,7 +258,7 @@ input[type=file]{padding:8px}
   <!-- COURSES -->
   <section class="panel" id="p-courses" role="tabpanel" aria-labelledby="tab-courses" hidden>
     <h2>Liste de courses</h2>
-    <p class="lead-p">Les quantités des recettes au menu sont additionnées. Marquez « en stock » ce que vous avez déjà : l'article disparaît de la liste.</p>
+    <p class="lead-p">Ajoutez des articles à la main, par scan ou depuis une recette (onglet Recettes). Marquez « en stock » ce que vous avez déjà : l'article disparaît de la liste.</p>
     <div class="row-actions" style="margin-bottom:12px"><button class="btn" data-act="scan-open">Scanner un code-barres</button><button class="btn" id="btn-hide" data-act="toggle-list" aria-pressed="false">Masquer la liste</button></div>
     <div class="box" id="ex-box" style="margin-bottom:16px">
       <h3>Ajouter un article</h3>
@@ -612,6 +614,7 @@ function renderRecipes(){
   $('#recipe-list').innerHTML=list.length?list.map(recipeCard).join(''):`<div class="empty">${S.recipes.length?'Aucune recette ne correspond à ces filtres.':'Aucune recette pour le moment. Ajoutez la vôtre ou demandez des idées à Claude.'}</div>`;
   const names=new Set();S.recipes.forEach(r=>r.ingredients.forEach(i=>names.add(i.n.toLowerCase())));
   $('#dl-ing').innerHTML=[...names].sort().map(n=>`<option value="${esc(n)}">`).join('')+(DICT?DICT.opts:'');
+  renderMenu();
 }
 
 /* ---------- rendu : idées ---------- */
@@ -799,6 +802,12 @@ function scClose(){scStop();$('#sc').hidden=true}
 /* préférence d'affichage (propre à l'appareil) */
 let UI={};try{UI=JSON.parse(localStorage.getItem('lepanier-ui')||'{}')||{}}catch(e){}
 function saveUI(){try{localStorage.setItem('lepanier-ui',JSON.stringify(UI))}catch(e){}}
+function renderMenu(){
+  const dayIdx=id=>{const i=DAYS.indexOf(S.days[id]);return i<0?99:i};
+  const plan=Object.entries(S.plan).sort((a,b)=>dayIdx(a[0])-dayIdx(b[0])).map(([id,p])=>{const r=S.recipes.find(x=>x.id===id);return r?`<div class="plan-row"><span class="t">${esc(r.title)}</span><div class="row-actions"><select data-day="${esc(id)}" aria-label="Jour pour ${esc(r.title)}" style="width:auto;min-height:34px"><option value="">Jour libre</option>${DAYS.map(d=>`<option ${S.days[id]===d?'selected':''}>${d}</option>`).join('')}</select><div class="stepper"><button data-act="plan-minus" data-id="${esc(id)}" aria-label="Moins de personnes">−</button><span>${esc(p)} pers.</span><button data-act="plan-plus" data-id="${esc(id)}" aria-label="Plus de personnes">+</button></div><button class="btn sm" data-act="cook" data-id="${esc(id)}">Cuisiné</button><button class="btn sm" data-act="plan-del" data-id="${esc(id)}">Retirer</button></div></div>`:''}).join('');
+  const n=Object.keys(S.plan).length;
+  $('#menu-box').innerHTML=`<h3>Ajoutées à ma liste de courses${n?` (${n})`:''}</h3>${plan||'<p class="hint" style="margin:0">Aucune recette pour l\'instant. Touchez « Ajouter aux courses » sur une recette ci-dessous : ses ingrédients rejoignent la liste de courses. Le jour est facultatif.</p>'}`;
+}
 function renderCourses(){
   const items=shoppingItems(),done=new Set(S.bought);
   const left=items.filter(i=>!done.has(i.key)).length;
@@ -818,20 +827,15 @@ function renderCourses(){
         return`<li class="item ${d?'done':''}"><div class="line"><button class="chk" role="checkbox" aria-checked="${d}" aria-label="${esc(i.name)}" data-act="bought" data-k="${esc(i.key)}"></button><span class="nm">${esc(i.name)}</span><span class="dots"></span><span class="qty">${esc(fmtQty(i.q,i.u)||(i.extra?'':'au goût'))}</span>${i.extra?`<button class="mini" data-act="extra-del" data-id="${esc(i.extra)}" title="Retirer de la liste">retirer</button>`:`<button class="mini" data-act="stock" data-k="${esc(i.nk)}" data-n="${esc(i.name)}" title="Je l'ai déjà à la maison">en stock</button>`}</div><p class="from">${esc(i.from.join(', '))}${i.have?esc(' · déjà '+fmtQty(i.have,i.u)+' en stock'):''}${(()=>{const b=bestPrice(i.nk,i.u);return b?esc(' · meilleur prix : '+b.shop+' '+eur(unitPrice(b))+'/'+unitLabel(b.u)):''})()}</p></li>`}).join('')}</ul>`).join('')+
       `<div class="total"><span>${items.length} article${items.length>1?'s':''}</span><span>${items.length-left} coché${items.length-left>1?'s':''}</span></div></div>`;
   }
-  const dayIdx=id=>{const i=DAYS.indexOf(S.days[id]);return i<0?99:i};
-  const plan=Object.entries(S.plan).sort((a,b)=>dayIdx(a[0])-dayIdx(b[0])).map(([id,p])=>{const r=S.recipes.find(x=>x.id===id);return r?`<div class="plan-row"><span class="t">${esc(r.title)}</span><div class="row-actions"><select data-day="${esc(id)}" aria-label="Jour pour ${esc(r.title)}" style="width:auto;min-height:34px"><option value="">Jour libre</option>${DAYS.map(d=>`<option ${S.days[id]===d?'selected':''}>${d}</option>`).join('')}</select><div class="stepper"><button data-act="plan-minus" data-id="${esc(id)}" aria-label="Moins de personnes">−</button><span>${esc(p)} pers.</span><button data-act="plan-plus" data-id="${esc(id)}" aria-label="Plus de personnes">+</button></div><button class="btn sm" data-act="cook" data-id="${esc(id)}">Cuisiné</button><button class="btn sm" data-act="plan-del" data-id="${esc(id)}">Retirer</button></div></div>`:''}).join('');
   const side=`<div class="side">
-    <div class="box"><h3>Au menu</h3>${plan||'<p class="hint" style="margin:0">Aucune recette au menu.</p>'}</div>
+    <div class="box"><h3>Recettes ajoutées</h3>
+      <p class="hint" style="margin:0">${Object.keys(S.plan).length?Object.keys(S.plan).length+' recette'+(Object.keys(S.plan).length>1?'s':'')+' dans la liste.':'Aucune recette : la liste ne contient que vos articles.'}</p><div class="row-actions"><button class="btn sm" data-act="tab" data-t="recettes">Voir les recettes</button></div></div>
     <div class="box"><h3>Déjà à la maison</h3>
-      <p class="hint" style="margin:0">${S.stock.length} ingrédient${S.stock.length>1?'s':''} en stock. Les quantités connues sont déduites de la liste.</p><div class="row-actions"><button class="btn sm" data-act="tab" data-t="stock">Gérer mon stock</button></div>
-      <input type="text" id="in-stock" list="dl-ing" data-chipin="stock" placeholder="Ajouter un ingrédient en stock" autocomplete="off" aria-label="Ajouter un ingrédient en stock">
-      <p class="hint" style="margin:0">Ajouté ici sans quantité, un ingrédient est considéré comme déjà disponible.</p></div>
+      <p class="hint" style="margin:0">${S.stock.length} ingrédient${S.stock.length>1?'s':''} en stock. Les quantités connues sont déduites de la liste.</p><div class="row-actions"><button class="btn sm" data-act="tab" data-t="stock">Gérer mon stock</button></div></div>
     <div class="row-actions"><button class="btn primary" data-act="store" ${items.length-left?'':'disabled'} title="Met les articles cochés dans le stock">Ranger les courses${items.length-left?` (${items.length-left})`:''}</button><button class="btn" data-act="copy" ${items.length?'':'disabled'}>Copier la liste</button><button class="btn" data-act="uncheck" ${S.bought.length?'':'disabled'}>Tout décocher</button><button class="btn danger" data-act="reset" ${Object.keys(S.plan).length||S.extras.length?'':'disabled'}>Vider la liste</button></div>
     <span class="hint" id="copy-msg" aria-live="polite"></span>
   </div>`;
-  const keep=document.activeElement&&document.activeElement.id==='in-stock';
   $('#courses').innerHTML=rec+side;
-  if(keep){const el=$('#in-stock');if(el)el.focus()}
 }
 
 /* ---------- stock ---------- */
@@ -1002,11 +1006,13 @@ $('#f-stock').addEventListener('change',e=>{F.stockOnly=e.target.checked;renderR
 
 /* ---------- onglets ---------- */
 function showTab(t){
-  if(!['recettes','idees','courses','stock','prix'].includes(t))t='recettes';
+  if(!['recettes','idees','courses','stock','prix'].includes(t))t='courses';
   tab=t;
+  // « Idées de Claude » n'a pas d'onglet : l'onglet Recettes reste sélectionné
+  const shown=t==='idees'?'recettes':t;
   for(const n of ['recettes','idees','courses','stock','prix']){
     $('#p-'+n).hidden=n!==t;
-    $('#tab-'+n).setAttribute('aria-selected',String(n===t));
+    const tb=$('#tab-'+n);if(tb)tb.setAttribute('aria-selected',String(n===shown));
   }
   try{if(location.hash!=='#'+t)history.replaceState(null,'','#'+t)}catch(e){}
   renderAll();
@@ -1153,12 +1159,12 @@ document.addEventListener('change',e=>{
   const psel=e.target.closest&&e.target.closest('[data-prr]');
   if(psel){const [k,u]=psel.dataset.prr.split('|');S.prices.forEach(x=>{if(ckey(x.n)===k&&(x.u||'')===u)x.r=psel.value});persist();renderPrix();return}
   const dsel=e.target.closest&&e.target.closest('[data-day]');
-  if(dsel){const id=dsel.dataset.day;if(dsel.value)S.days[id]=dsel.value;else delete S.days[id];persist();renderCourses();return}const el=e.target.closest&&e.target.closest('[data-chipin]');if(el&&el.value.trim())chipKey(e,el)});
+  if(dsel){const id=dsel.dataset.day;if(dsel.value)S.days[id]=dsel.value;else delete S.days[id];persist();renderMenu();renderCourses();return}const el=e.target.closest&&e.target.closest('[data-chipin]');if(el&&el.value.trim())chipKey(e,el)});
 $('#f-text').addEventListener('input',e=>{F.text=e.target.value;renderRecipes()});
 window.addEventListener('hashchange',()=>showTab(location.hash.slice(1)));
 
 /* ---------- démarrage ---------- */
-showTab(location.hash.slice(1)||'recettes');
+showTab(location.hash.slice(1)||'courses');
 setSync('wait');
 document.body.classList.add('loading');
 const ready=()=>document.body.classList.remove('loading');
