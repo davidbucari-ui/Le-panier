@@ -196,6 +196,15 @@ input[type=file]{padding:8px}
 .ck-row .fx{font-size:13px;text-align:right}
 .ck-row.dim .fx{color:var(--muted)}
 @media (prefers-reduced-motion:no-preference){.card,.btn{transition:border-color .15s}}
+.fo-chips{max-height:240px;overflow-y:auto;border:1px solid var(--line);border-radius:10px;padding:6px 10px;background:var(--card)}
+.fo-grp{--c:var(--muted);--s:var(--paper);margin:6px 0}
+.fo-grp h4{margin:0 0 4px;font-size:.85rem;color:var(--ink)}
+.fo-list{display:flex;flex-wrap:wrap;gap:6px}
+.fchip{border:1px solid var(--c);background:var(--s);color:var(--ink);border-radius:999px;padding:4px 12px;min-height:36px;font-size:.92rem;font-weight:600;cursor:pointer}
+.fchip[aria-pressed="true"]{background:var(--c);color:var(--paper)}
+a.btn{display:inline-flex;align-items:center;text-decoration:none;color:inherit}
+a.btn.primary{color:var(--leaf-ink)}
+#fo-go[aria-disabled="true"]{opacity:.45;pointer-events:none}
 .ex-opts{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,.8fr) minmax(0,1fr);gap:8px;margin-top:8px}
 .ex-hist{margin-top:12px}
 .ex-hist:empty{display:none}
@@ -283,6 +292,7 @@ input[type=file]{padding:8px}
     <div class="row-actions">
       <button class="btn primary" data-act="new-recipe">Ajouter une recette</button>
       <button class="btn" data-act="imp-open">Importer depuis un site</button>
+      <button class="btn" data-act="fo-open">Trouver en ligne</button>
       <button class="btn" data-act="tab" data-t="idees">Idées de Claude</button>
       <span class="hint" id="recipe-count"></span>
     </div>
@@ -529,6 +539,23 @@ input[type=file]{padding:8px}
     <p class="hint" style="margin:0">Exemples : paquet de 500 g → 1 unité de 500 g ; pot de 4 yaourts de 125 g → 4 unités de 125 g ; boîte de 12 œufs → 12 unités, contenu vide.</p>
     <div id="fm-msg" role="alert"></div>
     <div class="row-actions"><button class="btn primary" data-act="fmt-save">Enregistrer</button><button class="btn" data-act="fmt-clear">Effacer le format</button><button class="btn" data-act="fmt-close">Annuler</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="fo" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="fo-h" style="max-width:640px">
+    <h3 id="fo-h">Trouver une recette en ligne</h3>
+    <p class="hint" style="margin:0">Choisissez les ingrédients de votre stock à cuisiner (2 à 5 donnent les meilleurs résultats), puis ouvrez un site de recettes. Seuls les noms choisis sont envoyés, dans l'adresse de la recherche.</p>
+    <div id="fo-chips" class="fo-chips"></div>
+    <div class="field"><label for="fo-extra">Autre ingrédient ou mot-clé (facultatif)</label><input type="text" id="fo-extra" placeholder="ex. gratin, rapide, végétarien" autocomplete="off"></div>
+    <div class="field"><label for="fo-site">Site de recettes</label>
+      <select id="fo-site"><option value="marmiton">Marmiton</option><option value="google">Plusieurs sites (Marmiton, 750g, CuisineAZ)</option></select></div>
+    <div class="row-actions"><a class="btn primary" id="fo-go" href="#" target="_blank" rel="noopener noreferrer">Chercher des recettes</a><span class="hint" id="fo-count" aria-live="polite"></span></div>
+    <hr style="border:0;border-top:1px solid var(--line);margin:6px 0">
+    <p style="margin:0"><b>Une recette vous plaît ?</b> <span class="hint">Copiez son adresse (dans la barre du navigateur), revenez ici, puis touchez :</span></p>
+    <div class="row-actions"><button class="btn" data-act="fo-paste">Importer l'adresse copiée</button></div>
+    <div id="fo-msg" role="alert" style="min-height:20px;font-size:14px"></div>
+    <div class="row-actions"><button class="btn" data-act="fo-close">Fermer</button></div>
   </div>
 </div>
 
@@ -1239,6 +1266,47 @@ function finishImport(d,url){
   $('#imp').hidden=true;
   openForm({title:d.title,servings:d.servings,time:d.time,ingredients:d.ingredients,steps:d.steps,url:url||''},true);
 }
+/* ---------- trouver une recette en ligne ---------- */
+// ingrédients de base qu'on ne choisit pas comme point de départ d'une recette
+const FO_SKIP=/\b(sel|poivre|eau|huile|vinaigre|farine|sucre|cafe|the|capsules?|epices?|levure|bicarbonate|moutarde|ketchup|mayonnaise|lait)\b/;
+let FO_SEL=null;
+// terme de recherche : vos mots, coupés à la plus longue partie initiale connue du dictionnaire
+// (« poulet pac fermier j » → « poulet ») ; on ne prend pas le nom générique : « pâtes » deviendrait « pâte »
+function foTerm(name){
+  const w=String(name).trim().toLowerCase().split(/\s+/);
+  if(DICT)for(let n=Math.min(3,w.length);n>=1;n--){const t=w.slice(0,n).join(' ');if(DICT.byName.get(norm(t)))return t}
+  return w.slice(0,2).join(' ');
+}
+function foItems(){
+  const m=new Map();
+  for(const st of S.stock){const t=foTerm(st.n),k=norm(t);if(!k||m.has(k))continue;m.set(k,{t,k,r:rayonOf(st.n,st.r),skip:FO_SKIP.test(k)})}
+  return[...m.values()];
+}
+function foUrl(terms,site){
+  const e=terms.map(t=>encodeURIComponent(t).replace(/%20/g,'+'));
+  return site==='google'
+    ?'https://www.google.com/search?q='+encodeURIComponent('recette '+terms.join(' ')+' (site:marmiton.org OR site:750g.com OR site:cuisineaz.com)')
+    :'https://www.marmiton.org/recettes/recherche.aspx?aqt='+e.join('+');
+}
+function foTerms(){return[...FO_SEL].concat($('#fo-extra').value.trim()?[$('#fo-extra').value.trim()]:[])}
+function foUpdate(){
+  const terms=foTerms(),go=$('#fo-go'),n=terms.length;
+  go.href=n?foUrl(terms,$('#fo-site').value):'#';go.setAttribute('aria-disabled',String(!n));
+  $('#fo-count').textContent=!n?'Choisissez au moins un ingrédient.':n>5?`${n} choisis : au-delà de 5, les résultats se raréfient.`:`${n} ingrédient${n>1?'s':''} choisi${n>1?'s':''}.`;
+  $('#fo-chips').querySelectorAll('.fchip').forEach(b=>b.setAttribute('aria-pressed',String(FO_SEL.has(b.dataset.t))));
+}
+function foRender(){
+  const items=foItems();
+  if(FO_SEL===null){ // première ouverture : jusqu'à 4 produits frais, sans les ingrédients de base
+    FO_SEL=new Set();
+    const pool=r=>items.filter(i=>!i.skip&&i.r===r),order=['Boucherie et poissonnerie','Fruits et légumes','Crèmerie'];
+    for(const r of order){const f=pool(r)[0];if(f)FO_SEL.add(f.t)}                       // d'abord un de chaque
+    for(const r of ['Fruits et légumes','Boucherie et poissonnerie','Crèmerie'])for(const it of pool(r))if(FO_SEL.size<4)FO_SEL.add(it.t);
+  }
+  const have=new Set(items.map(i=>i.t));for(const t of [...FO_SEL])if(!have.has(t))FO_SEL.delete(t);   // un article sorti du stock disparaît de la sélection
+  $('#fo-chips').innerHTML=items.length?RAYONS.map(r=>[r,items.filter(i=>i.r===r)]).filter(g=>g[1].length).map(([r,l])=>`<div class="fo-grp" style="${rcStyle(r)}"><h4>${esc(rcLabel(r))}</h4><div class="fo-list">${l.map(i=>`<button type="button" class="fchip" data-act="fo-tog" data-t="${esc(i.t)}" aria-pressed="false">${esc(i.t)}</button>`).join('')}</div></div>`).join(''):'<p class="hint" style="margin:6px 0">Votre stock est vide : tapez un ingrédient ci-dessous.</p>';
+  foUpdate();
+}
 function openImport(){
   const canUrl=!!(sb&&sbUid),m=$('#imp-msg');
   m.textContent='';$('#imp').hidden=false;
@@ -1663,6 +1731,15 @@ document.addEventListener('click',e=>{
     case 'cook':openCook(id);break;
     case 'ck-close':$('#ck').hidden=true;COOK=null;break;
     case 'ck-ok':confirmCook();break;
+    case 'fo-open':$('#fo-msg').textContent='';$('#fo').hidden=false;foRender();break
+    case 'fo-close':$('#fo').hidden=true;break
+    case 'fo-tog':{const t=b.dataset.t;FO_SEL.has(t)?FO_SEL.delete(t):FO_SEL.add(t);foUpdate();break}
+    case 'fo-paste':(async()=>{
+      let t='';try{t=(await navigator.clipboard.readText()).trim()}catch(e){}
+      $('#fo').hidden=true;openImport();
+      if(/^https?:\/\//i.test(t)){$('#imp-url').value=t;importUrl()}
+      else $('#imp-msg').textContent='Aucune adresse copiée détectée : touchez le champ ci-dessus, puis « Coller ».';
+    })();break
     case 'imp-open':openImport();break;
     case 'imp-close':$('#imp').hidden=true;break;
     case 'imp-go':importUrl();break;
@@ -1764,6 +1841,8 @@ document.addEventListener('change',e=>{
   if(dsel){const id=dsel.dataset.day;if(dsel.value)S.days[id]=dsel.value;else delete S.days[id];persist();renderMenu();renderCourses();return}const el=e.target.closest&&e.target.closest('[data-chipin]');if(el&&el.value.trim())chipKey(e,el)});
 $('#f-text').addEventListener('input',e=>{F.text=e.target.value;renderRecipes()});
 $('#nr-ing').addEventListener('input',nrCount);
+$('#fo-extra').addEventListener('input',foUpdate);
+$('#fo-site').addEventListener('change',foUpdate);
 $('#nr-title').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#nr-ing').focus()}});
 $('#tk-doc').addEventListener('change',e=>readTicketDoc(e.target.files[0]));
 $('#tk-pdf').addEventListener('change',e=>readTicketDoc(e.target.files[0]));
