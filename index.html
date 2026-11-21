@@ -496,8 +496,11 @@ input[type=file]{padding:8px}
 
 <div class="overlay" id="fm" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="fm-h">
-    <h3 id="fm-h">Conditionnement</h3>
-    <p class="hint" style="margin:0"><b id="fm-name"></b> : décrivez comment ce produit est vendu. La liste de courses en déduit le nombre de paquets à prendre, et le stock compte en paquets.</p>
+    <h3 id="fm-h">Article</h3>
+    <p class="hint" style="margin:0"><b id="fm-name"></b></p>
+    <div class="field"><label for="fm-r">Catégorie (rayon)</label><select id="fm-r"></select></div>
+    <h4 style="margin:6px 0 0">Conditionnement</h4>
+    <p class="hint" style="margin:0">Décrivez comment ce produit est vendu : la liste de courses en déduit le nombre de paquets à prendre, et le stock compte en paquets. Laissez vide si vous ne savez pas.</p>
     <div class="field"><label for="fm-l">Type de contenant</label>
       <select id="fm-l"><option value="">(aucun)</option><option>paquet</option><option>boîte</option><option>bouteille</option><option>brique</option><option>pot</option><option>sachet</option><option>barquette</option><option>plaquette</option><option>bocal</option><option>tube</option><option>lot</option></select></div>
     <div class="two">
@@ -506,7 +509,7 @@ input[type=file]{padding:8px}
     </div>
     <p class="hint" style="margin:0">Exemples : paquet de 500 g → 1 unité de 500 g ; pot de 4 yaourts de 125 g → 4 unités de 125 g ; boîte de 12 œufs → 12 unités, contenu vide.</p>
     <div id="fm-msg" role="alert"></div>
-    <div class="row-actions"><button class="btn primary" data-act="fmt-save">Enregistrer</button><button class="btn" data-act="fmt-clear">Effacer</button><button class="btn" data-act="fmt-close">Annuler</button></div>
+    <div class="row-actions"><button class="btn primary" data-act="fmt-save">Enregistrer</button><button class="btn" data-act="fmt-clear">Effacer le format</button><button class="btn" data-act="fmt-close">Annuler</button></div>
   </div>
 </div>
 
@@ -533,6 +536,7 @@ function ckey(name){const k=norm(name);return(DICT&&DICT.byName.get(k))||k}
 // un stock couvre un besoin s'il s'agit du même ingrédient, ou d'un ingrédient plus précis (ex. « tomate concassée » couvre « tomate »)
 function covers(stockName,needKey){const sk=ckey(stockName);if(sk===needKey)return true;const e=DICT&&DICT.ent.get(sk);return!!(e&&e.anc.has(needKey))}
 function guessRayon(n){
+  const ov=catOf(n);if(ov)return ov;
   const nn=norm(n);if(/compote|\bjus\b|confiture|sirop|conserve|lyophilis|\bsec\b|seche|gateau|biscuit|cookie|chocolat|capsule/.test(nn))return'Épicerie';
   if(DICT){const e=DICT.ent.get(ckey(n));if(e&&e.r>=0)return DICT.rayons[e.r]}
   n=nn;
@@ -560,8 +564,10 @@ function examples(){return[
   steps:['Disposer poulet et légumes en morceaux dans un plat.','Ajouter beurre et thym, saler, poivrer.','Enfourner 55 minutes à 200 °C en arrosant à mi-cuisson.']}
 ]}
 const DAYS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
-function fresh(){return{v:1,rev:0,recipes:examples(),plan:{},days:{},stock:[],extras:[],prices:[],barcodes:{},fmts:{},bought:[],exclude:[]}}
-function fix(d){d=d||{};return{v:1,rev:Number(d.rev)||0,days:d.days&&typeof d.days==='object'&&!Array.isArray(d.days)?d.days:{},recipes:Array.isArray(d.recipes)?d.recipes:[],plan:d.plan&&typeof d.plan==='object'&&!Array.isArray(d.plan)?d.plan:{},stock:Array.isArray(d.stock)?d.stock.map(s=>({k:s.k||norm(s.n),n:s.n,q:Number(s.q)||0,u:s.u||'',r:s.r||guessRayon(s.n)})):[],barcodes:d.barcodes&&typeof d.barcodes==='object'&&!Array.isArray(d.barcodes)?d.barcodes:{},prices:Array.isArray(d.prices)?d.prices.filter(x=>x&&x.n&&Number(x.p)>0&&x.shop).map(x=>({id:x.id||uid(),k:x.k||norm(x.n),n:String(x.n),p:Number(x.p),q:Number(x.q)||1,u:x.u||'',shop:String(x.shop),d:String(x.d||''),r:RAYONS.includes(x.r)?x.r:''})):[],extras:Array.isArray(d.extras)?d.extras.filter(x=>x&&x.n).map(x=>({id:x.id||uid(),n:String(x.n),q:Number(x.q)||0,u:x.u||'',r:x.r||guessRayon(x.n)})):[],bought:Array.isArray(d.bought)?d.bought:[],exclude:Array.isArray(d.exclude)?d.exclude:[],fmts:fixFmts(d.fmts)}}
+function fresh(){return{v:1,rev:0,recipes:examples(),plan:{},days:{},stock:[],extras:[],prices:[],barcodes:{},fmts:{},cats:{},bought:[],exclude:[]}}
+function fix(d){d=d||{};return{v:1,rev:Number(d.rev)||0,days:d.days&&typeof d.days==='object'&&!Array.isArray(d.days)?d.days:{},recipes:Array.isArray(d.recipes)?d.recipes:[],plan:d.plan&&typeof d.plan==='object'&&!Array.isArray(d.plan)?d.plan:{},stock:Array.isArray(d.stock)?d.stock.map(s=>({k:s.k||norm(s.n),n:s.n,q:Number(s.q)||0,u:s.u||'',r:s.r||guessRayon(s.n)})):[],barcodes:d.barcodes&&typeof d.barcodes==='object'&&!Array.isArray(d.barcodes)?d.barcodes:{},prices:Array.isArray(d.prices)?d.prices.filter(x=>x&&x.n&&Number(x.p)>0&&x.shop).map(x=>({id:x.id||uid(),k:x.k||norm(x.n),n:String(x.n),p:Number(x.p),q:Number(x.q)||1,u:x.u||'',shop:String(x.shop),d:String(x.d||''),r:RAYONS.includes(x.r)?x.r:''})):[],extras:Array.isArray(d.extras)?d.extras.filter(x=>x&&x.n).map(x=>({id:x.id||uid(),n:String(x.n),q:Number(x.q)||0,u:x.u||'',r:x.r||guessRayon(x.n)})):[],bought:Array.isArray(d.bought)?d.bought:[],exclude:Array.isArray(d.exclude)?d.exclude:[],fmts:fixFmts(d.fmts),cats:fixCats(d.cats)}}
+// catégories (rayons) choisies à la main : {nomNormalisé: {n, r}} ; elles priment sur le rayon deviné ou enregistré
+function fixCats(o){const r={};if(!o||typeof o!=='object'||Array.isArray(o))return r;for(const [k,e] of Object.entries(o))if(e&&e.n&&RAYONS.includes(e.r))r[k]={n:String(e.n),r:e.r};return r}
 // formats (conditionnements) connus : {nomNormalisé: {n, c lots, q contenu, u, l type, s source}}
 function fixFmts(o){const r={};if(!o||typeof o!=='object'||Array.isArray(o))return r;for(const [k,e] of Object.entries(o)){if(!e||!e.n||!(Number(e.q)>0))continue;r[k]={n:String(e.n),c:Math.max(1,Math.round(Number(e.c))||1),q:Number(e.q),u:e.u==='g'||e.u==='ml'?e.u:'',l:String(e.l||'').slice(0,20),s:['user','ticket','scan'].includes(e.s)?e.s:'ticket'}}return r}
 let S;
@@ -602,6 +608,19 @@ function normQty(q,u){u=(u||'').toLowerCase().trim();q=Number(q)||0;
   if(u==='gousses')return[q,'gousse'];return[q,u]}
 const num=n=>String(Math.round(n*100)/100).replace('.',',');
 function fmtQty(q,u){if(!q)return'';if(u==='g'&&q>=1000)return num(q/1000)+' kg';if(u==='ml'&&q>=1000)return num(q/1000)+' l';return num(q)+(u?' '+u:'')}
+
+/* ---------- catégorie choisie à la main ---------- */
+function catOf(name){
+  const c=typeof S==='object'&&S&&S.cats;if(!c)return'';
+  const k=norm(name);if(c[k])return c[k].r;
+  const ck=ckey(name),e=Object.values(c).find(x=>ckey(x.n)===ck);return e?e.r:'';
+}
+// rayon d'un article : choix de l'utilisateur, sinon rayon enregistré, sinon rayon deviné
+const rayonOf=(name,r)=>catOf(name)||(RAYONS.includes(r)?r:guessRayon(name));
+function setCat(name,r){
+  const k=norm(name);if(!k||!RAYONS.includes(r))return;
+  S.cats[k]={n:String(name).trim(),r};   // toujours mémorisé, même s'il égale le rayon deviné : l'article peut porter un ancien rayon enregistré
+}
 
 /* ---------- conditionnement (format du produit) ---------- */
 const RAYON_ICO=['🥬','🥩','🧀','🥫','🍞','🧊','🛒'];
@@ -690,7 +709,7 @@ function shoppingItems(){
       const [q,u]=normQty((Number(ing.q)||0)*f,ing.u);
       const key=nk+'|'+u;
       let it=map.get(key);
-      if(!it){it={key,nk,name:ing.n,u,q:0,rayon:RAYONS.includes(ing.r)?ing.r:guessRayon(ing.n),from:[]};map.set(key,it)}
+      if(!it){it={key,nk,name:ing.n,u,q:0,rayon:rayonOf(ing.n,ing.r),from:[]};map.set(key,it)}
       it.q+=q;if(!it.from.includes(r.title))it.from.push(r.title);
     }
   }
@@ -703,7 +722,7 @@ function shoppingItems(){
     if(it.q>0&&hq>0){it.have=hq;it.q=Math.round((it.q-hq)*100)/100;if(it.q<=0)continue}
     out.push(it);
   }
-  for(const x of S.extras){const [q,u]=normQty(Number(x.q)||0,x.u);out.push({key:'x|'+x.id,nk:ckey(x.n),name:x.n,u,q,rayon:RAYONS.includes(x.r)?x.r:guessRayon(x.n),from:['ajouté à la main'],extra:x.id})}
+  for(const x of S.extras){const [q,u]=normQty(Number(x.q)||0,x.u);out.push({key:'x|'+x.id,nk:ckey(x.n),name:x.n,u,q,rayon:rayonOf(x.n,x.r),from:['ajouté à la main'],extra:x.id})}
   return out.sort((a,b)=>a.name.localeCompare(b.name,'fr'));
 }
 
@@ -918,6 +937,7 @@ function scRead(){
   const q=Number($('#sc-q').value)||0,u=$('#sc-u').value,r=$('#sc-r').value,c=Math.max(1,parseInt($('#sc-c').value)||1);
   if(SC.code){S.barcodes[SC.code]={n,r,q,u}}
   if(q>0)setFmt(n,{c:1,q,u},'scan');
+  if(RAYONS.includes(r)&&r!==rayonOf(n,''))setCat(n,r);
   return{n,q,u,r,c};
 }
 function scDone(msg){
@@ -979,7 +999,7 @@ function catTabs(tb,cats,cur,act,total){
   const sel=tb.querySelector('[aria-selected="true"]');
   if(sel){const l=sel.offsetLeft,r=l+sel.offsetWidth;if(l<tb.scrollLeft)tb.scrollLeft=Math.max(0,l-8);else if(r>tb.scrollLeft+tb.clientWidth)tb.scrollLeft=r-tb.clientWidth+8}
 }
-let C_TAB='*',SK_TAB='*',FM_NAME='';
+let C_TAB='*',SK_TAB='*',FM_NAME='',FM_R0='';
 function renderCourses(){
   const items=shoppingItems(),done=new Set(S.bought);
   const open=items.filter(i=>!done.has(i.key)),got=items.filter(i=>done.has(i.key));
@@ -996,7 +1016,7 @@ function renderCourses(){
     const act=i.extra
       ?`<button type="button" class="cbtn x" data-act="extra-del" data-id="${esc(i.extra)}" aria-label="Retirer ${esc(i.name)} de la liste" title="Retirer de la liste">×</button>`
       :`<button type="button" class="cbtn" data-act="stock" data-k="${esc(i.nk)}" data-n="${esc(i.name)}" title="Je l'ai déjà à la maison">En stock</button>`;
-    return`<li class="citem ${d?'done':''}"><button class="chk" role="checkbox" aria-checked="${d}" aria-label="${esc(i.name)}" data-act="bought" data-k="${esc(i.key)}"></button><div class="cmain"><button type="button" class="cnm" data-act="fmt-open" data-n="${esc(i.name)}" title="Conditionnement de cet article">${esc(i.name)}</button>${np&&!(!fm.l&&fm.c===1&&np===1&&!pkPieces(fm))?`<span class="cpk">à prendre : ${esc(pkPhrase(np,fm))}</span>`:''}${from?`<span class="cfrom">${esc(from)}</span>`:''}</div><span class="cqty">${esc(fmtQty(i.q,i.u)||(i.extra?'':'au goût'))}</span>${act}</li>`;
+    return`<li class="citem ${d?'done':''}"><button class="chk" role="checkbox" aria-checked="${d}" aria-label="${esc(i.name)}" data-act="bought" data-k="${esc(i.key)}"></button><div class="cmain"><button type="button" class="cnm" data-act="fmt-open" data-n="${esc(i.name)}" data-r="${esc(i.rayon)}" title="Catégorie et conditionnement de cet article">${esc(i.name)}</button>${np&&!(!fm.l&&fm.c===1&&np===1&&!pkPieces(fm))?`<span class="cpk">à prendre : ${esc(pkPhrase(np,fm))}</span>`:''}${from?`<span class="cfrom">${esc(from)}</span>`:''}</div><span class="cqty">${esc(fmtQty(i.q,i.u)||(i.extra?'':'au goût'))}</span>${act}</li>`;
   };
   const group=(t,l,cls,bare)=>`<section class="cgroup ${cls||''}" ${cls==='got'?'':`style="${rcStyle(t)}"`}>${bare?'':`<h4 class="crayon"><span>${esc(cls==='got'?t:rcLabel(t))}</span><span class="n">${l.length}</span></h4>`}<ul class="citems">${l.map(row).join('')}</ul></section>`;
   let list;
@@ -1028,7 +1048,7 @@ function addStock(it){
   const n=String(it.n||'').trim();if(!n||/@|https?:|www\./i.test(n))return;
   const k=norm(n),[q,u]=normQty(it.q,it.u);
   const ex=S.stock.find(s=>s.k===k&&(s.u||'')===u);
-  if(ex)ex.q=(ex.q||0)+q;else S.stock.push({k,n,q,u,r:RAYONS.includes(it.r)?it.r:guessRayon(n)});
+  if(ex)ex.q=(ex.q||0)+q;else S.stock.push({k,n,q,u,r:rayonOf(n,it.r)});
 }
 const todayISO=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 const eur=n=>(Math.round(n*100)/100).toFixed(2).replace('.',',')+' €';
@@ -1054,7 +1074,7 @@ function skStep(s){return s.u==='g'||s.u==='ml'?((s.q||0)>=1000?500:100):1}
 function skRow(s){
   const id=esc(sid(s)),step=skStep(s),nm=esc(s.n);
   const fm=fmtOf(s.n),lots=fm?pkLots(s.q,s.u,fm):null,sub=fm?pkText(fm)+(lots?` · ${pkCount(lots,fm)} en stock`:''):'';
-  return`<div class="srow"><div class="nmw"><button type="button" class="nm" data-act="fmt-open" data-n="${nm}" title="Conditionnement de cet article">${nm}</button>${sub?`<span class="sub">${esc(sub)}</span>`:''}</div><div class="ctl">`+
+  return`<div class="srow"><div class="nmw"><button type="button" class="nm" data-act="fmt-open" data-n="${nm}" data-r="${esc(rayonOf(s.n,s.r))}" title="Catégorie et conditionnement de cet article">${nm}</button>${sub?`<span class="sub">${esc(sub)}</span>`:''}</div><div class="ctl">`+
     `<button type="button" class="stp" data-act="stock-step" data-d="-1" data-sid="${id}" aria-label="Moins de ${nm}" ${s.q>step?'':'disabled'}>−</button>`+
     `<input type="number" inputmode="decimal" min="0" step="any" data-sq="${id}" value="${s.q?esc(Math.round(s.q*100)/100):''}" placeholder="dispo" aria-label="Quantité de ${nm}">`+
     (s.u?`<span class="u">${esc(s.u)}</span>`:'')+
@@ -1070,12 +1090,12 @@ function renderStock(){
   const el=$('#stock-list');
   if(!list.length)$('#sk-tabs').hidden=true;
   if(!list.length){el.innerHTML=`<div class="empty">${S.stock.length?'Aucun article ne correspond.':'Votre stock est vide. Lisez votre ticket de courses depuis l\'onglet Courses, ou ajoutez un article à la main.'}</div>`;return}
-  const cats=RAYONS.map(r=>[r,list.filter(s=>(RAYONS.includes(s.r)?s.r:'Autres')===r).length]).filter(c=>c[1]>0);
+  const cats=RAYONS.map(r=>[r,list.filter(s=>rayonOf(s.n,s.r)===r).length]).filter(c=>c[1]>0);
   const tab=cats.some(c=>c[0]===SK_TAB)?SK_TAB:'*';
   catTabs($('#sk-tabs'),cats,tab,'sk-tab',list.length);
   const closed=new Set(UI.skClosed||[]);
   el.innerHTML=RAYONS.filter(r=>tab==='*'||r===tab).map(r=>{
-    const l=list.filter(s=>(RAYONS.includes(s.r)?s.r:'Autres')===r);
+    const l=list.filter(s=>rayonOf(s.n,s.r)===r);
     if(!l.length)return'';
     if(tab!=='*')return`<section class="sk-group" style="${rcStyle(r)}">${l.map(skRow).join('')}</section>`; // un onglet de catégorie remplace l'en-tête
     const shut=closed.has(r)&&!f; // une recherche déplie tout
@@ -1516,7 +1536,7 @@ function renderPrix(){
     const best=priceByShop(g.k,g.u),multi=best.length>1;
     const hist=[...g.all].sort((a,b)=>b.d.localeCompare(a.d));
     return`<div class="box" style="margin-bottom:12px"><h3>${esc(g.n)} <span class="hint">(par ${esc(unitLabel(g.u))})</span> <select class="mini-sel" data-prr="${esc(g.k+'|'+g.u)}" aria-label="Rayon de ${esc(g.n)}">${RAYONS.map(r=>`<option${r===g.r?' selected':''}>${esc(r)}</option>`).join('')}</select></h3>${best.map((e,i)=>`<div class="srow"><span class="nm">${esc(e.shop)}${multi&&i===0?' <span class="chip">le moins cher</span>':''}</span><span class="dots"></span><b>${eur(unitPrice(e))}/${esc(unitLabel(g.u))}</b><span class="hint" style="margin-left:8px">${esc(fmtQty(e.q,e.u)||'1')} à ${eur(e.p)}${e.d?' · '+esc(new Date(e.d+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'})):''}</span></div>`).join('')}<details><summary class="hint">Historique et suppression (${hist.length})</summary>${hist.map(e=>`<div class="srow"><span class="nm">${esc(e.shop)} · ${esc(e.d)}</span><span class="dots"></span><span>${eur(unitPrice(e))}/${esc(unitLabel(g.u))}</span><button class="btn sm danger" data-act="pr-del" data-id="${esc(e.id)}" aria-label="Supprimer ce prix">×</button></div>`).join('')}</details></div>`};
-  for(const g of list)if(!RAYONS.includes(g.r))g.r=guessRayon(g.n);
+  for(const g of list)g.r=rayonOf(g.n,g.r);
   const cats=RAYONS.map(r=>[r,list.filter(g=>g.r===r)]).filter(c=>c[1].length);
   if(PR_TAB!=='*'&&!cats.some(c=>c[0]===PR_TAB))PR_TAB=cats.length?cats[0][0]:'*';
   const tb=$('#pr-tabs');tb.hidden=false;
@@ -1558,15 +1578,18 @@ document.addEventListener('click',e=>{
     case 'ex-toggle':{const f=$('#ex-box'),op=f.hidden;f.hidden=!op;b.setAttribute('aria-expanded',String(op));if(op)$('#ex-q').focus();break}
     case 'fmt-open':{
       FM_NAME=b.dataset.n||'';const f=fmtOf(FM_NAME);
+      FM_R0=RAYONS.includes(b.dataset.r)?b.dataset.r:rayonOf(FM_NAME,'');
+      $('#fm-r').innerHTML=RAYONS.map(r=>`<option value="${esc(r)}">${esc(rcLabel(r))}</option>`).join('');$('#fm-r').value=FM_R0;
       $('#fm-name').textContent=FM_NAME;
       $('#fm-l').value=f?(f.l||''):pkLabel(FM_NAME);
       $('#fm-c').value=f?f.c:1;
       const sh=!f||pkPieces(f)?['','']:f.u==='g'&&f.q>=1000?[f.q/1000,'kg']:f.u==='ml'&&f.q>=1000?[f.q/1000,'l']:[f.q,f.u];
-      $('#fm-q').value=sh[0];$('#fm-u').value=sh[1];$('#fm-msg').textContent='';$('#fm').hidden=false;$('#fm-q').focus();break}
+      $('#fm-q').value=sh[0];$('#fm-u').value=sh[1];$('#fm-msg').textContent='';$('#fm').hidden=false;$('#fm-r').focus();break}
     case 'fmt-save':{
-      let q=parseFloat($('#fm-q').value)||0,u=$('#fm-u').value;if(!q){q=1;u=''}   // contenu vide = pièces
-      setFmt(FM_NAME,{c:parseInt($('#fm-c').value)||1,q,u,l:$('#fm-l').value},'user');
-      persist();$('#fm').hidden=true;renderStock();renderCourses();break}
+      const r=$('#fm-r').value;if(RAYONS.includes(r)&&r!==FM_R0)setCat(FM_NAME,r);   // catégorie changée
+      let q=parseFloat($('#fm-q').value)||0,c=parseInt($('#fm-c').value)||1,u=$('#fm-u').value;
+      if(q>0||c>1){if(!q){q=1;u=''}setFmt(FM_NAME,{c,q,u,l:$('#fm-l').value},'user')}   // pas de format saisi : on ne touche pas à l'existant
+      persist();$('#fm').hidden=true;renderStock();renderCourses();renderPrix();break}
     case 'fmt-clear':{
       const ck=ckey(FM_NAME);delete S.fmts[norm(FM_NAME)];
       for(const [k,e] of Object.entries(S.fmts))if(ckey(e.n)===ck)delete S.fmts[k];
@@ -1677,7 +1700,7 @@ function chipKey(e,el){
 document.addEventListener('keydown',e=>{const el=e.target.closest&&e.target.closest('[data-chipin]');if(el)chipKey(e,el);if(e.key==='Escape'){if(!$('#sc').hidden)scClose();if(!$('#ck').hidden){$('#ck').hidden=true;COOK=null}if(!$('#nr').hidden)$('#nr').hidden=true;if(!$('#imp').hidden)$('#imp').hidden=true}});
 document.addEventListener('change',e=>{
   const psel=e.target.closest&&e.target.closest('[data-prr]');
-  if(psel){const [k,u]=psel.dataset.prr.split('|');S.prices.forEach(x=>{if(ckey(x.n)===k&&(x.u||'')===u)x.r=psel.value});persist();renderPrix();return}
+  if(psel){const [k,u]=psel.dataset.prr.split('|');let nm='';S.prices.forEach(x=>{if(ckey(x.n)===k&&(x.u||'')===u){x.r=psel.value;nm=x.n}});if(nm)setCat(nm,psel.value);persist();renderPrix();renderStock();renderCourses();return}
   const dsel=e.target.closest&&e.target.closest('[data-day]');
   if(dsel){const id=dsel.dataset.day;if(dsel.value)S.days[id]=dsel.value;else delete S.days[id];persist();renderMenu();renderCourses();return}const el=e.target.closest&&e.target.closest('[data-chipin]');if(el&&el.value.trim())chipKey(e,el)});
 $('#f-text').addEventListener('input',e=>{F.text=e.target.value;renderRecipes()});
