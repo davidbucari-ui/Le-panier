@@ -13,7 +13,7 @@
   --paper:#F2F3EC; --card:#FBFBF7; --ink:#1B2A22; --muted:#5E6B63; --line:#D9DDD0;
   --leaf:#2E7A4E; --leaf-ink:#FFFFFF; --leaf-soft:#DCEADC;
   --rc0:#2E7A4E; --rs0:#DCEADC; --rc1:#C8325F; --rs1:#F6DCE4; --rc2:#2F6FB0; --rs2:#DCE8F5; --rc3:#C46A1A; --rs3:#F8E5D0;
-  --rc4:#9A6B2F; --rs4:#F1E4CC; --rc5:#1E8FA0; --rs5:#D6EEF2; --rc6:#6B6FA8; --rs6:#E3E4F2;
+  --rc4:#9A6B2F; --rs4:#F1E4CC; --rc5:#1E8FA0; --rs5:#D6EEF2; --rc6:#B8860B; --rs6:#F5E8C0; --rc7:#B04A9A; --rs7:#F3DCEE; --rc8:#3B7F8C; --rs8:#D8ECEF; --rc9:#8A5A44; --rs9:#EBDDD5; --rc10:#6B6FA8; --rs10:#E3E4F2;
   --radis:#C8325F; --radis-ink:#8F1D40; --radis-soft:#F6DCE4;
   --display:'Bricolage Grotesque',system-ui,sans-serif;
   --body:'Instrument Sans',system-ui,sans-serif;
@@ -25,7 +25,7 @@
     --paper:#121A15; --card:#1A251E; --ink:#E8EEE6; --muted:#9AA89F; --line:#2D3B32;
     --leaf:#5DBB84; --leaf-ink:#0B1A11; --leaf-soft:#1F3A2A;
     --rc0:#5DBB84; --rs0:#1F3A2A; --rc1:#F0829E; --rs1:#3A1E28; --rc2:#7FB2EC; --rs2:#1C2D44; --rc3:#F0A25A; --rs3:#3F2B15;
-    --rc4:#D9A85E; --rs4:#392B16; --rc5:#5FC6D6; --rs5:#173A40; --rc6:#A9ADE0; --rs6:#2A2C48;
+    --rc4:#D9A85E; --rs4:#392B16; --rc5:#5FC6D6; --rs5:#173A40; --rc6:#E8C15A; --rs6:#3A3012; --rc7:#E08BCB; --rs7:#3C1F36; --rc8:#7CC0CC; --rs8:#17353B; --rc9:#C9987F; --rs9:#352419; --rc10:#A9ADE0; --rs10:#2A2C48;
     --radis:#F0829E; --radis-ink:#F4A3B8; --radis-soft:#3A1E28;
     color-scheme:dark;
   }
@@ -34,7 +34,7 @@
   --paper:#121A15; --card:#1A251E; --ink:#E8EEE6; --muted:#9AA89F; --line:#2D3B32;
   --leaf:#5DBB84; --leaf-ink:#0B1A11; --leaf-soft:#1F3A2A;
   --rc0:#5DBB84; --rs0:#1F3A2A; --rc1:#F0829E; --rs1:#3A1E28; --rc2:#7FB2EC; --rs2:#1C2D44; --rc3:#F0A25A; --rs3:#3F2B15;
-  --rc4:#D9A85E; --rs4:#392B16; --rc5:#5FC6D6; --rs5:#173A40; --rc6:#A9ADE0; --rs6:#2A2C48;
+  --rc4:#D9A85E; --rs4:#392B16; --rc5:#5FC6D6; --rs5:#173A40; --rc6:#E8C15A; --rs6:#3A3012; --rc7:#E08BCB; --rs7:#3C1F36; --rc8:#7CC0CC; --rs8:#17353B; --rc9:#C9987F; --rs9:#352419; --rc10:#A9ADE0; --rs10:#2A2C48;
   --radis:#F0829E; --radis-ink:#F4A3B8; --radis-soft:#3A1E28;
   color-scheme:dark;
 }
@@ -570,7 +570,14 @@ const norm=s=>{s=String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g
 const use=n=>{try{return window.claude&&window.claude.use?window.claude.use(n):Promise.resolve(null)}catch(e){return Promise.resolve(null)}};
 
 let DICT=null; // dictionnaire d'ingrédients (ingredients.json), chargé au démarrage s'il est disponible
-const RAYONS=['Fruits et légumes','Boucherie et poissonnerie','Crèmerie','Épicerie','Boulangerie','Surgelés','Autres'];
+const RAYONS=['Fruits et légumes','Boucherie et poissonnerie','Crèmerie','Épicerie','Boulangerie','Surgelés','Boissons','Hygiène et beauté','Entretien et maison','Bébé et animaux','Autres'];
+// mots-clés des rayons non alimentaires et des boissons (testés avant le dictionnaire, qui ne connaît que l'alimentaire)
+const KW_PRIO=[
+ ['Boissons',/\b(boissons?|eaux? (minerale|gazeuse|plate|de source)|eau|sodas?|cola|limonade|ice tea|the glace|bieres?|vins? (rouge|blanc|rose)|rhum|vodka|whisky|champagne|cidre|aperitif|pastis|biere|cafe soluble|jus d(e|')?\s?(orange|pomme|raisin|fruits?|ananas|tomate|pamplemousse|multifruits?)|nectar|smoothie|tonic|orangina|perrier|badoit|evian|volvic)\b/],
+ ['Hygiène et beauté',/\b(shampooings?|shampoing|apres[- ]shampoing|gel douche|savon|dentifrice|brosse a dents|deodorant|rasoir|mousse a raser|coton|cotons|cotons? tiges?|mouchoirs?|papier toilette|papier hygienique|serviettes? hygieniques?|tampons?|protege[- ]slips?|creme (mains|visage|hydratante|solaire)|lait corporel|parfum|demaquillant|vernis|gel hydroalcoolique|bain de bouche|fil dentaire|rouge a levres|mascara|lingettes? (demaquillantes|bebe))\b/],
+ ['Entretien et maison',/\b(lessive|adoucissant|liquide vaisselle|produit vaisselle|tablettes? lave[- ]vaisselle|lave[- ]vaisselle|sel regenerant|nettoyant|degraissant|javel|eponges?|sacs? poubelle|essuie[- ]tout|papier alu|aluminium|film (alimentaire|etirable)|papier cuisson|sacs? (congelation|fraicheur)|bougies?|allumettes?|piles?|ampoules?|desodorisant|insecticide|detartrant|lavettes?|serpilleres?|gants? (menage|vaisselle)|filtres? a cafe|nettoyant (wc|sol|vitres?))\b/],
+ ['Bébé et animaux',/\b(couches?|lait infantile|lait 1er age|lait 2eme age|petits? pots? bebe|compote bebe|croquettes?|patee|litiere|pate pour (chat|chien)|friandises? (chat|chien)|nourriture (chat|chien)|aliment (chat|chien))\b/]
+];
 const KW={
  'Fruits et légumes':['tomate','carotte','oignon','ail','pomme','courgette','poireau','salade','citron','banane','champignon','poivron','aubergine','patate','basilic','persil','coriandre','epinard','brocoli','haricot vert','concombre','orange','echalote','gingembre','avocat','courge','potiron','chou','celeri','navet','radis','fenouil','ciboulette','menthe','thym','romarin','poire','fraise','mangue'],
  'Boucherie et poissonnerie':['poulet','boeuf','porc','veau','agneau','jambon','lardon','saucisse','steak','dinde','saumon','cabillaud','thon','crevette','poisson','merguez','bacon'],
@@ -583,7 +590,8 @@ function ckey(name){const k=norm(name);return(DICT&&DICT.byName.get(k))||k}
 function covers(stockName,needKey){const sk=ckey(stockName);if(sk===needKey)return true;const e=DICT&&DICT.ent.get(sk);return!!(e&&e.anc.has(needKey))}
 function guessRayon(n){
   const ov=catOf(n);if(ov)return ov;
-  const nn=norm(n);if(/compote|\bjus\b|confiture|sirop|conserve|lyophilis|\bsec\b|seche|gateau|biscuit|cookie|chocolat|capsule/.test(nn))return'Épicerie';
+  const nn=norm(n);for(const [r,re] of KW_PRIO)if(re.test(nn))return r;
+  if(/compote|\bjus\b|confiture|sirop|conserve|lyophilis|\bsec\b|seche|gateau|biscuit|cookie|chocolat|capsule/.test(nn))return'Épicerie';
   if(DICT){const e=DICT.ent.get(ckey(n));if(e&&e.r>=0)return DICT.rayons[e.r]}
   n=nn;
   for(const r of Object.keys(KW))if(KW[r].some(k=>n.includes(k)))return r;return 'Épicerie'}
@@ -669,7 +677,7 @@ function setCat(name,r){
 }
 
 /* ---------- conditionnement (format du produit) ---------- */
-const RAYON_ICO=['🥬','🥩','🧀','🥫','🍞','🧊','🛒'];
+const RAYON_ICO=['🥬','🥩','🧀','🥫','🍞','🧊','🥤','🧴','🧽','🍼','🛒'];
 const rcIdx=r=>{const i=RAYONS.indexOf(r);return i<0?RAYONS.length-1:i};
 const rcStyle=r=>`--c:var(--rc${rcIdx(r)});--s:var(--rs${rcIdx(r)})`;
 const rcLabel=r=>RAYON_ICO[rcIdx(r)]+' '+r;
