@@ -259,7 +259,7 @@ input[type=file]{padding:8px}
   <section class="panel" id="p-courses" role="tabpanel" aria-labelledby="tab-courses" hidden>
     <h2>Liste de courses</h2>
     <p class="lead-p">Ajoutez des articles à la main, par scan ou depuis une recette (onglet Recettes). Marquez « en stock » ce que vous avez déjà : l'article disparaît de la liste.</p>
-    <div class="row-actions" style="margin-bottom:12px"><button class="btn" data-act="scan-open">Scanner un code-barres</button><button class="btn" id="btn-hide" data-act="toggle-list" aria-pressed="false">Masquer la liste</button></div>
+    <div class="row-actions" style="margin-bottom:12px"><button class="btn" data-act="scan-open">Scanner un code-barres</button><button class="btn" data-act="new-recipe">Nouvelle recette</button><button class="btn" id="btn-hide" data-act="toggle-list" aria-pressed="false">Masquer la liste</button></div>
     <div class="box" id="ex-box" style="margin-bottom:16px">
       <h3>Ajouter un article</h3>
       <div class="bar">
@@ -394,15 +394,19 @@ input[type=file]{padding:8px}
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="nr-h">
     <h3 id="nr-h">Nouvelle recette</h3>
     <div class="field"><label for="nr-title">Titre</label><input type="text" id="nr-title" autocomplete="off"></div>
-    <div class="two">
-      <div class="field"><label for="nr-serv">Personnes</label><input type="number" id="nr-serv" min="1" value="4"></div>
-      <div class="field"><label for="nr-time">Durée (min)</label><input type="number" id="nr-time" min="0" value="30"></div>
-    </div>
-    <div class="field"><label for="nr-ing">Ingrédients, un par ligne</label>
-      <textarea id="nr-ing" placeholder="400 g courgettes&#10;2 oignons&#10;1 c. à soupe huile d'olive&#10;sel"></textarea></div>
-    <div class="field"><label for="nr-steps">Étapes, une par ligne</label><textarea id="nr-steps"></textarea></div>
+    <div class="field"><label for="nr-ing">Ingrédients (collez ou tapez, un par ligne)</label>
+      <textarea id="nr-ing" placeholder="400 g courgettes&#10;2 oignons&#10;1 c. à soupe huile d'olive&#10;sel"></textarea>
+      <span class="hint" id="nr-count" aria-live="polite"></span></div>
+    <details id="nr-more" class="box" style="margin-bottom:12px">
+      <summary><b>Plus de détails</b> <span class="hint">personnes, durée, étapes (facultatif)</span></summary>
+      <div class="two" style="margin-top:10px">
+        <div class="field"><label for="nr-serv">Personnes</label><input type="number" id="nr-serv" min="1" value="4"></div>
+        <div class="field"><label for="nr-time">Durée (min)</label><input type="number" id="nr-time" min="0" value="30"></div>
+      </div>
+      <div class="field"><label for="nr-steps">Étapes, une par ligne</label><textarea id="nr-steps"></textarea></div>
+    </details>
     <div id="nr-msg" role="alert"></div>
-    <div class="row-actions"><button class="btn primary" data-act="nr-save">Enregistrer</button><button class="btn" data-act="nr-cancel">Annuler</button></div>
+    <div class="row-actions"><button class="btn primary" data-act="nr-save-plan" id="nr-save-plan">Enregistrer et ajouter aux courses</button><button class="btn" data-act="nr-save">Enregistrer seulement</button><button class="btn" data-act="nr-cancel">Annuler</button></div>
   </div>
 </div>
 
@@ -1070,6 +1074,7 @@ document.addEventListener('click',e=>{
     case 'edit-recipe':openForm(S.recipes.find(r=>r.id===id));break;
     case 'nr-cancel':$('#nr').hidden=true;PENDING_URL='';break;
     case 'nr-save':saveNew();break;
+    case 'nr-save-plan':saveNew(true);break;
     case 'ia-go':generate();break;
     case 'ia-exclude':{const v=b.dataset.v.toLowerCase();if(!S.exclude.some(x=>norm(x)===norm(v))){S.exclude.push(v);persist();renderChips();renderRecipes();renderIA()}break}
     case 'ia-save':{const p=A.results[+b.dataset.i];if(p){S.recipes.unshift({id:uid(),title:p.title,time:p.time,servings:p.servings,tags:p.tags,source:'ia',ingredients:p.ingredients,steps:p.steps});A.notice={title:p.title,bad:excludedIn(p)};A.results.splice(+b.dataset.i,1);persist();renderIA();renderRecipes()}break}
@@ -1128,19 +1133,26 @@ function openForm(r,isNew){
   $('#nr-time').value=r?r.time:30;
   $('#nr-ing').value=r?r.ingredients.map(ingLine).join('\n'):'';
   $('#nr-steps').value=r?(r.steps||[]).join('\n'):'';
+  $('#nr-more').open=!!r;nrCount();
   $('#nr-msg').textContent='';$('#nr').hidden=false;$('#nr-title').focus();
 }
-function saveNew(){
+function nrCount(){
+  const n=$('#nr-ing').value.split('\n').map(parseLine).filter(Boolean).length;
+  $('#nr-count').textContent=n?n+' ingrédient'+(n>1?'s':'')+' reconnu'+(n>1?'s':''):'';
+}
+function saveNew(addToList){
   const title=$('#nr-title').value.trim(),ings=$('#nr-ing').value.split('\n').map(parseLine).filter(Boolean),steps=$('#nr-steps').value.split('\n').map(s=>s.trim()).filter(Boolean);
   if(!title){$('#nr-msg').textContent='Donnez un titre à la recette.';return}
-  if(!ings.length){$('#nr-msg').textContent='Ajoutez au moins un ingrédient, un par ligne.';return}
+  if(!ings.length){$('#nr-msg').textContent='Ajoutez au moins un ingrédient, un par ligne.';$('#nr-ing').focus();return}
   const time=Math.max(0,parseInt($('#nr-time').value,10)||0),servings=Math.max(1,parseInt($('#nr-serv').value,10)||4);
   const old=EDIT?S.recipes.find(r=>r.id===EDIT):null;
+  let rid;
   if(old){
     ings.forEach(i=>{const o=old.ingredients.find(x=>norm(x.n)===norm(i.n));if(o&&o.r)i.r=o.r});
-    Object.assign(old,{title,time,servings,ingredients:ings,steps});
+    Object.assign(old,{title,time,servings,ingredients:ings,steps});rid=old.id;
     if(S.plan[old.id]!=null&&!S.plan[old.id])S.plan[old.id]=servings;
-  }else S.recipes.unshift({id:uid(),title,time,servings,tags:[],source:PENDING_URL?'site':'manuel',url:PENDING_URL||undefined,ingredients:ings,steps});
+  }else{rid=uid();S.recipes.unshift({id:rid,title,time,servings,tags:[],source:PENDING_URL?'site':'manuel',url:PENDING_URL||undefined,ingredients:ings,steps})}
+  if(addToList)S.plan[rid]=S.plan[rid]||servings;
   persist();$('#nr').hidden=true;EDIT=null;PENDING_URL='';renderRecipes();renderCourses();
 }
 async function copyList(){
@@ -1161,6 +1173,8 @@ document.addEventListener('change',e=>{
   const dsel=e.target.closest&&e.target.closest('[data-day]');
   if(dsel){const id=dsel.dataset.day;if(dsel.value)S.days[id]=dsel.value;else delete S.days[id];persist();renderMenu();renderCourses();return}const el=e.target.closest&&e.target.closest('[data-chipin]');if(el&&el.value.trim())chipKey(e,el)});
 $('#f-text').addEventListener('input',e=>{F.text=e.target.value;renderRecipes()});
+$('#nr-ing').addEventListener('input',nrCount);
+$('#nr-title').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#nr-ing').focus()}});
 window.addEventListener('hashchange',()=>showTab(location.hash.slice(1)));
 
 /* ---------- démarrage ---------- */
