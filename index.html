@@ -166,6 +166,16 @@ input[type=file]{padding:8px}
 .tk-line input[type=checkbox]{width:20px;height:20px}
 .tk-line select{width:100%;min-height:34px;font-size:.85rem}
 .tk-line.off{opacity:.55}
+@media (max-width:640px){
+  /* mobile : case + nom sur toute la largeur, puis quantité / unité / prix, puis la correspondance */
+  .tk-line{grid-template-columns:26px 1fr 1fr 1fr}
+  .tk-line [data-rv=n]{grid-column:2/-1}
+  .tk-line [data-rv=q]{grid-column:2}
+  .tk-line [data-rv=u]{grid-column:3}
+  .tk-line [data-rv=p]{grid-column:4}
+  .tk-line .m{grid-column:2/-1}
+  .tk-line input[type=text],.tk-line input[type=number]{min-width:0;width:100%}
+}
 .tk-sum{margin:10px 0}
 </style>
 </head>
@@ -1263,7 +1273,7 @@ function renderReview(){
   el.innerHTML=`<div class="box"><h3>${R.items.length} ligne${R.items.length>1?'s':''} du ticket</h3>
     <p class="hint" style="margin:0">Vérifiez les noms, quantités et prix. Chaque ligne est rapprochée de votre liste ; vous pouvez changer le rapprochement. Une ligne hors liste est ajoutée au stock et aux prix comme les autres.</p>
     <div class="bar" style="margin:10px 0"><div class="field"><label for="rv-shop">Magasin</label><input type="text" id="rv-shop" list="dl-shop" value="${esc(R.shop)}" placeholder="ex. Lidl" autocomplete="off"></div><div class="field"><label for="rv-date">Date</label><input type="date" id="rv-date" value="${esc(R.date)}"></div></div>
-    ${R.items.map(i=>`<div class="tk-line ${i.on?'':'off'}"><input type="checkbox" data-rv="on" data-id="${esc(i.id)}" ${i.on?'checked':''} aria-label="Garder ${esc(i.n)}"><input type="text" data-rv="n" data-id="${esc(i.id)}" value="${esc(i.n)}" aria-label="Nom"${i.raw?` title="Sur le ticket : ${esc(i.raw)}"`:''}><input type="number" data-rv="q" data-id="${esc(i.id)}" min="0" step="any" value="${esc(i.q)}" aria-label="Quantité"><input type="text" data-rv="u" data-id="${esc(i.id)}" value="${esc(i.u)}" aria-label="Unité" placeholder="unité"><input type="number" data-rv="p" data-id="${esc(i.id)}" min="0" step="any" value="${i.p?esc(i.p):''}" aria-label="Prix payé en euros" placeholder="€"><div class="m"><select data-rv="m" data-id="${esc(i.id)}" aria-label="Correspondance avec la liste" ${i.on?'':'disabled'}>${opts(i.m)}</select></div></div>`).join('')}
+    ${R.items.map(i=>`<div class="tk-line ${i.on?'':'off'}"><input type="checkbox" data-rv="on" data-id="${esc(i.id)}" ${i.on?'checked':''} aria-label="Garder ${esc(i.n)}"><input type="text" data-rv="n" data-id="${esc(i.id)}" value="${esc(i.n)}" aria-label="Nom"${i.raw?` title="Sur le ticket : ${esc(i.raw)}"`:''}><input type="number" data-rv="q" data-id="${esc(i.id)}" min="0" step="any" value="${esc(i.q)}" aria-label="Quantité" placeholder="qté"><input type="text" data-rv="u" data-id="${esc(i.id)}" value="${esc(i.u)}" aria-label="Unité" placeholder="unité"><input type="number" data-rv="p" data-id="${esc(i.id)}" min="0" step="any" value="${i.p?esc(i.p):''}" aria-label="Prix payé en euros" placeholder="€"><div class="m"><select data-rv="m" data-id="${esc(i.id)}" aria-label="Correspondance avec la liste" ${i.on?'':'disabled'}>${opts(i.m)}</select></div></div>`).join('')}
     <p class="hint tk-sum"><b>${inList}</b> ligne${inList>1?'s':''} sur la liste · <b>${extra}</b> hors liste${left.length?` · <b>restent sur la liste</b> : ${esc(left.map(l=>l.name).join(', '))}`:' · rien ne reste à acheter'}.</p>
     <div class="row-actions"><button class="btn primary" data-act="tk-add">Valider le ticket</button><button class="btn" data-act="tk-cancel">Annuler</button></div></div>`;
 }
