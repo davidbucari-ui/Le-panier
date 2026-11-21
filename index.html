@@ -196,6 +196,23 @@ input[type=file]{padding:8px}
 .ck-row .fx{font-size:13px;text-align:right}
 .ck-row.dim .fx{color:var(--muted)}
 @media (prefers-reduced-motion:no-preference){.card,.btn{transition:border-color .15s}}
+.ex-opts{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,.8fr) minmax(0,1fr);gap:8px;margin-top:8px}
+.ex-hist{margin-top:12px}
+.ex-hist:empty{display:none}
+.hist-h{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin-bottom:6px}
+.hist-sort{display:flex;gap:4px;margin-left:auto}
+.hist-sort button{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:4px 10px;min-height:32px;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer}
+.hist-sort button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.hist-list{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:10px;max-height:320px;overflow-y:auto;background:var(--card)}
+.hist-list li{--c:var(--muted)}
+.hrow{display:flex;align-items:center;gap:10px;width:100%;min-height:50px;padding:6px 6px 6px 12px;background:transparent;border:0;border-bottom:1px solid var(--line);text-align:left;box-shadow:inset 3px 0 0 var(--c);font:inherit;color:inherit;cursor:pointer}
+.hist-list li:last-child .hrow{border-bottom:0}
+.hrow .htxt{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:1px}
+.hrow .hname{font-weight:600;line-height:1.2;overflow-wrap:anywhere}
+.hrow .hmeta{font-size:12px;color:var(--muted);line-height:1.25}
+.hrow .hadd{flex:none;width:36px;height:36px;border:1px solid var(--line);border-radius:8px;display:grid;place-items:center;font-size:20px;font-weight:700;background:var(--paper)}
+.hrow.on{opacity:.55;cursor:default}
+.hrow.on .hadd{border-color:transparent;background:transparent;font-size:12px;font-weight:600;color:var(--muted);width:auto;padding:0 6px}
 .ex-res{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;max-height:128px;overflow-y:auto;padding:2px}
 .ex-res:empty{display:none}
 .ex-res button.free{background:var(--ink,#1c2b22);color:#fff;border-color:transparent}
@@ -326,13 +343,15 @@ input[type=file]{padding:8px}
     <div class="row-actions c-top"><button class="btn primary" id="ex-btn" data-act="ex-toggle" aria-expanded="false" aria-controls="ex-box">＋ Ajouter</button><button class="btn" data-act="scan-open">Scanner</button></div>
     <div class="box" id="ex-box" hidden style="margin-bottom:16px">
       <h3>Ajouter un article</h3>
-      <div class="bar">
-        <div class="field"><label for="ex-q">Chercher un article</label><input type="search" id="ex-q" placeholder="ex. yaourt, riz, citron" autocomplete="off" enterkeyhint="done"></div>
-        <div class="field"><label for="ex-ray">Rayon</label><select id="ex-ray"><option value="">Tous</option></select></div>
-        <div class="field"><label for="ex-qty">Quantité</label><div class="two"><input type="number" id="ex-qty" min="0" step="any" placeholder="facultatif"><select id="ex-unit" aria-label="Unité"><option value="">pièce(s)</option><option>g</option><option>kg</option><option>ml</option><option>cl</option><option>l</option></select></div></div>
+      <div class="field"><label for="ex-q">Chercher un article</label><input type="search" id="ex-q" placeholder="ex. yaourt, riz, citron" autocomplete="off" enterkeyhint="done"></div>
+      <div class="ex-opts">
+        <select id="ex-ray" aria-label="Rayon"><option value="">Rayon</option></select>
+        <input type="number" id="ex-qty" inputmode="decimal" min="0" step="any" placeholder="Qté" aria-label="Quantité (facultatif)">
+        <select id="ex-unit" aria-label="Unité"><option value="">pièce</option><option>g</option><option>kg</option><option>ml</option><option>cl</option><option>l</option></select>
       </div>
+      <div id="ex-hist" class="ex-hist"></div>
       <div id="ex-res" class="ex-res" role="list"></div>
-      <p class="hint" style="margin:8px 0 0" id="ex-hint">Tapez 2 lettres ou choisissez un rayon, puis touchez l'article : il s'ajoute à la liste.</p>
+      <p class="hint" style="margin:8px 0 0" id="ex-hint">Touchez un article de votre historique, ou tapez 2 lettres pour chercher : il s'ajoute à la liste.</p>
     </div>
     <div class="pr-tabs" id="c-tabs" role="tablist" aria-label="Catégories" hidden></div>
     <div class="cols" id="courses"></div>
@@ -863,7 +882,45 @@ function exAdd(n,r){
   persist();renderCourses();$('#ex-qty').value='';$('#ex-q').value='';exSearch();$('#ex-q').focus();
   const m=$('#ex-hint');if(m)m.innerHTML='<span class="ex-ok">✓ '+esc(n)+' ajouté</span> · '+S.extras.length+' article'+(S.extras.length>1?'s':'')+' ajouté'+(S.extras.length>1?'s':'')+' à la main. Continuez ou consultez la liste ci-dessous.';
 }
+/* ---------- historique d'achat ---------- */
+// un article = un ckey ; chaque ligne de ticket ou prix noté compte pour un achat (par jour et magasin)
+function histItems(){
+  const map=new Map();
+  for(const e of S.prices){
+    const k=ckey(e.n);let h=map.get(k);
+    if(!h){h={k,n:e.n,r:e.r||'',buys:new Set(),d:'',p:0,shop:'',q:0,u:''};map.set(k,h)}
+    h.buys.add(e.d+'|'+norm(e.shop));
+    if((e.d||'')>=h.d){h.d=e.d||'';h.p=e.p;h.shop=e.shop;h.q=e.q;h.u=e.u||'';h.n=e.n;if(e.r)h.r=e.r}
+  }
+  for(const st of S.stock){const k=ckey(st.n);if(!map.has(k))map.set(k,{k,n:st.n,r:st.r||'',buys:new Set(),d:'',p:0,shop:'',q:0,u:''})}   // en stock, sans prix noté
+  return[...map.values()].map(h=>({k:h.k,n:h.n,r:rayonOf(h.n,h.r),count:h.buys.size,d:h.d,p:h.p,shop:h.shop,q:h.q,u:h.u}));
+}
+function ago(d){
+  const n=Math.round((new Date(todayISO())-new Date(d))/864e5);
+  if(!(n>=0))return'';
+  return n===0?'aujourd\'hui':n===1?'hier':n<14?`il y a ${n} j`:n<60?`il y a ${Math.round(n/7)} sem.`:`il y a ${Math.round(n/30)} mois`;
+}
+function renderHist(){
+  const box=$('#ex-hist');if(!box)return;
+  const all=histItems();
+  if(!all.length){box.innerHTML=`<p class="hint" style="margin:0">Votre historique d'achat se remplira avec vos tickets de caisse.</p>`;return}
+  const qn=norm(($('#ex-q')&&$('#ex-q').value||'').trim()),ray=($('#ex-ray')&&$('#ex-ray').value)||'';
+  const onList=new Set(shoppingItems().map(i=>i.nk));
+  const sort=UI.hSort||'freq',dd=h=>h.d||'';
+  let l=all.filter(h=>(!ray||h.r===ray)&&(!qn||norm(h.n).includes(qn)));
+  l.sort(sort==='az'?(a,b)=>a.n.localeCompare(b.n,'fr'):sort==='recent'?(a,b)=>dd(b).localeCompare(dd(a))||b.count-a.count:(a,b)=>b.count-a.count||dd(b).localeCompare(dd(a)));
+  if(qn)l.sort((a,b)=>(norm(a.n).startsWith(qn)?0:1)-(norm(b.n).startsWith(qn)?0:1));   // les noms qui commencent par la saisie d'abord
+  if(!l.length){box.innerHTML='';return}
+  const chip=(k,t)=>`<button type="button" data-act="hist-sort" data-s="${k}" aria-pressed="${sort===k}">${t}</button>`;
+  box.innerHTML=`<div class="hist-h"><b>Mon historique d'achat</b><span class="hint" style="margin:0">${l.length} article${l.length>1?'s':''}</span><span class="hist-sort">${chip('freq','Plus achetés')}${chip('recent','Récents')}${chip('az','A–Z')}</span></div>`+
+    `<ul class="hist-list">${l.slice(0,60).map(h=>{
+      const on=onList.has(h.k);
+      const meta=h.d?[h.shop,eur(h.p),ago(h.d),h.count+' achat'+(h.count>1?'s':'')].filter(Boolean).join(' · '):'en stock';
+      return`<li style="${rcStyle(h.r)}"><button type="button" class="hrow${on?' on':''}" ${on?'disabled':`data-act="extra-pick" data-n="${esc(h.n)}" data-r="${esc(h.r)}"`} aria-label="${on?esc(h.n)+' est déjà sur la liste':'Ajouter '+esc(h.n)+' à la liste'}"><span class="htxt"><span class="hname">${esc(h.n)}</span><span class="hmeta">${esc(meta)}</span></span><span class="hadd">${on?'✓ sur la liste':'＋'}</span></button></li>`}).join('')}</ul>`;
+}
+
 function exSearch(){
+  renderHist();
   const el=$('#ex-res');if(!el)return;
   const q=norm($('#ex-q').value.trim()),ray=$('#ex-ray').value;
   const raw=$('#ex-q').value.trim();
@@ -1040,6 +1097,7 @@ function renderCourses(){
     <span class="hint" id="copy-msg" aria-live="polite"></span>
   </div>`;
   $('#courses').innerHTML=list+side;
+  renderHist();
 }
 
 /* ---------- stock ---------- */
@@ -1595,6 +1653,7 @@ document.addEventListener('click',e=>{
       for(const [k,e] of Object.entries(S.fmts))if(ckey(e.n)===ck)delete S.fmts[k];
       persist();$('#fm').hidden=true;renderStock();renderCourses();break}
     case 'fmt-close':$('#fm').hidden=true;break;
+    case 'hist-sort':UI.hSort=b.dataset.s;saveUI();renderHist();break
     case 'c-tab':C_TAB=b.dataset.r;renderCourses();break;
     case 'sk-tab':SK_TAB=b.dataset.r;renderStock();break;
     case 'sk-add-toggle':{const f=$('#sk-add'),open=f.hidden;f.hidden=!open;b.setAttribute('aria-expanded',String(open));if(open)$('#sk-name').focus();break}
@@ -1727,7 +1786,7 @@ setSync('wait');
 document.body.classList.add('loading');
 const ready=()=>document.body.classList.remove('loading');
 setTimeout(ready,12000);
-if(typeof fetch==='function')fetch('ingredients.json').then(r=>r.ok?r.json():null).then(j=>{if(j&&Array.isArray(j.e)){buildDict(j);$('#ex-ray').innerHTML='<option value="">Tous</option>'+DICT.rayons.slice(0,5).map(r=>`<option>${esc(r)}</option>`).join('');$('#credit').hidden=false;renderAll();exSearch()}}).catch(()=>{});
+if(typeof fetch==='function')fetch('ingredients.json').then(r=>r.ok?r.json():null).then(j=>{if(j&&Array.isArray(j.e)){buildDict(j);$('#ex-ray').innerHTML='<option value="">Rayon</option>'+DICT.rayons.slice(0,5).map(r=>`<option>${esc(r)}</option>`).join('');$('#credit').hidden=false;renderAll();exSearch()}}).catch(()=>{});
 let unsub=null,sb=null,sbUid=null;
 function attach(ref){
   if(unsub){try{unsub()}catch(e){}unsub=null}
