@@ -1212,8 +1212,10 @@ async function readTicketDoc(file){
   let info='';
   TK_STEP='lecture du fichier';
   try{
-    const buf=await file.arrayBuffer();
-    if(!buf.byteLength){st.textContent='Le fichier est vide ou le navigateur n\'a pas pu y accéder. Choisissez-le de nouveau (depuis « Fichiers » ou la Galerie), ou collez le texte du ticket.';return}
+    // lecture directe, puis par FileReader : certains navigateurs mobiles ne lisent un fichier que d'une des deux façons
+    let buf=await file.arrayBuffer().catch(()=>null);
+    if(!buf||!buf.byteLength)buf=await new Promise(ok=>{const fr=new FileReader();fr.onload=()=>ok(fr.result);fr.onerror=()=>ok(null);fr.readAsArrayBuffer(file)});
+    if(!buf||!buf.byteLength){st.textContent=`Le navigateur n'a pas pu lire ce fichier (taille annoncée : ${file.size} octet${file.size>1?'s':''}, type : ${file.type||'inconnu'}). Essayez de le choisir depuis la Galerie plutôt que depuis « Fichiers » (ou l'inverse), ou refaites la capture d'écran, ou collez le texte du ticket.`;return}
     const sn=sniffFile(new Uint8Array(buf));
     info=`${sn.fmt||'format inconnu'}${sn.w?` ${sn.w}×${sn.h}`:''}, ${buf.byteLength>1e6?(buf.byteLength/1e6).toFixed(1)+' Mo':Math.round(buf.byteLength/1e3)+' Ko'}`;
     const pdf=sn.fmt==='PDF'||(!sn.mime&&(/pdf$/i.test(file.type)||/\.pdf$/i.test(file.name)));
