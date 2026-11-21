@@ -35,6 +35,9 @@ prices   : {id, k, n, p, q, u, shop, d, r?} p = prix payé pour q·u ; d = AAAA-
 - **Conflits de synchro** : chaque `persist()` pose `rev = Date.now()` ; un état distant n'est accepté que si `remote.rev > local.rev`. Toute écriture directe en base doit **mettre `rev` à l'heure courante** (en ms), sinon elle sera ignorée ou écrasée.
 - Toujours passer les données lues par `fix()` (tolère les anciens formats) ; toute nouvelle clé de `S` doit être ajoutée dans `fresh()` **et** `fix()`.
 
+## Écran Courses
+- Haut : « ＋ Ajouter » (déplie le formulaire de recherche `#ex-box`, masqué par défaut) et « Scanner ». Liste (`renderCourses`) : une ligne par article (`.citem` : case, nom + origine, quantité, bouton « En stock » ou × pour un ajout à la main), regroupée par rayon ; les articles cochés passent dans un groupe « Dans le panier » en bas. À droite (tablette) ou dessous (mobile) : résumé recettes/stock, « Lire mon ticket », « Ranger les courses », « Copier la liste », puis « Plus d'actions » (nouvelle recette, masquer, tout décocher, vider). L'ancien style « ticket de caisse » (police mono, pointillés) a été retiré.
+
 ## Écran Stock
 - Une ligne par article (`skRow`) : nom, boutons − / + (`stock-step`, pas de 1 pièce, 100 g/ml, 500 au-delà d'un kilo/litre), quantité modifiable, × (retrait avec confirmation par second toucher). Quantité vide = « dispo » (`q=0`, considéré disponible). Le − est désactivé au minimum (le retrait passe par ×).
 - Catégories repliables (`sk-toggle`, état dans `UI.skClosed`, local à l'appareil) ; une recherche les déplie. L'ajout à la main est masqué derrière « ＋ Ajouter ».
