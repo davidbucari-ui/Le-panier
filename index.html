@@ -1135,25 +1135,53 @@ function parseTicketText(txt){
   return{shop,date:date||todayISO(),items:[...merged.values()]};
 }
 // image (capture d'écran du ticket) : reconnaissance de caractères par Tesseract, chargé à la demande
+let TK_STEP='';
+// ouvre une image : createImageBitmap, sinon balise <img> (anciens navigateurs)
+async function loadBitmap(file){
+  try{if(typeof createImageBitmap==='function')return await createImageBitmap(file)}catch(e){}
+  const url=URL.createObjectURL(file);
+  try{return await new Promise((ok,ko)=>{const im=new Image();im.onload=()=>ok(im);im.onerror=()=>ko(new Error('image illisible'));im.src=url})}
+  finally{setTimeout(()=>URL.revokeObjectURL(url),10000)}
+}
 async function imgText(file,progress){
-  if(!window.Tesseract)await new Promise((ok,ko)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';sc.onload=ok;sc.onerror=ko;document.head.appendChild(sc)});
-  const bmp=await createImageBitmap(file),s=bmp.width<1000?Math.min(4,1200/bmp.width):1;
-  const c=document.createElement('canvas');c.width=Math.round(bmp.width*s);c.height=Math.round(bmp.height*s);
+  TK_STEP='chargement du lecteur d\'image';
+  if(!window.Tesseract)await new Promise((ok,ko)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';sc.onload=ok;sc.onerror=()=>ko(new Error('téléchargement impossible'));document.head.appendChild(sc)});
+  TK_STEP='ouverture de l\'image';
+  const bmp=await loadBitmap(file),bw=bmp.width||bmp.naturalWidth,bh=bmp.height||bmp.naturalHeight,s=bw<1000?Math.min(4,1200/bw):1;
+  const c=document.createElement('canvas');c.width=Math.round(bw*s);c.height=Math.round(bh*s);
   const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.imageSmoothingQuality='high';g.drawImage(bmp,0,0,c.width,c.height);
-  const w=await Tesseract.createWorker('fra',1,{logger:m=>{if(m.status==='recognizing text')progress(Math.round(m.progress*100))}});
-  try{await w.setParameters({preserve_interword_spaces:'1'});return(await w.recognize(c)).data.text}
-  finally{w.terminate()}
+  // la bibliothèque ne rejette pas toujours ses erreurs (ex. langue non téléchargée) : errorHandler + délai évitent un écran figé
+  let w=null;
+  try{
+    return await new Promise((ok,ko)=>{
+      const t=setTimeout(()=>ko(new Error('délai dépassé (2 min)')),120000);
+      const fail=e=>{clearTimeout(t);ko(e instanceof Error?e:new Error(String(e&&e.message||e)))};
+      (async()=>{
+        TK_STEP='démarrage de la reconnaissance (téléchargement de la langue française)';
+        w=await Tesseract.createWorker('fra',1,{errorHandler:fail,logger:m=>{if(m.status==='recognizing text')progress(Math.round(m.progress*100))}});
+        TK_STEP='reconnaissance du texte';
+        await w.setParameters({preserve_interword_spaces:'1'});
+        const r=await w.recognize(c);clearTimeout(t);ok(r.data.text);
+      })().catch(fail);
+    });
+  }finally{if(w)try{w.terminate()}catch(e){}}
 }
 async function readTicketDoc(file){
   const st=$('#tk-status');if(!file)return;
   st.textContent='Lecture du ticket…';
-  const pdf=/pdf$/i.test(file.type)||/\.pdf$/i.test(file.name),img=/^image\//.test(file.type);
+  const pdf=/pdf$/i.test(file.type)||/\.pdf$/i.test(file.name),img=/^image\//.test(file.type)||/\.(png|jpe?g|webp|heic|gif)$/i.test(file.name);
+  TK_STEP='lecture du fichier';
   try{
     const txt=pdf?await pdfText(file):img?await imgText(file,p=>{st.textContent=`Lecture de l'image… ${p} %`}):await file.text();
     if(!txt.trim()){st.textContent=pdf?'Ce PDF ne contient pas de texte (ticket scanné) : importez plutôt une capture d\'écran du ticket.':'Aucun texte trouvé dans ce fichier.';return}
     $('#tk-text').value=txt.slice(0,20000);
+    TK_STEP='analyse du ticket';
     showTicket(parseTicketText(txt),'dans le fichier');
-  }catch(e){st.textContent=(pdf?window.pdfjsLib:img?window.Tesseract:true)&&navigator.onLine!==false?'Impossible de lire ce fichier. Essayez une capture d\'écran plus nette, ou collez le texte du ticket ci-dessous.':'Le lecteur n\'a pas pu être chargé (réseau). Réessayez avec une connexion.'}
+  }catch(e){
+    console.error('Ticket :',TK_STEP,e);
+    const det=String((e&&e.message)||e||'erreur inconnue').slice(0,140);
+    st.textContent=navigator.onLine===false?'Pas de connexion : le lecteur de ticket doit être téléchargé. Réessayez avec une connexion.':`Impossible de lire ce fichier (étape : ${TK_STEP} — ${det}). Essayez une capture d'écran plus nette, ou collez le texte du ticket ci-dessous.`;
+  }
 }
 
 // rapproche chaque ligne du ticket d'un article de la liste (un article de la liste ne sert qu'une fois)
