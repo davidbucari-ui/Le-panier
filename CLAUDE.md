@@ -26,14 +26,21 @@ Le code doit rester compatible avec les deux : tout accès réseau ou dictionnai
 ## Modèle de données (objet `S`, persisté sous `lepanier-v1` + Supabase)
 ```
 S = { v, rev, recipes[], plan{recetteId: personnes}, days{recetteId: jour}, stock[], extras[],
-      prices[], barcodes{ean: {n,r,q,u}}, bought[], exclude[] }
+      prices[], barcodes{ean: {n,r,q,u}}, fmts{norm(nom): {n,c,q,u,l,s}}, bought[], exclude[] }
 stock    : {k: norm(nom), n, q, u, r}      q=0 → quantité inconnue (considéré disponible)
 extras   : {id, n, q, u, r}                articles ajoutés à la main à la liste de courses
 prices   : {id, k, n, p, q, u, shop, d, r?} p = prix payé pour q·u ; d = AAAA-MM-JJ ; r = rayon corrigé
+fmts     : conditionnement d'un produit : c unités par lot × q·u de contenu (g/ml/pièce), l type (paquet, brique…), s source user|ticket|scan
 ```
 - Unités normalisées par `normQty` : kg→g, l/cl/dl→ml ; `''` = pièce. Prix unitaire = `unitPrice` (€/kg, €/l ou €/pièce).
 - **Conflits de synchro** : chaque `persist()` pose `rev = Date.now()` ; un état distant n'est accepté que si `remote.rev > local.rev`. Toute écriture directe en base doit **mettre `rev` à l'heure courante** (en ms), sinon elle sera ignorée ou écrasée.
 - Toujours passer les données lues par `fix()` (tolère les anciens formats) ; toute nouvelle clé de `S` doit être ajoutée dans `fresh()` **et** `fix()`.
+
+## Conditionnement et couleurs par rayon
+- **Conditionnement** (`S.fmts`, clé = `norm(nom)`, jamais un identifiant de dictionnaire ; `fmtOf` compare par `ckey` à l'exécution). Exemples : paquet 500 g = {c:1,q:500,u:'g'} ; pot 4 × 125 g = {c:4,q:125,u:'g'} ; boîte de 12 œufs = {c:12,q:1,u:''}. Appris du libellé d'un ticket (`tkFormat`, à la validation) et du contenu Open Food Facts au scan (`scRead`) ; modifiable en touchant le nom d'un article (fenêtre `#fm`). **Un format saisi à la main (`s:'user'`) n'est jamais écrasé** par un ticket ou un scan. Le type de contenant est deviné d'après le nom (`PK_GUESS`).
+- Affichage : Stock = format sous le nom + « N briques en stock » si la quantité est un compte rond (`pkLots`) ; Courses = « à prendre : 2 pots de 4 × 125 g » (`pkPacks`, arrondi au-dessus, masqué une fois l'article coché ni quand il n'apporte rien).
+- **Couleurs par rayon** : variables `--rc0…6` / `--rs0…6` (clair, sombre auto et sombre forcé) ; `rcStyle(rayon)` pose `--c`/`--s` en style en ligne sur groupes, onglets (Courses, Stock, Prix) ; `RAYON_ICO` donne l'icône. Un nouveau rayon doit être ajouté à `RAYONS`, `RAYON_ICO` et aux variables.
+- Les lignes d'un ticket qui ressemblent à des coordonnées (e-mail, site, téléphone) ne deviennent jamais un article (`TK_CONTACT`, et garde-fou dans `addStock`).
 
 ## Écran Courses
 - Haut : « ＋ Ajouter » (déplie le formulaire de recherche `#ex-box`, masqué par défaut) et « Scanner ». Liste (`renderCourses`) : une ligne par article (`.citem` : case, nom + origine, quantité, bouton « En stock » ou × pour un ajout à la main), regroupée par rayon ; les articles cochés passent dans un groupe « Dans le panier » en bas. À droite (tablette) ou dessous (mobile) : résumé recettes/stock, « Lire mon ticket », « Ranger les courses », « Copier la liste », puis « Plus d'actions » (nouvelle recette, masquer, tout décocher, vider). L'ancien style « ticket de caisse » (police mono, pointillés) a été retiré.

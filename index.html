@@ -12,6 +12,8 @@
 :root{
   --paper:#F2F3EC; --card:#FBFBF7; --ink:#1B2A22; --muted:#5E6B63; --line:#D9DDD0;
   --leaf:#2E7A4E; --leaf-ink:#FFFFFF; --leaf-soft:#DCEADC;
+  --rc0:#2E7A4E; --rs0:#DCEADC; --rc1:#C8325F; --rs1:#F6DCE4; --rc2:#2F6FB0; --rs2:#DCE8F5; --rc3:#C46A1A; --rs3:#F8E5D0;
+  --rc4:#9A6B2F; --rs4:#F1E4CC; --rc5:#1E8FA0; --rs5:#D6EEF2; --rc6:#6B6FA8; --rs6:#E3E4F2;
   --radis:#C8325F; --radis-ink:#8F1D40; --radis-soft:#F6DCE4;
   --display:'Bricolage Grotesque',system-ui,sans-serif;
   --body:'Instrument Sans',system-ui,sans-serif;
@@ -22,6 +24,8 @@
   :root:not([data-theme="light"]){
     --paper:#121A15; --card:#1A251E; --ink:#E8EEE6; --muted:#9AA89F; --line:#2D3B32;
     --leaf:#5DBB84; --leaf-ink:#0B1A11; --leaf-soft:#1F3A2A;
+    --rc0:#5DBB84; --rs0:#1F3A2A; --rc1:#F0829E; --rs1:#3A1E28; --rc2:#7FB2EC; --rs2:#1C2D44; --rc3:#F0A25A; --rs3:#3F2B15;
+    --rc4:#D9A85E; --rs4:#392B16; --rc5:#5FC6D6; --rs5:#173A40; --rc6:#A9ADE0; --rs6:#2A2C48;
     --radis:#F0829E; --radis-ink:#F4A3B8; --radis-soft:#3A1E28;
     color-scheme:dark;
   }
@@ -29,6 +33,8 @@
 :root[data-theme="dark"]{
   --paper:#121A15; --card:#1A251E; --ink:#E8EEE6; --muted:#9AA89F; --line:#2D3B32;
   --leaf:#5DBB84; --leaf-ink:#0B1A11; --leaf-soft:#1F3A2A;
+  --rc0:#5DBB84; --rs0:#1F3A2A; --rc1:#F0829E; --rs1:#3A1E28; --rc2:#7FB2EC; --rs2:#1C2D44; --rc3:#F0A25A; --rs3:#3F2B15;
+  --rc4:#D9A85E; --rs4:#392B16; --rc5:#5FC6D6; --rs5:#173A40; --rc6:#A9ADE0; --rs6:#2A2C48;
   --radis:#F0829E; --radis-ink:#F4A3B8; --radis-soft:#3A1E28;
   color-scheme:dark;
 }
@@ -120,6 +126,8 @@ button.ing:hover{border-color:var(--radis)}
 .cmain{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:1px}
 .cnm{font-weight:600;line-height:1.2;overflow-wrap:anywhere}
 .cfrom{font-size:12px;color:var(--muted);line-height:1.25}
+.cpk{font-size:12.5px;font-weight:600;color:var(--ink);line-height:1.25}
+.cgroup .cpk::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--c);margin-right:6px}
 .cqty{white-space:nowrap;font-size:.9rem;font-variant-numeric:tabular-nums}
 .cbtn{min-width:36px;min-height:36px;padding:0 10px;border:1px solid var(--line);background:var(--card);border-radius:8px;font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;cursor:pointer}
 .cbtn.x{font-size:18px;color:var(--radis-ink);padding:0}
@@ -155,8 +163,13 @@ body.loading main{opacity:.5;pointer-events:none}
 .sk-head{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;padding:6px 2px;background:none;border:0;border-bottom:2px solid var(--line);font:inherit;font-weight:700;color:var(--ink);text-align:left;cursor:pointer}
 .sk-head .n{margin-left:auto;font-size:.8rem;font-weight:600;color:var(--muted);background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:1px 9px}
 .sk-head .chev{color:var(--muted);width:1em;text-align:center}
-.srow{display:flex;align-items:center;gap:8px;padding:6px 2px;border-bottom:1px solid var(--line)}
-.srow .nm{flex:1 1 0;min-width:0;font-weight:600;line-height:1.2;overflow-wrap:anywhere}
+.sk-group,.cgroup{--c:var(--muted);--s:var(--paper)}
+.sk-head{background:var(--s);border-radius:10px 10px 0 0;padding:6px 10px;border-bottom:2px solid var(--c)}
+.sk-head .n{border-color:var(--c);color:var(--ink)}
+.srow{display:flex;align-items:center;gap:8px;padding:6px 2px 6px 10px;border-bottom:1px solid var(--line);box-shadow:inset 3px 0 0 var(--c)}
+.srow .nmw{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:1px}
+.srow .nm,.cnm{background:none;border:0;padding:0;margin:0;font:inherit;font-weight:600;line-height:1.2;color:inherit;text-align:left;overflow-wrap:anywhere;cursor:pointer}
+.srow .sub{font-size:12px;color:var(--muted);line-height:1.25}
 .srow .ctl{display:flex;align-items:center;gap:4px;flex:0 0 auto}
 .srow input[type=number]{width:66px;min-height:36px;padding:2px 2px;text-align:center;-moz-appearance:textfield;appearance:textfield}
 .srow input[type=number]::-webkit-inner-spin-button,.srow input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
@@ -165,6 +178,16 @@ body.loading main{opacity:.5;pointer-events:none}
 .srow .stp:disabled{opacity:.3;cursor:default}
 .srow .del{font-size:17px;color:var(--radis-ink);margin-left:6px}
 .srow .del.armed{width:auto;background:var(--radis-soft);border-color:var(--radis);font-size:12px;padding:0 8px}
+.pr-tabs .tab[style]{background:var(--s);border-color:transparent;color:var(--ink)}
+.pr-tabs .tab[style] .badge{background:var(--c);color:var(--paper)}
+.pr-tabs .tab[style][aria-selected="true"]{background:var(--c);color:var(--paper)}
+.pr-tabs .tab[style][aria-selected="true"] .badge{background:var(--paper);color:var(--c)}
+.crayon{background:var(--s);border-radius:10px 10px 0 0;padding:6px 10px;border-bottom:2px solid var(--c)}
+.crayon .n{border-color:var(--c);color:var(--ink)}
+.cgroup .citem{padding-left:10px;box-shadow:inset 3px 0 0 var(--c)}
+.cgroup .chk{border-color:var(--c)}
+.cgroup .chk[aria-checked="true"]{background:var(--c)}
+.cgroup .chk[aria-checked="true"]::after{border-color:var(--paper)}
 .tag.ok{background:var(--leaf-soft);border-color:transparent}
 input[type=file]{padding:8px}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:10px;font-size:14px;z-index:30;max-width:calc(100% - 32px)}
@@ -471,6 +494,22 @@ input[type=file]{padding:8px}
   </div>
 </div>
 
+<div class="overlay" id="fm" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="fm-h">
+    <h3 id="fm-h">Conditionnement</h3>
+    <p class="hint" style="margin:0"><b id="fm-name"></b> : décrivez comment ce produit est vendu. La liste de courses en déduit le nombre de paquets à prendre, et le stock compte en paquets.</p>
+    <div class="field"><label for="fm-l">Type de contenant</label>
+      <select id="fm-l"><option value="">(aucun)</option><option>paquet</option><option>boîte</option><option>bouteille</option><option>brique</option><option>pot</option><option>sachet</option><option>barquette</option><option>plaquette</option><option>bocal</option><option>tube</option><option>lot</option></select></div>
+    <div class="two">
+      <div class="field"><label for="fm-c">Unités par lot</label><input type="number" id="fm-c" inputmode="numeric" min="1" step="1" value="1"></div>
+      <div class="field"><label for="fm-q">Contenu d'une unité</label><div class="two"><input type="number" id="fm-q" inputmode="decimal" min="0" step="any" placeholder="500"><select id="fm-u" aria-label="Unité"><option value="">pièce</option><option>g</option><option>kg</option><option>ml</option><option>cl</option><option>l</option></select></div></div>
+    </div>
+    <p class="hint" style="margin:0">Exemples : paquet de 500 g → 1 unité de 500 g ; pot de 4 yaourts de 125 g → 4 unités de 125 g ; boîte de 12 œufs → 12 unités, contenu vide.</p>
+    <div id="fm-msg" role="alert"></div>
+    <div class="row-actions"><button class="btn primary" data-act="fmt-save">Enregistrer</button><button class="btn" data-act="fmt-clear">Effacer</button><button class="btn" data-act="fmt-close">Annuler</button></div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 (function(){
@@ -521,8 +560,10 @@ function examples(){return[
   steps:['Disposer poulet et légumes en morceaux dans un plat.','Ajouter beurre et thym, saler, poivrer.','Enfourner 55 minutes à 200 °C en arrosant à mi-cuisson.']}
 ]}
 const DAYS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
-function fresh(){return{v:1,rev:0,recipes:examples(),plan:{},days:{},stock:[],extras:[],prices:[],barcodes:{},bought:[],exclude:[]}}
-function fix(d){d=d||{};return{v:1,rev:Number(d.rev)||0,days:d.days&&typeof d.days==='object'&&!Array.isArray(d.days)?d.days:{},recipes:Array.isArray(d.recipes)?d.recipes:[],plan:d.plan&&typeof d.plan==='object'&&!Array.isArray(d.plan)?d.plan:{},stock:Array.isArray(d.stock)?d.stock.map(s=>({k:s.k||norm(s.n),n:s.n,q:Number(s.q)||0,u:s.u||'',r:s.r||guessRayon(s.n)})):[],barcodes:d.barcodes&&typeof d.barcodes==='object'&&!Array.isArray(d.barcodes)?d.barcodes:{},prices:Array.isArray(d.prices)?d.prices.filter(x=>x&&x.n&&Number(x.p)>0&&x.shop).map(x=>({id:x.id||uid(),k:x.k||norm(x.n),n:String(x.n),p:Number(x.p),q:Number(x.q)||1,u:x.u||'',shop:String(x.shop),d:String(x.d||''),r:RAYONS.includes(x.r)?x.r:''})):[],extras:Array.isArray(d.extras)?d.extras.filter(x=>x&&x.n).map(x=>({id:x.id||uid(),n:String(x.n),q:Number(x.q)||0,u:x.u||'',r:x.r||guessRayon(x.n)})):[],bought:Array.isArray(d.bought)?d.bought:[],exclude:Array.isArray(d.exclude)?d.exclude:[]}}
+function fresh(){return{v:1,rev:0,recipes:examples(),plan:{},days:{},stock:[],extras:[],prices:[],barcodes:{},fmts:{},bought:[],exclude:[]}}
+function fix(d){d=d||{};return{v:1,rev:Number(d.rev)||0,days:d.days&&typeof d.days==='object'&&!Array.isArray(d.days)?d.days:{},recipes:Array.isArray(d.recipes)?d.recipes:[],plan:d.plan&&typeof d.plan==='object'&&!Array.isArray(d.plan)?d.plan:{},stock:Array.isArray(d.stock)?d.stock.map(s=>({k:s.k||norm(s.n),n:s.n,q:Number(s.q)||0,u:s.u||'',r:s.r||guessRayon(s.n)})):[],barcodes:d.barcodes&&typeof d.barcodes==='object'&&!Array.isArray(d.barcodes)?d.barcodes:{},prices:Array.isArray(d.prices)?d.prices.filter(x=>x&&x.n&&Number(x.p)>0&&x.shop).map(x=>({id:x.id||uid(),k:x.k||norm(x.n),n:String(x.n),p:Number(x.p),q:Number(x.q)||1,u:x.u||'',shop:String(x.shop),d:String(x.d||''),r:RAYONS.includes(x.r)?x.r:''})):[],extras:Array.isArray(d.extras)?d.extras.filter(x=>x&&x.n).map(x=>({id:x.id||uid(),n:String(x.n),q:Number(x.q)||0,u:x.u||'',r:x.r||guessRayon(x.n)})):[],bought:Array.isArray(d.bought)?d.bought:[],exclude:Array.isArray(d.exclude)?d.exclude:[],fmts:fixFmts(d.fmts)}}
+// formats (conditionnements) connus : {nomNormalisé: {n, c lots, q contenu, u, l type, s source}}
+function fixFmts(o){const r={};if(!o||typeof o!=='object'||Array.isArray(o))return r;for(const [k,e] of Object.entries(o)){if(!e||!e.n||!(Number(e.q)>0))continue;r[k]={n:String(e.n),c:Math.max(1,Math.round(Number(e.c))||1),q:Number(e.q),u:e.u==='g'||e.u==='ml'?e.u:'',l:String(e.l||'').slice(0,20),s:['user','ticket','scan'].includes(e.s)?e.s:'ticket'}}return r}
 let S;
 try{const raw=localStorage.getItem(LS);S=raw?fix(JSON.parse(raw)):fresh()}catch(e){S=fresh()}
 const F={text:'',with:[],stockOnly:false};      // filtres éphémères
@@ -561,6 +602,60 @@ function normQty(q,u){u=(u||'').toLowerCase().trim();q=Number(q)||0;
   if(u==='gousses')return[q,'gousse'];return[q,u]}
 const num=n=>String(Math.round(n*100)/100).replace('.',',');
 function fmtQty(q,u){if(!q)return'';if(u==='g'&&q>=1000)return num(q/1000)+' kg';if(u==='ml'&&q>=1000)return num(q/1000)+' l';return num(q)+(u?' '+u:'')}
+
+/* ---------- conditionnement (format du produit) ---------- */
+const RAYON_ICO=['🥬','🥩','🧀','🥫','🍞','🧊','🛒'];
+const rcIdx=r=>{const i=RAYONS.indexOf(r);return i<0?RAYONS.length-1:i};
+const rcStyle=r=>`--c:var(--rc${rcIdx(r)});--s:var(--rs${rcIdx(r)})`;
+const rcLabel=r=>RAYON_ICO[rcIdx(r)]+' '+r;
+const PK_LABELS=['paquet','boîte','bouteille','brique','pot','sachet','barquette','plaquette','bocal','tube','lot'];
+// type de contenant probable d'après le nom (modifiable à la main)
+const PK_GUESS=[[/\boeufs?\b/,'boîte'],[/\blait\b/,'brique'],[/\b(yaourts?|yogourts?|skyr|faisselle|fromage blanc|dessert|compotes?)\b/,'pot'],
+ [/\b(conserve|tomates? (en morceaux|concassees?|pelees?)|haricots? (verts?|rouges?|blancs?)|petits? pois|mais|thon|sardines?)\b/,'boîte'],
+ [/\b(jus|eau|soda|limonade|sirop|vinaigre|huile|vin|biere|sauce)\b/,'bouteille'],[/\b(pates?|spaghetti|riz|farine|sucre|semoule|cereales?|biscuits?|cafe|lentilles?)\b/,'paquet'],
+ [/\b(jambon|poulet|steak|saumon|lardons?|saucisses?|viande|filet|escalope|croquettes?)\b/,'barquette'],[/\bbeurre\b/,'plaquette'],[/\b(rape|rapee|salade|carottes?|champignons?|epinards?|frites)\b/,'sachet']];
+const pkLabel=name=>{const nn=norm(name);for(const [re,l] of PK_GUESS)if(re.test(nn))return l;return''};
+// enregistre un format ; un format saisi à la main n'est jamais écrasé par un ticket ou un scan
+function setFmt(name,f,src){
+  const k=norm(name);if(!k)return;const [q,u]=normQty(f.q,f.u);if(!(q>0))return;
+  const old=S.fmts[k];if(old&&old.s==='user'&&src!=='user')return;
+  S.fmts[k]={n:String(name).trim(),c:Math.max(1,Math.round(Number(f.c))||1),q,u,l:f.l!==undefined?f.l:(old&&old.l)||pkLabel(name),s:src};
+}
+function fmtOf(name){const k=norm(name);if(S.fmts[k])return S.fmts[k];const ck=ckey(name);return Object.values(S.fmts).find(e=>ckey(e.n)===ck)||null}
+const pkPieces=f=>f.u===''&&f.q===1;                         // lot de N pièces (œufs…)
+const pkTotal=f=>f.c*f.q;                                     // contenu d'un lot, en g / ml / pièces
+const pkContent=f=>pkPieces(f)?String(f.c):(f.c>1?f.c+' × ':'')+fmtQty(f.q,f.u);   // « 4 × 125 g », « 500 g », « 12 »
+const pkText=f=>pkPieces(f)?`${f.l||'lot'} de ${f.c}`:`${f.l?f.l+' ':''}${pkContent(f)}`;  // « pot 4 × 125 g »
+const pkCount=(n,f)=>`${n} ${f.l||'lot'}${n>1?'s':''}`;                                   // « 2 briques »
+function pkPhrase(n,f){                                                                      // « 2 briques de 1 l »
+  if(!f.l)return pkPieces(f)?`${pkCount(n,f)} de ${f.c}`:(n===1?pkContent(f):`${n} × ${pkContent(f)}`);
+  return `${pkCount(n,f)} de ${pkContent(f)}`;
+}
+// nombre de lots pour un besoin (arrondi au-dessus), ou null si on ne sait pas convertir
+function pkPacks(need,u,f){
+  if(!f||!(need>0))return null;u=u||'';
+  if((f.u||'')===u)return Math.max(1,Math.ceil(need/pkTotal(f)-1e-9));
+  if(u===''&&f.c>1)return Math.max(1,Math.ceil(need/f.c-1e-9));   // besoin en pièces, lot de plusieurs contenants
+  if(u===''&&f.c===1)return Math.max(1,Math.ceil(need-1e-9));     // une pièce = un contenant
+  return null;
+}
+// nombre entier de lots contenus dans une quantité en stock (ou null si ce n'est pas un compte rond)
+function pkLots(q,u,f){
+  if(!(q>0))return null;u=u||'';let x=null;
+  if((f.u||'')===u)x=q/pkTotal(f);else if(u===''&&f.c>1)x=q/f.c;
+  return x!=null&&x>=1&&Math.abs(x-Math.round(x))<0.02?Math.round(x):null;
+}
+// format détecté dans le libellé d'un ticket : « 4x125g », « 1L », « 500g », « x12 »
+function tkFormat(raw){
+  const s=String(raw).toLowerCase().replace(/(\d),(\d)/g,'$1.$2');
+  let m=s.match(/(\d+)\s*[x*]\s*(\d+(?:\.\d+)?)\s*(kg|g|gr|cl|ml|l)\b/);
+  if(m)return{c:+m[1],q:+m[2],u:m[3]==='gr'?'g':m[3]};
+  m=s.match(/(\d+(?:\.\d+)?)\s*(kg|g|gr|cl|ml|l)\b/);
+  if(m)return{c:1,q:+m[1],u:m[2]==='gr'?'g':m[2]};
+  m=s.match(/\bx\s*(\d+)\b|\b(\d+)\s*x\b(?!\s*\d)/);
+  if(m)return{c:+(m[1]||m[2]),q:1,u:''};
+  return null;
+}
 function parseLine(l){
   l=String(l).trim().replace(/^[-•*]\s*/,'');if(!l)return null;
   const m=l.match(/^(\d+\/\d+|\d+(?:[.,]\d+)?)?\s*(?:(kg|g|ml|cl|dl|l|cuill?[èe]res? ?à ?soupe|cuill?[èe]res? ?à ?café|c\. ?à ?s(?:oupe)?\.?|c\. ?à ?c(?:afé)?\.?|cs|cc|pincées?|sachets?|boîtes?|gousses?|tranches?|bouquets?|pots?)(?=\s|$))?\s*(?:de |d['’])?(.+)$/i);
@@ -822,6 +917,7 @@ function scRead(){
   const n=$('#sc-n').value.trim();if(!n){$('#sc-st').textContent='Indiquez le nom du produit.';return null}
   const q=Number($('#sc-q').value)||0,u=$('#sc-u').value,r=$('#sc-r').value,c=Math.max(1,parseInt($('#sc-c').value)||1);
   if(SC.code){S.barcodes[SC.code]={n,r,q,u}}
+  if(q>0)setFmt(n,{c:1,q,u},'scan');
   return{n,q,u,r,c};
 }
 function scDone(msg){
@@ -878,12 +974,12 @@ function catTabs(tb,cats,cur,act,total){
   tb.hidden=cats.length<2;
   if(tb.hidden){tb.innerHTML='';return}
   const sl=tb.scrollLeft;
-  tb.innerHTML=[['*','Tous',total]].concat(cats.map(c=>[c[0],c[0],c[1]])).map(([k,l,n])=>`<button type="button" class="tab" role="tab" data-act="${act}" data-r="${esc(k)}" aria-selected="${cur===k}">${esc(l)} <span class="badge">${n===0?'✓':n}</span></button>`).join('');
+  tb.innerHTML=[['*','Tous',total]].concat(cats.map(c=>[c[0],c[0],c[1]])).map(([k,l,n])=>`<button type="button" class="tab" role="tab" ${k==='*'?'':`style="${rcStyle(k)}"`} data-act="${act}" data-r="${esc(k)}" aria-selected="${cur===k}">${esc(k==='*'?l:rcLabel(l))} <span class="badge">${n===0?'✓':n}</span></button>`).join('');
   tb.scrollLeft=sl; // le défilement ne revient pas à gauche à chaque rendu
   const sel=tb.querySelector('[aria-selected="true"]');
   if(sel){const l=sel.offsetLeft,r=l+sel.offsetWidth;if(l<tb.scrollLeft)tb.scrollLeft=Math.max(0,l-8);else if(r>tb.scrollLeft+tb.clientWidth)tb.scrollLeft=r-tb.clientWidth+8}
 }
-let C_TAB='*',SK_TAB='*';
+let C_TAB='*',SK_TAB='*',FM_NAME='';
 function renderCourses(){
   const items=shoppingItems(),done=new Set(S.bought);
   const open=items.filter(i=>!done.has(i.key)),got=items.filter(i=>done.has(i.key));
@@ -895,14 +991,14 @@ function renderCourses(){
   catTabs($('#c-tabs'),UI.hideList?[]:cats.map(c=>[c[0],c[1]]),C_TAB,'c-tab',open.length);
   const vis=i=>C_TAB==='*'||i.rayon===C_TAB;
   const row=i=>{
-    const d=done.has(i.key),pr=bestPrice(i.nk,i.u);
+    const d=done.has(i.key),pr=bestPrice(i.nk,i.u),fm=fmtOf(i.name),np=fm&&!d?pkPacks(i.q,i.u,fm):null; // plus de « à prendre » une fois coché
     const from=[i.extra?'':i.from.join(', '),i.have?'déjà '+fmtQty(i.have,i.u)+' en stock':'',pr?'meilleur prix : '+pr.shop+' '+eur(unitPrice(pr))+'/'+unitLabel(pr.u):''].filter(Boolean).join(' · ');
     const act=i.extra
       ?`<button type="button" class="cbtn x" data-act="extra-del" data-id="${esc(i.extra)}" aria-label="Retirer ${esc(i.name)} de la liste" title="Retirer de la liste">×</button>`
       :`<button type="button" class="cbtn" data-act="stock" data-k="${esc(i.nk)}" data-n="${esc(i.name)}" title="Je l'ai déjà à la maison">En stock</button>`;
-    return`<li class="citem ${d?'done':''}"><button class="chk" role="checkbox" aria-checked="${d}" aria-label="${esc(i.name)}" data-act="bought" data-k="${esc(i.key)}"></button><div class="cmain"><span class="cnm">${esc(i.name)}</span>${from?`<span class="cfrom">${esc(from)}</span>`:''}</div><span class="cqty">${esc(fmtQty(i.q,i.u)||(i.extra?'':'au goût'))}</span>${act}</li>`;
+    return`<li class="citem ${d?'done':''}"><button class="chk" role="checkbox" aria-checked="${d}" aria-label="${esc(i.name)}" data-act="bought" data-k="${esc(i.key)}"></button><div class="cmain"><button type="button" class="cnm" data-act="fmt-open" data-n="${esc(i.name)}" title="Conditionnement de cet article">${esc(i.name)}</button>${np&&!(!fm.l&&fm.c===1&&np===1&&!pkPieces(fm))?`<span class="cpk">à prendre : ${esc(pkPhrase(np,fm))}</span>`:''}${from?`<span class="cfrom">${esc(from)}</span>`:''}</div><span class="cqty">${esc(fmtQty(i.q,i.u)||(i.extra?'':'au goût'))}</span>${act}</li>`;
   };
-  const group=(t,l,cls,bare)=>`<section class="cgroup ${cls||''}">${bare?'':`<h4 class="crayon"><span>${esc(t)}</span><span class="n">${l.length}</span></h4>`}<ul class="citems">${l.map(row).join('')}</ul></section>`;
+  const group=(t,l,cls,bare)=>`<section class="cgroup ${cls||''}" ${cls==='got'?'':`style="${rcStyle(t)}"`}>${bare?'':`<h4 class="crayon"><span>${esc(cls==='got'?t:rcLabel(t))}</span><span class="n">${l.length}</span></h4>`}<ul class="citems">${l.map(row).join('')}</ul></section>`;
   let list;
   if(UI.hideList){
     list=`<div class="clist"><p class="hint" style="margin:12px 0">Liste masquée · ${open.length} article${open.length>1?'s':''} à acheter.</p></div>`;
@@ -957,7 +1053,8 @@ function stockChanged(){persist();renderStock();renderRecipes();renderCourses()}
 function skStep(s){return s.u==='g'||s.u==='ml'?((s.q||0)>=1000?500:100):1}
 function skRow(s){
   const id=esc(sid(s)),step=skStep(s),nm=esc(s.n);
-  return`<div class="srow"><span class="nm">${nm}</span><div class="ctl">`+
+  const fm=fmtOf(s.n),lots=fm?pkLots(s.q,s.u,fm):null,sub=fm?pkText(fm)+(lots?` · ${pkCount(lots,fm)} en stock`:''):'';
+  return`<div class="srow"><div class="nmw"><button type="button" class="nm" data-act="fmt-open" data-n="${nm}" title="Conditionnement de cet article">${nm}</button>${sub?`<span class="sub">${esc(sub)}</span>`:''}</div><div class="ctl">`+
     `<button type="button" class="stp" data-act="stock-step" data-d="-1" data-sid="${id}" aria-label="Moins de ${nm}" ${s.q>step?'':'disabled'}>−</button>`+
     `<input type="number" inputmode="decimal" min="0" step="any" data-sq="${id}" value="${s.q?esc(Math.round(s.q*100)/100):''}" placeholder="dispo" aria-label="Quantité de ${nm}">`+
     (s.u?`<span class="u">${esc(s.u)}</span>`:'')+
@@ -980,9 +1077,9 @@ function renderStock(){
   el.innerHTML=RAYONS.filter(r=>tab==='*'||r===tab).map(r=>{
     const l=list.filter(s=>(RAYONS.includes(s.r)?s.r:'Autres')===r);
     if(!l.length)return'';
-    if(tab!=='*')return`<section class="sk-group">${l.map(skRow).join('')}</section>`; // un onglet de catégorie remplace l'en-tête
+    if(tab!=='*')return`<section class="sk-group" style="${rcStyle(r)}">${l.map(skRow).join('')}</section>`; // un onglet de catégorie remplace l'en-tête
     const shut=closed.has(r)&&!f; // une recherche déplie tout
-    return`<section class="sk-group"><button type="button" class="sk-head" data-act="sk-toggle" data-r="${esc(r)}" aria-expanded="${!shut}"><span>${esc(r)}</span><span class="n">${l.length}</span><span class="chev" aria-hidden="true">${shut?'▸':'▾'}</span></button>${shut?'':l.map(skRow).join('')}</section>`;
+    return`<section class="sk-group" style="${rcStyle(r)}"><button type="button" class="sk-head" data-act="sk-toggle" data-r="${esc(r)}" aria-expanded="${!shut}"><span>${esc(rcLabel(r))}</span><span class="n">${l.length}</span><span class="chev" aria-hidden="true">${shut?'▸':'▾'}</span></button>${shut?'':l.map(skRow).join('')}</section>`;
   }).join('');
 }
 function parsePasted(t){
@@ -1223,7 +1320,7 @@ function parseTicketText(txt){
     const lidlTax=shop==='Lidl'&&(it.tax==='A'||it.tax==='B');
     // chez Lidl, A = TVA 5,5 % (alimentaire) et B = 20 % (surtout du non alimentaire) ; ailleurs, on se fie au dictionnaire
     const food=!TK_NONFOOD.test(norm(it.raw))&&(lidlTax?it.tax==='A':g.known);
-    merged.set(key,{id:uid(),n:g.n,q:Math.round(q*1000)/1000,u,p:it.p,r:guessRayon(g.n),on:food,raw:it.raw});
+    merged.set(key,{id:uid(),n:g.n,q:Math.round(q*1000)/1000,u,p:it.p,r:guessRayon(g.n),on:food,raw:it.raw,fmt:it.w?null:tkFormat(it.raw)});
   }
   return{shop,date:date||todayISO(),items:[...merged.values()]};
 }
@@ -1374,6 +1471,7 @@ function applyTicket(){
       if(l.extra)S.extras=S.extras.filter(x=>x.id!==l.extra);
     }
     addStock({n:name,q,u,r:i.r});
+    if(i.fmt)setFmt(name,i.fmt,'ticket');
     if(shop&&addPrice(name,i.p,i.q,i.u,shop,R.date,i.r))np++;
   }
   S.bought=S.bought.filter(k=>!matched.has(k));
@@ -1422,7 +1520,7 @@ function renderPrix(){
   const cats=RAYONS.map(r=>[r,list.filter(g=>g.r===r)]).filter(c=>c[1].length);
   if(PR_TAB!=='*'&&!cats.some(c=>c[0]===PR_TAB))PR_TAB=cats.length?cats[0][0]:'*';
   const tb=$('#pr-tabs');tb.hidden=false;
-  tb.innerHTML=cats.map(([r,l])=>`<button class="tab" role="tab" data-act="pr-tab" data-r="${esc(r)}" aria-selected="${PR_TAB===r}">${esc(r)} <span class="badge">${l.length}</span></button>`).join('')+`<button class="tab" role="tab" data-act="pr-tab" data-r="*" aria-selected="${PR_TAB==='*'}">Tous <span class="badge">${list.length}</span></button>`;
+  tb.innerHTML=cats.map(([r,l])=>`<button class="tab" role="tab" style="${rcStyle(r)}" data-act="pr-tab" data-r="${esc(r)}" aria-selected="${PR_TAB===r}">${esc(rcLabel(r))} <span class="badge">${l.length}</span></button>`).join('')+`<button class="tab" role="tab" data-act="pr-tab" data-r="*" aria-selected="${PR_TAB==='*'}">Tous <span class="badge">${list.length}</span></button>`;
   $('#pr-list').innerHTML=PR_TAB==='*'?cats.map(([r,l])=>`<h3 class="pr-cat">${esc(r)}</h3>${l.map(card).join('')}`).join(''):(cats.find(c=>c[0]===PR_TAB)||[0,[]])[1].map(card).join('');
 }
 function safe(fn,name){try{fn()}catch(e){console.error(name,e);try{toast('Erreur d\'affichage ('+name+') : '+(e&&e.message||e))}catch(_){}}}
@@ -1458,6 +1556,22 @@ document.addEventListener('click',e=>{
       else{S.stock=S.stock.filter(s=>sid(s)!==b.dataset.sid);stockChanged()}
       break;
     case 'ex-toggle':{const f=$('#ex-box'),op=f.hidden;f.hidden=!op;b.setAttribute('aria-expanded',String(op));if(op)$('#ex-q').focus();break}
+    case 'fmt-open':{
+      FM_NAME=b.dataset.n||'';const f=fmtOf(FM_NAME);
+      $('#fm-name').textContent=FM_NAME;
+      $('#fm-l').value=f?(f.l||''):pkLabel(FM_NAME);
+      $('#fm-c').value=f?f.c:1;
+      const sh=!f||pkPieces(f)?['','']:f.u==='g'&&f.q>=1000?[f.q/1000,'kg']:f.u==='ml'&&f.q>=1000?[f.q/1000,'l']:[f.q,f.u];
+      $('#fm-q').value=sh[0];$('#fm-u').value=sh[1];$('#fm-msg').textContent='';$('#fm').hidden=false;$('#fm-q').focus();break}
+    case 'fmt-save':{
+      let q=parseFloat($('#fm-q').value)||0,u=$('#fm-u').value;if(!q){q=1;u=''}   // contenu vide = pièces
+      setFmt(FM_NAME,{c:parseInt($('#fm-c').value)||1,q,u,l:$('#fm-l').value},'user');
+      persist();$('#fm').hidden=true;renderStock();renderCourses();break}
+    case 'fmt-clear':{
+      const ck=ckey(FM_NAME);delete S.fmts[norm(FM_NAME)];
+      for(const [k,e] of Object.entries(S.fmts))if(ckey(e.n)===ck)delete S.fmts[k];
+      persist();$('#fm').hidden=true;renderStock();renderCourses();break}
+    case 'fmt-close':$('#fm').hidden=true;break;
     case 'c-tab':C_TAB=b.dataset.r;renderCourses();break;
     case 'sk-tab':SK_TAB=b.dataset.r;renderStock();break;
     case 'sk-add-toggle':{const f=$('#sk-add'),open=f.hidden;f.hidden=!open;b.setAttribute('aria-expanded',String(open));if(open)$('#sk-name').focus();break}
