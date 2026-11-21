@@ -1371,6 +1371,7 @@ const SHOPS=['Lidl','Carrefour','E.Leclerc','Leclerc','Auchan','Intermarché','S
 const TK_STOP=/^(sous[ -]?)?total\b|^a payer|^montant (du|a payer|total)|^net a payer|^somme\b/;
 const TK_SKIP=/\b(tva|cb|carte bancaire|carte de fidelite|visa|mastercard|especes|rendu|monnaie|paiement|payer|ticket|caisse|caissier|merci|siret|tel|telephone|articles?|nombre|points?|cagnotte|solde|total|montant|transaction|autorisation|client|facture|fidelite|euro?s?)\b/;
 const TK_DISC=/^(remise|reduc|reduction|promo|coupon|bon d|avantage|lidl plus|offre|economie|rabais|immediate)/;
+const NONFOOD_R=['Hygiène et beauté','Entretien et maison','Bébé et animaux','Autres'];
 const TK_NONFOOD=/\b(sac|sachet cabas|cabas|lessive|liquide vaisselle|vaisselle|essuie|papier toilette|mouchoir|shampo|shampoing|dentifrice|deodorant|gel douche|savon|eponge|piles?|ampoule|consigne|nettoyant|javel|adoucissant|couche|lingette|sopalin|aluminium|film etirable|bougie|journal|rasoir|lame|dentaire|parodontax|colgate|brosse a dent|litiere)\b/;
 const TK_ABBR={cho:'choix',ecr:'ecreme',nat:'nature',choc:'chocolat',jbn:'jambon',jamb:'jambon',fro:'fromage',from:'fromage',yaou:'yaourt',yt:'yaourt',yrt:'yaourt',pdt:'pomme de terre',pdterre:'pomme de terre',vol:'volaille',emment:'emmental',gruy:'gruyere',moz:'mozzarella',bche:'boeuf',bf:'boeuf',pll:'poulet',poul:'poulet',fil:'filet',sauc:'saucisse',cr:'creme',crm:'creme',fr:'fraiche',leg:'legume',lgm:'legume',tom:'tomate',pom:'pomme',bana:'banane',past:'pate',spag:'spaghetti',farin:'farine',sucr:'sucre',oeu:'oeuf',porme:'pomme',pornme:'pomme',pomrne:'pomme'};
 const tkNum=s=>parseFloat(String(s).replace(',','.'))||0;
@@ -1473,8 +1474,10 @@ function parseTicketText(txt){
     if(ex){ex.q+=q;ex.p=Math.round((ex.p+it.p)*100)/100;continue}
     const lidlTax=shop==='Lidl'&&(it.tax==='A'||it.tax==='B');
     // chez Lidl, A = TVA 5,5 % (alimentaire) et B = 20 % (surtout du non alimentaire) ; ailleurs, on se fie au dictionnaire
-    const food=!TK_NONFOOD.test(norm(it.raw))&&(lidlTax?it.tax==='A':g.known);
-    merged.set(key,{id:uid(),n:g.n,q:Math.round(q*1000)/1000,u,p:it.p,r:guessRayon(g.n),on:food,raw:it.raw,fmt:it.w?null:tkFormat(it.raw)});
+    // non alimentaire (lessive, piles, couches…) : gardé et coché, rangé dans un rayon non alimentaire (sinon « Autres »)
+    const nonfood=TK_NONFOOD.test(norm(it.raw))||(lidlTax&&it.tax==='B');
+    let r=guessRayon(g.n);if(nonfood&&!NONFOOD_R.includes(r))r='Autres';
+    merged.set(key,{id:uid(),n:g.n,q:Math.round(q*1000)/1000,u,p:it.p,r,on:nonfood||(lidlTax?it.tax==='A':g.known),raw:it.raw,fmt:it.w?null:tkFormat(it.raw)});
   }
   return{shop,date:date||todayISO(),items:[...merged.values()]};
 }
@@ -1590,7 +1593,7 @@ function tkMatch(){
 function showTicket(res,from){
   R.shop=res.shop;R.date=res.date;R.items=res.items;tkMatch();
   const off=res.items.filter(i=>!i.on).length;
-  $('#tk-status').textContent=res.items.length?`${res.items.length} ligne${res.items.length>1?'s':''} lue${res.items.length>1?'s':''} ${from}.${off?` ${off} non reconnue${off>1?'s':''} ou non alimentaire${off>1?'s':''} : décochée${off>1?'s':''}.`:''}`:'Aucun article reconnu dans ce ticket. Vérifiez qu\'il s\'agit bien du ticket détaillé.';
+  $('#tk-status').textContent=res.items.length?`${res.items.length} ligne${res.items.length>1?'s':''} lue${res.items.length>1?'s':''} ${from}.${off?` ${off} non reconnue${off>1?'s':''} : décochée${off>1?'s':''}.`:''}`:'Aucun article reconnu dans ce ticket. Vérifiez qu\'il s\'agit bien du ticket détaillé.';
   renderReview();
 }
 function renderReview(){
