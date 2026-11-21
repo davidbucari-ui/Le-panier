@@ -182,7 +182,7 @@ input[type=file]{padding:8px}
 .sc-cam{position:relative;border-radius:12px;overflow:hidden;background:#000;margin:8px 0}
 .sc-cam video{display:block;width:100%;max-height:260px;object-fit:cover}
 .sc-cam .sc-line{position:absolute;left:10%;right:10%;top:50%;height:2px;background:rgba(255,60,60,.85)}
-.pr-tabs{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;margin-bottom:4px;-webkit-overflow-scrolling:touch}
+.pr-tabs{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;margin-bottom:4px;-webkit-overflow-scrolling:touch;position:relative}
 .pr-tabs .tab{flex:0 0 auto;border:1px solid var(--line,#ccc);white-space:nowrap}
 .pr-tabs .tab .badge{margin-left:2px}
 .pr-cat{margin:22px 0 8px;font-size:1.05rem;border-bottom:1px solid var(--line,#ccc);padding-bottom:4px}
@@ -311,6 +311,7 @@ input[type=file]{padding:8px}
       <div id="ex-res" class="ex-res" role="list"></div>
       <p class="hint" style="margin:8px 0 0" id="ex-hint">Tapez 2 lettres ou choisissez un rayon, puis touchez l'article : il s'ajoute à la liste.</p>
     </div>
+    <div class="pr-tabs" id="c-tabs" role="tablist" aria-label="Catégories" hidden></div>
     <div class="cols" id="courses"></div>
   </section>
 
@@ -354,6 +355,7 @@ input[type=file]{padding:8px}
         <div class="field" style="justify-content:flex-end"><button class="btn primary" data-act="stock-add">Ajouter au stock</button></div>
       </div>
     </div>
+    <div class="pr-tabs" id="sk-tabs" role="tablist" aria-label="Catégories" hidden></div>
     <div id="stock-list"></div>
     <div class="row-actions" style="margin-top:12px"><button class="btn danger sm" data-act="stock-clear" id="stock-clear">Vider le stock</button><span class="hint">Case « dispo » (quantité vide) : l'article est considéré comme disponible, sans quantité précise.</span></div>
   </section>
@@ -871,12 +873,27 @@ function renderMenu(){
   const n=Object.keys(S.plan).length;
   $('#menu-box').innerHTML=`<h3>Ajoutées à ma liste de courses${n?` (${n})`:''}</h3>${plan||'<p class="hint" style="margin:0">Aucune recette pour l\'instant. Touchez « Ajouter aux courses » sur une recette ci-dessous : ses ingrédients rejoignent la liste de courses. Le jour est facultatif.</p>'}`;
 }
+// rangée d'onglets par catégorie (Courses, Stock) : « Tous » puis une catégorie par onglet, avec son nombre (✓ = rien à faire)
+function catTabs(tb,cats,cur,act,total){
+  tb.hidden=cats.length<2;
+  if(tb.hidden){tb.innerHTML='';return}
+  const sl=tb.scrollLeft;
+  tb.innerHTML=[['*','Tous',total]].concat(cats.map(c=>[c[0],c[0],c[1]])).map(([k,l,n])=>`<button type="button" class="tab" role="tab" data-act="${act}" data-r="${esc(k)}" aria-selected="${cur===k}">${esc(l)} <span class="badge">${n===0?'✓':n}</span></button>`).join('');
+  tb.scrollLeft=sl; // le défilement ne revient pas à gauche à chaque rendu
+  const sel=tb.querySelector('[aria-selected="true"]');
+  if(sel){const l=sel.offsetLeft,r=l+sel.offsetWidth;if(l<tb.scrollLeft)tb.scrollLeft=Math.max(0,l-8);else if(r>tb.scrollLeft+tb.clientWidth)tb.scrollLeft=r-tb.clientWidth+8}
+}
+let C_TAB='*',SK_TAB='*';
 function renderCourses(){
   const items=shoppingItems(),done=new Set(S.bought);
   const open=items.filter(i=>!done.has(i.key)),got=items.filter(i=>done.has(i.key));
   const b=$('#badge');b.textContent=open.length;b.hidden=!open.length;
   const date=new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
   const n=Object.keys(S.plan).length;
+  const cats=RAYONS.map(r=>[r,open.filter(i=>i.rayon===r).length,got.filter(i=>i.rayon===r).length]).filter(c=>c[1]+c[2]>0);
+  if(C_TAB!=='*'&&!cats.some(c=>c[0]===C_TAB))C_TAB='*';
+  catTabs($('#c-tabs'),UI.hideList?[]:cats.map(c=>[c[0],c[1]]),C_TAB,'c-tab',open.length);
+  const vis=i=>C_TAB==='*'||i.rayon===C_TAB;
   const row=i=>{
     const d=done.has(i.key),pr=bestPrice(i.nk,i.u);
     const from=[i.extra?'':i.from.join(', '),i.have?'déjà '+fmtQty(i.have,i.u)+' en stock':'',pr?'meilleur prix : '+pr.shop+' '+eur(unitPrice(pr))+'/'+unitLabel(pr.u):''].filter(Boolean).join(' · ');
@@ -885,16 +902,17 @@ function renderCourses(){
       :`<button type="button" class="cbtn" data-act="stock" data-k="${esc(i.nk)}" data-n="${esc(i.name)}" title="Je l'ai déjà à la maison">En stock</button>`;
     return`<li class="citem ${d?'done':''}"><button class="chk" role="checkbox" aria-checked="${d}" aria-label="${esc(i.name)}" data-act="bought" data-k="${esc(i.key)}"></button><div class="cmain"><span class="cnm">${esc(i.name)}</span>${from?`<span class="cfrom">${esc(from)}</span>`:''}</div><span class="cqty">${esc(fmtQty(i.q,i.u)||(i.extra?'':'au goût'))}</span>${act}</li>`;
   };
-  const group=(t,l,cls)=>`<section class="cgroup ${cls||''}"><h4 class="crayon"><span>${esc(t)}</span><span class="n">${l.length}</span></h4><ul class="citems">${l.map(row).join('')}</ul></section>`;
+  const group=(t,l,cls,bare)=>`<section class="cgroup ${cls||''}">${bare?'':`<h4 class="crayon"><span>${esc(t)}</span><span class="n">${l.length}</span></h4>`}<ul class="citems">${l.map(row).join('')}</ul></section>`;
   let list;
   if(UI.hideList){
     list=`<div class="clist"><p class="hint" style="margin:12px 0">Liste masquée · ${open.length} article${open.length>1?'s':''} à acheter.</p></div>`;
   }else if(!items.length){
     list=`<div class="clist"><p class="hint" style="margin:12px 0">${n?'Tout est déjà en stock : rien à acheter.':'La liste est vide. Touchez « ＋ Ajouter », ou ajoutez des recettes depuis l\'onglet Recettes.'}</p></div>`;
   }else{
-    list=`<div class="clist"><div class="chead"><b>${open.length} à acheter</b>${got.length?`<span>· ${got.length} dans le panier</span>`:''}<span class="date">${esc(date)}</span></div>`+
-      RAYONS.map(r=>[r,open.filter(i=>i.rayon===r)]).filter(g=>g[1].length).map(([r,l])=>group(r,l)).join('')+
-      (got.length?group('Dans le panier',got,'got'):'')+`</div>`;
+    const vo=open.filter(vis),vg=got.filter(vis);
+    list=`<div class="clist"><div class="chead"><b>${vo.length} à acheter</b>${vg.length?`<span>· ${vg.length} dans le panier</span>`:''}<span class="date">${esc(date)}</span></div>`+
+      RAYONS.map(r=>[r,vo.filter(i=>i.rayon===r)]).filter(g=>g[1].length).map(([r,l])=>group(r,l,'',C_TAB!=='*')).join('')+
+      (vg.length?group('Dans le panier',vg,'got'):'')+`</div>`;
   }
   const side=`<div class="side">
     <div class="box csum">
@@ -953,11 +971,16 @@ function renderStock(){
   $('#stock-clear').disabled=!S.stock.length;
   $('#sk-count').textContent=S.stock.length?(f?`${list.length} sur ${S.stock.length}`:`${S.stock.length} article${S.stock.length>1?'s':''}`):'';
   const el=$('#stock-list');
+  if(!list.length)$('#sk-tabs').hidden=true;
   if(!list.length){el.innerHTML=`<div class="empty">${S.stock.length?'Aucun article ne correspond.':'Votre stock est vide. Lisez votre ticket de courses depuis l\'onglet Courses, ou ajoutez un article à la main.'}</div>`;return}
+  const cats=RAYONS.map(r=>[r,list.filter(s=>(RAYONS.includes(s.r)?s.r:'Autres')===r).length]).filter(c=>c[1]>0);
+  const tab=cats.some(c=>c[0]===SK_TAB)?SK_TAB:'*';
+  catTabs($('#sk-tabs'),cats,tab,'sk-tab',list.length);
   const closed=new Set(UI.skClosed||[]);
-  el.innerHTML=RAYONS.map(r=>{
+  el.innerHTML=RAYONS.filter(r=>tab==='*'||r===tab).map(r=>{
     const l=list.filter(s=>(RAYONS.includes(s.r)?s.r:'Autres')===r);
     if(!l.length)return'';
+    if(tab!=='*')return`<section class="sk-group">${l.map(skRow).join('')}</section>`; // un onglet de catégorie remplace l'en-tête
     const shut=closed.has(r)&&!f; // une recherche déplie tout
     return`<section class="sk-group"><button type="button" class="sk-head" data-act="sk-toggle" data-r="${esc(r)}" aria-expanded="${!shut}"><span>${esc(r)}</span><span class="n">${l.length}</span><span class="chev" aria-hidden="true">${shut?'▸':'▾'}</span></button>${shut?'':l.map(skRow).join('')}</section>`;
   }).join('');
@@ -1431,6 +1454,8 @@ document.addEventListener('click',e=>{
       else{S.stock=S.stock.filter(s=>sid(s)!==b.dataset.sid);stockChanged()}
       break;
     case 'ex-toggle':{const f=$('#ex-box'),op=f.hidden;f.hidden=!op;b.setAttribute('aria-expanded',String(op));if(op)$('#ex-q').focus();break}
+    case 'c-tab':C_TAB=b.dataset.r;renderCourses();break;
+    case 'sk-tab':SK_TAB=b.dataset.r;renderStock();break;
     case 'sk-add-toggle':{const f=$('#sk-add'),open=f.hidden;f.hidden=!open;b.setAttribute('aria-expanded',String(open));if(open)$('#sk-name').focus();break}
     case 'stock-step':{const it=S.stock.find(x=>sid(x)===b.dataset.sid);if(it){const st=skStep(it),d=Number(b.dataset.d)||0;it.q=Math.max(0,Math.round(((it.q||0)+d*st)*100)/100);stockChanged()}break}
     case 'sk-toggle':{const r=b.dataset.r,c=new Set(UI.skClosed||[]);c.has(r)?c.delete(r):c.add(r);UI.skClosed=[...c];saveUI();renderStock();break}

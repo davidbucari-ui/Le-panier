@@ -38,6 +38,9 @@ prices   : {id, k, n, p, q, u, shop, d, r?} p = prix payé pour q·u ; d = AAAA-
 ## Écran Courses
 - Haut : « ＋ Ajouter » (déplie le formulaire de recherche `#ex-box`, masqué par défaut) et « Scanner ». Liste (`renderCourses`) : une ligne par article (`.citem` : case, nom + origine, quantité, bouton « En stock » ou × pour un ajout à la main), regroupée par rayon ; les articles cochés passent dans un groupe « Dans le panier » en bas. À droite (tablette) ou dessous (mobile) : résumé recettes/stock, « Lire mon ticket », « Ranger les courses », « Copier la liste », puis « Plus d'actions » (nouvelle recette, masquer, tout décocher, vider). L'ancien style « ticket de caisse » (police mono, pointillés) a été retiré.
 
+## Onglets par catégorie (Courses et Stock)
+- Composant commun `catTabs` (même style `.pr-tabs` que l'onglet Prix) : « Tous » puis un onglet par rayon avec son nombre (✓ = rien à acheter dans Courses). Masqué s'il n'y a qu'une catégorie. État en mémoire seulement (`C_TAB`, `SK_TAB`, pas persisté) ; retour automatique à « Tous » si la catégorie se vide. La barre défile horizontalement et garde sa position à chaque rendu. Dans un onglet de catégorie, l'en-tête de rayon est omis (l'onglet le remplace) ; dans « Tous », le Stock garde ses groupes repliables.
+
 ## Écran Stock
 - Une ligne par article (`skRow`) : nom, boutons − / + (`stock-step`, pas de 1 pièce, 100 g/ml, 500 au-delà d'un kilo/litre), quantité modifiable, × (retrait avec confirmation par second toucher). Quantité vide = « dispo » (`q=0`, considéré disponible). Le − est désactivé au minimum (le retrait passe par ×).
 - Catégories repliables (`sk-toggle`, état dans `UI.skClosed`, local à l'appareil) ; une recherche les déplie. L'ajout à la main est masqué derrière « ＋ Ajouter ».
