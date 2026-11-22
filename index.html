@@ -2389,6 +2389,8 @@ async function authGo(signup){
       msg.textContent='Création du compte…';
       const {data,error}=await sb.auth.signUp({email,password:pw,options:{emailRedirectTo:authBack()}});
       if(error)throw error;
+      // adresse déjà inscrite : Supabase répond « succès » sans rien envoyer, avec une liste d'identités vide
+      if(data.user&&Array.isArray(data.user.identities)&&!data.user.identities.length){authMode('in');$('#au-mail').value=email;$('#au-msg').innerHTML=`<div class="au-ok"><b>Vous avez déjà un compte Le Panier</b> avec <b>${esc(email)}</b> : aucun e-mail n'est envoyé dans ce cas.<br>Tapez votre mot de passe Le Panier et touchez « Se connecter ». Si vous ne le connaissez pas, touchez « Mot de passe oublié ? » ci-dessous.</div>`;$('#au-pass').value='';$('#au-pass').focus();return}
       if(data.session)msg.textContent='';else authSent(email);
     }else{
       const {error}=await sb.auth.signInWithPassword({email,password:pw});
