@@ -106,6 +106,14 @@ textarea{resize:vertical;min-height:96px}
 .ing{font-size:13.5px;padding:2px 8px;border-radius:6px;background:var(--paper);border:1px solid var(--line);font:inherit;font-size:13.5px}
 button.ing:hover{border-color:var(--radis)}
 .ing.bad{background:var(--radis-soft);color:var(--radis-ink);border-color:transparent;text-decoration:line-through}
+.cm{border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:8px}
+.cm h4{margin:0;font-size:14px;color:var(--muted)}
+.cm-it{background:var(--paper);border-radius:10px;padding:8px 10px;font-size:14.5px;display:flex;flex-direction:column;gap:2px}
+.cm-it .who{font-size:12.5px;color:var(--muted);display:flex;justify-content:space-between;gap:8px;align-items:center}
+.cm-it .who button{border:0;background:none;color:var(--muted);cursor:pointer;min-width:36px;min-height:28px;font-size:13px}
+.cm-it p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.cm-new{display:flex;gap:8px;align-items:flex-end}
+.cm-new textarea{flex:1;min-width:0;min-height:44px;resize:vertical}
 .steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:15px}
 .warn{font-size:13.5px;color:var(--radis-ink);background:var(--radis-soft);padding:6px 10px;border-radius:8px}
 .card .spacer{flex:1}
@@ -1028,9 +1036,9 @@ function recipeCard(r){
   return`<article class="card" id="rc-${esc(r.id)}">
     ${rcHero(r,planned?'Dans la liste · '+S.plan[r.id]+' pers.':'')}
     <h3>${esc(r.title)}</h3>
-    <div class="meta">${r.time?`<span class="mono">${esc(r.time)} min</span>`:''}<span class="mono">${esc(r.servings)} pers.</span>${S.stock.length?`<span class="tag ${sh===st?'ok':''}">${sh}/${st} en stock</span>`:''}${(r.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}${r._by&&r._by!==sbUid&&r._au?`<span class="tag">par ${esc(r._au)}</span>`:''}${r.source==='ia'?'<span class="tag ia">Claude</span>':''}${r.source==='exemple'?'<span class="tag">Exemple</span>':''}${r.source==='site'?'<span class="tag">Site</span>':''}</div>
+    <div class="meta">${r.time?`<span class="mono">${esc(r.time)} min</span>`:''}<span class="mono">${esc(r.servings)} pers.</span>${S.stock.length?`<span class="tag ${sh===st?'ok':''}">${sh}/${st} en stock</span>`:''}${(r.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}${(CM[r.id]||[]).length?`<span class="tag">💬 ${CM[r.id].length}</span>`:''}${r._by&&r._by!==sbUid&&r._au?`<span class="tag">par ${esc(r._au)}</span>`:''}${r.source==='ia'?'<span class="tag ia">Claude</span>':''}${r.source==='exemple'?'<span class="tag">Exemple</span>':''}${r.source==='site'?'<span class="tag">Site</span>':''}</div>
     <ul class="ings">${shown.map(i=>ingChip(i,'li')).join('')}${more>0?`<li class="ing more">+${more}</li>`:''}</ul>
-    ${open&&r.steps&&r.steps.length?`<ol class="steps">${r.steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol>`:''}${open&&/^https?:\/\//i.test(r.url||'')?`<p class="hint" style="margin:0">Source : <a href="${esc(r.url)}" target="_blank" rel="noopener noreferrer">${esc((()=>{try{return new URL(r.url).hostname.replace(/^www\./,'')}catch(e){return r.url}})())}</a></p>`:''}
+    ${open&&r.steps&&r.steps.length?`<ol class="steps">${r.steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol>`:''}${open?cmBlock(r):''}${open&&/^https?:\/\//i.test(r.url||'')?`<p class="hint" style="margin:0">Source : <a href="${esc(r.url)}" target="_blank" rel="noopener noreferrer">${esc((()=>{try{return new URL(r.url).hostname.replace(/^www\./,'')}catch(e){return r.url}})())}</a></p>`:''}
     <div class="spacer"></div>
     <div class="row-actions">
       ${planned?`<div class="stepper"><button data-act="plan-minus" data-id="${esc(r.id)}" aria-label="Moins de personnes">−</button><span>${esc(S.plan[r.id])} pers.</span><button data-act="plan-plus" data-id="${esc(r.id)}" aria-label="Plus de personnes">+</button></div><button class="btn sm" data-act="plan-del" data-id="${esc(r.id)}">Retirer des courses</button>`
@@ -1043,6 +1051,11 @@ function recipeCard(r){
   </article>`;
 }
 function renderRecipes(){
+  const ae=document.activeElement,keep=ae&&ae.classList&&ae.classList.contains('cm-in')&&ae.closest('article')?{id:ae.closest('article').id,v:ae.value}:null;
+  renderRecipes0();
+  if(keep){const a=document.getElementById(keep.id),t=a&&a.querySelector('.cm-in');if(t){t.value=keep.v;t.focus()}}
+}
+function renderRecipes0(){
   const all=allRec(),list=all.filter(matches),hidden=all.filter(r=>excludedIn(r).length).length;
   if(UI.az)list.sort((a,b)=>(a.title||'').localeCompare(b.title||'','fr',{sensitivity:'base'}));
   $('#recipe-count').textContent=`${list.length} recette${list.length>1?'s':''} affichée${list.length>1?'s':''} sur ${all.length}`+(hidden?` · ${hidden} masquée${hidden>1?'s':''} par vos exclusions`:'');
@@ -1298,11 +1311,18 @@ function catTabs(tb,cats,cur,act,total){
 }
 let C_TAB='*',SK_TAB='*',FM_NAME='',FM_R0='';
 /* ---------- recettes communes (Supabase : shared_recipes) : tout le monde les voit, seul l'auteur modifie ou supprime ---------- */
-var CR=[],CR_OK=false,crCh=null,crTimer=null;
+var CM={},CR=[],CR_OK=false,crCh=null,crTimer=null;
 const crOn=()=>{try{return!!(sb&&sbUid&&CR_OK)}catch(e){return false}};   // sb est déclaré plus bas
 const allRec=()=>CR.concat(S.recipes);
 const findRec=id=>allRec().find(r=>r.id===id);
 const canEdit=r=>!r._by||r._by===sbUid;
+function cmBlock(r){
+  if(!r._by)return'';
+  const l=CM[r.id]||[];
+  return`<div class="cm"><h4>Commentaires${l.length?' ('+l.length+')':''}</h4>
+    ${l.map(m=>`<div class="cm-it"><div class="who"><span>${esc(m.author||'Un membre')} · ${esc(new Date(m.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'short'}))}</span>${m.owner===sbUid?`<button type="button" data-act="cm-del" data-cid="${esc(m.id)}" aria-label="Supprimer mon commentaire">Supprimer</button>`:''}</div><p>${esc(m.body)}</p></div>`).join('')}
+    <div class="cm-new"><textarea class="cm-in" maxlength="1000" rows="2" placeholder="Votre commentaire (astuce, variante, avis…)" aria-label="Votre commentaire"></textarea><button class="btn sm primary" data-act="cm-add" data-id="${esc(r.id)}">Publier</button></div></div>`;
+}
 function crFrom(row){const d=row.data&&typeof row.data==='object'?row.data:{};return{...d,id:row.id,_by:row.owner,_au:row.author||'',ingredients:Array.isArray(d.ingredients)?d.ingredients:[],steps:Array.isArray(d.steps)?d.steps:[],title:String(d.title||'')}}
 async function crSave(r){
   const data={...r};delete data._by;delete data._au;delete data.id;
@@ -1315,6 +1335,8 @@ async function crLoad(){
     const {data,error}=await sb.from('shared_recipes').select('id,owner,author,data,created_at').order('created_at',{ascending:false});
     if(error)throw error;
     CR=(data||[]).map(crFrom);CR_OK=true;
+    try{const c=await sb.from('recipe_comments').select('id,recipe_id,owner,author,body,created_at').order('created_at');
+      if(c.error)throw c.error;CM={};for(const m of c.data||[])(CM[m.recipe_id]=CM[m.recipe_id]||[]).push(m)}catch(e){console.error('commentaires',e)}
     crMove();
   }catch(e){console.error('recettes communes',e)}
   renderRecipes();renderCourses();
@@ -1330,9 +1352,9 @@ async function crMove(){
 function crStart(){
   crStop();crLoad();
   const again=()=>{clearTimeout(crTimer);crTimer=setTimeout(crLoad,250)};
-  crCh=sb.channel('recettes_'+sbUid).on('postgres_changes',{event:'*',schema:'public',table:'shared_recipes'},again).subscribe();
+  crCh=sb.channel('recettes_'+sbUid).on('postgres_changes',{event:'*',schema:'public',table:'shared_recipes'},again).on('postgres_changes',{event:'*',schema:'public',table:'recipe_comments'},again).subscribe();
 }
-function crStop(){if(crCh&&sb){try{sb.removeChannel(crCh)}catch(e){}}crCh=null;clearTimeout(crTimer);CR=[];CR_OK=false}
+function crStop(){if(crCh&&sb){try{sb.removeChannel(crCh)}catch(e){}}crCh=null;clearTimeout(crTimer);CR=[];CM={};CR_OK=false}
 async function addRec(r){if(crOn()){await crSave(r);CR.unshift({...r,_by:sbUid,_au:UI.me||''})}else S.recipes.unshift(r)}
 /* ---------- listes partagées (Supabase : shared_lists / shared_list_members / shared_items) ---------- */
 var SH={lists:[],members:{},items:{},ok:false},shCh=null,shTimer=null;
@@ -2121,6 +2143,12 @@ document.addEventListener('click',e=>{
     case 'plan-minus':planChange(id,()=>{S.plan[id]=Math.max(1,(S.plan[id]||1)-1)});break;
     case 'plan-plus':planChange(id,()=>{S.plan[id]=Math.min(30,(S.plan[id]||1)+1)});break;
     case 'del-recipe':if(b.dataset.arm!=='1'){b.dataset.arm='1';b.textContent='Confirmer ?';setTimeout(()=>{if(b.isConnected){b.dataset.arm='';b.textContent='Supprimer'}},3000)}else{(async()=>{const gone=findRec(id);if(!gone||!canEdit(gone))return;if(gone._by){const {error}=await sb.from('shared_recipes').delete().eq('id',id);if(error){toast('Suppression impossible ('+(error.message||error)+').');return}CR=CR.filter(r=>r.id!==id)}else S.recipes=S.recipes.filter(r=>r.id!==id);photoDel(gone.img);delete S.plan[id];delete S.days[id];OPEN.delete(id);persist();renderRecipes();renderCourses()})()}break;
+    case 'cm-add':{const ta=b.closest('article').querySelector('.cm-in'),body=ta.value.trim().slice(0,1000);if(!body||!crOn())break;b.disabled=true;
+      (async()=>{const {data,error}=await sb.from('recipe_comments').insert({recipe_id:id,author:(UI.me||'').slice(0,40),body}).select('id,recipe_id,owner,author,body,created_at').single();
+        if(error){toast('Commentaire non envoyé ('+(error.message||error)+').');b.disabled=false;return}
+        (CM[id]=CM[id]||[]).push(data);renderRecipes()})();break}
+    case 'cm-del':{const cid=b.dataset.cid;(async()=>{const {error}=await sb.from('recipe_comments').delete().eq('id',cid);if(error){toast('Suppression impossible ('+(error.message||error)+').');return}
+        for(const k in CM)CM[k]=CM[k].filter(m=>m.id!==cid);renderRecipes()})();break}
     case 'new-recipe':openForm(null);break;
     case 'edit-recipe':openForm(findRec(id));break;
     case 'nr-cancel':$('#nr').hidden=true;PENDING_URL='';break;

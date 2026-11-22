@@ -165,3 +165,26 @@ alter publication supabase_realtime add table public.shared_recipes;
 drop policy if exists "photos de recettes : lire les siennes" on storage.objects;
 create policy "photos de recettes : lire (tous les membres)" on storage.objects
   for select to authenticated using (bucket_id = 'recettes');
+
+-- ============================================================
+-- Commentaires sur les recettes communes (migration « commentaires_recettes ») : tous les membres lisent
+-- et commentent ; chacun ne supprime que les siens ; supprimés avec la recette.
+-- ============================================================
+create table if not exists public.recipe_comments (
+  id uuid primary key default gen_random_uuid(),
+  recipe_id text not null references public.shared_recipes(id) on delete cascade,
+  owner uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  author text not null default '' check (char_length(author) <= 40),
+  body text not null check (char_length(body) between 1 and 1000),
+  created_at timestamptz not null default now()
+);
+create index if not exists recipe_comments_recipe on public.recipe_comments(recipe_id);
+create index if not exists recipe_comments_owner on public.recipe_comments(owner);
+alter table public.recipe_comments enable row level security;
+create policy "commentaires : tous les membres lisent" on public.recipe_comments
+  for select to authenticated using (true);
+create policy "commentaires : ajouter les siens" on public.recipe_comments
+  for insert to authenticated with check (owner = (select auth.uid()));
+create policy "commentaires : supprimer les siens" on public.recipe_comments
+  for delete to authenticated using (owner = (select auth.uid()));
+alter publication supabase_realtime add table public.recipe_comments;
