@@ -208,6 +208,26 @@ body.loading main{opacity:.5;pointer-events:none}
 .sk-group .srow .del:hover{color:var(--radis-ink);background:var(--radis-soft)}
 .sk-group .srow .del.armed{color:var(--radis-ink);border-color:var(--radis)}
 @media (max-width:480px){.sk-ico{width:32px;height:32px;font-size:17px}.sk-group .sk-step input[type=number]{width:48px}.sk-group .srow{padding-left:8px;gap:8px}}
+/* Courses : même habillage que le Stock (cartes par rayon, pastille illustrée) */
+.clist{background:transparent;border:0;padding:0}
+.chead{padding:2px 2px 4px}
+.cgroup{margin-top:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 1px 2px rgba(20,40,28,.05),0 4px 14px -8px rgba(20,40,28,.18)}
+.cgroup .crayon{margin:0;border-radius:0;padding:10px 14px;min-height:46px;font-family:var(--display);font-size:1.05rem;letter-spacing:-.01em;background:linear-gradient(90deg,var(--s),var(--s) 60%,var(--card))}
+.cgroup .crayon .n{background:var(--c);border-color:var(--c);color:var(--card);font-family:var(--body)}
+.clist .cgroup .citem{box-shadow:none;padding:8px 12px;min-height:58px}
+.cgroup .citem:last-child{border-bottom:0}
+.cgroup .citem:hover{background:color-mix(in srgb,var(--s) 35%,transparent)}
+.cgroup .sk-ico{width:36px;height:36px;font-size:19px}
+.cgroup .cqty{font-weight:700;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:4px 10px}
+.cgroup .cbtn{border-radius:999px;padding:0 12px}
+.cgroup .cbtn.x{border-color:transparent;background:transparent;color:var(--muted);padding:0}
+.cgroup .cbtn.x:hover{color:var(--radis-ink);background:var(--radis-soft)}
+.cgroup.got{opacity:.8}
+.cgroup.got .crayon{background:var(--paper)}
+.cgroup.got .crayon .n{background:var(--muted);border-color:var(--muted)}
+.citem.done .sk-ico{filter:grayscale(.7);opacity:.6}
+.citem.done .cqty{background:transparent}
+@media (max-width:480px){.clist .cgroup .citem{padding:8px 10px;gap:8px}.cgroup .sk-ico{width:30px;height:30px;font-size:16px}}
 .pr-tabs .tab[style]{background:var(--s);border-color:transparent;color:var(--ink)}
 .pr-tabs .tab[style] .badge{background:var(--c);color:var(--paper)}
 .pr-tabs .tab[style][aria-selected="true"]{background:var(--c);color:var(--paper)}
@@ -1138,7 +1158,7 @@ function renderCourses(){
     const act=i.extra
       ?`<button type="button" class="cbtn x" data-act="extra-del" data-id="${esc(i.extra)}" aria-label="Retirer ${esc(i.name)} de la liste" title="Retirer de la liste">×</button>`
       :`<button type="button" class="cbtn" data-act="stock" data-k="${esc(i.nk)}" data-n="${esc(i.name)}" title="Je l'ai déjà à la maison">En stock</button>`;
-    return`<li class="citem ${d?'done':''}"><button class="chk" role="checkbox" aria-checked="${d}" aria-label="${esc(i.name)}" data-act="bought" data-k="${esc(i.key)}"></button><div class="cmain"><button type="button" class="cnm" data-act="fmt-open" data-n="${esc(i.name)}" data-r="${esc(i.rayon)}" title="Catégorie et conditionnement de cet article">${esc(i.name)}</button>${np&&!(!fm.l&&fm.c===1&&np===1&&!pkPieces(fm))?`<span class="cpk">à prendre : ${esc(pkPhrase(np,fm))}</span>`:''}${from?`<span class="cfrom">${esc(from)}</span>`:''}</div><span class="cqty">${esc(fmtQty(i.q,i.u)||(i.extra?'':'au goût'))}</span>${act}</li>`;
+    return`<li class="citem ${d?'done':''}"><button class="chk" role="checkbox" aria-checked="${d}" aria-label="${esc(i.name)}" data-act="bought" data-k="${esc(i.key)}"></button><span class="sk-ico" aria-hidden="true" style="${rcStyle(i.rayon)}">${itemIco(i.name,i.rayon)}</span><div class="cmain"><button type="button" class="cnm" data-act="fmt-open" data-n="${esc(i.name)}" data-r="${esc(i.rayon)}" title="Catégorie et conditionnement de cet article">${esc(i.name)}</button>${np&&!(!fm.l&&fm.c===1&&np===1&&!pkPieces(fm))?`<span class="cpk">à prendre : ${esc(pkPhrase(np,fm))}</span>`:''}${from?`<span class="cfrom">${esc(from)}</span>`:''}</div><span class="cqty">${esc(fmtQty(i.q,i.u)||(i.extra?'':'au goût'))}</span>${act}</li>`;
   };
   const group=(t,l,cls,bare)=>`<section class="cgroup ${cls||''}" ${cls==='got'?'':`style="${rcStyle(t)}"`}>${bare?'':`<h4 class="crayon"><span>${esc(cls==='got'?t:rcLabel(t))}</span><span class="n">${l.length}</span></h4>`}<ul class="citems">${l.map(row).join('')}</ul></section>`;
   let list;
