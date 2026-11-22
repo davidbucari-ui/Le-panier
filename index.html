@@ -2184,6 +2184,19 @@ function sbAdapter(client,uid){
   };
 }
 function showAuth(msg){$('#auth').hidden=false;$('#au-msg').textContent=msg||(localStorage.getItem('lepanier-join')?'On vous invite sur une liste de courses partagée : connectez-vous, ou créez votre compte, pour la rejoindre.':'');$('#au-mail').focus()}
+// mot de passe déjà divulgué ? (Have I Been Pwned, k-anonymat : seuls les 5 premiers caractères de l'empreinte SHA-1 partent)
+// renvoie true (divulgué), false (non trouvé) ou null (vérification impossible : hors ligne, navigateur ancien)
+async function pwLeaked(pw){
+  try{
+    if(!(window.crypto&&crypto.subtle))return null;
+    const h=[...new Uint8Array(await crypto.subtle.digest('SHA-1',new TextEncoder().encode(pw)))].map(b=>b.toString(16).padStart(2,'0')).join('').toUpperCase();
+    const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),6000);
+    const r=await fetch('https://api.pwnedpasswords.com/range/'+h.slice(0,5),{headers:{'Add-Padding':'true'},signal:ctl.signal});clearTimeout(t);
+    if(!r.ok)return null;
+    const suf=h.slice(5);
+    return (await r.text()).split('\n').some(l=>{const [x,n]=l.trim().split(':');return x===suf&&Number(n)>0});
+  }catch(e){return null}
+}
 async function authGo(signup){
   const email=$('#au-mail').value.trim(),pw=$('#au-pass').value,msg=$('#au-msg');
   if(!sb)return;
@@ -2191,6 +2204,9 @@ async function authGo(signup){
   msg.textContent='Connexion…';
   try{
     if(signup){
+      msg.textContent='Vérification du mot de passe…';
+      if(await pwLeaked(pw)){msg.textContent='Ce mot de passe figure dans des fuites de données connues : choisissez-en un autre (une phrase de plusieurs mots, par exemple).';$('#au-pass').focus();return}
+      msg.textContent='Création du compte…';
       const {data,error}=await sb.auth.signUp({email,password:pw,options:{emailRedirectTo:location.origin+location.pathname}});
       if(error)throw error;
       msg.textContent=data.session?'':'Compte créé. Cliquez sur le lien reçu par e-mail pour le confirmer, puis revenez vous connecter.';
