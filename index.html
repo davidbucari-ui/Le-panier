@@ -688,6 +688,15 @@ a.btn.primary{color:var(--leaf-ink)}
   </div>
 </div>
 
+<div class="overlay" id="mv" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="mv-h">
+    <h3 id="mv-h">Déplacer vers…</h3>
+    <p class="hint" style="margin:0"><b id="mv-name"></b></p>
+    <div id="mv-dest" class="row-actions" style="flex-direction:column;align-items:stretch"></div>
+    <div class="row-actions"><button class="btn" data-act="mv-close">Annuler</button></div>
+  </div>
+</div>
+
 <div class="overlay" id="fm" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="fm-h">
     <h3 id="fm-h">Article</h3>
@@ -1394,8 +1403,8 @@ async function shInvite(){
   if(navigator.share){try{await navigator.share({title:'Le Panier',text:txt});return}catch(e){if(e&&e.name==='AbortError')return}}
   try{await navigator.clipboard.writeText(txt);toast('Lien d\'invitation copié : collez-le dans un SMS ou un message.')}catch(e){prompt('Copiez ce lien d\'invitation :',url)}
 }
-async function shAdd(n,q,u,r){
-  const l=shCur();if(!l)return false;
+async function shAdd(n,q,u,r,lid){
+  const l=lid?SH.lists.find(x=>x.id===lid):shCur();if(!l)return false;
   n=String(n||'').trim().slice(0,120);if(!n)return false;
   const [qq,uu]=normQty(q,u),k=ckey(n);
   const ex=(SH.items[l.id]||[]).find(i=>!i.done&&ckey(i.n)===k&&(i.u||'')===uu);
@@ -1440,6 +1449,25 @@ async function shRename(){
   const {error}=await sb.from('shared_lists').update({name}).eq('id',l.id);
   if(error)return shErr(error);shLoad();
 }
+let MV_ID='';
+function mvOpen(id){
+  const l=shCur(),it=l?(SH.items[l.id]||[]).find(x=>x.id===id):S.extras.find(x=>x.id===id);if(!it)return;
+  MV_ID=id;
+  const dest=[];if(l)dest.push(['',' Ma liste','🧺']);
+  SH.lists.filter(x=>!l||x.id!==l.id).forEach(x=>dest.push([x.id,x.name,'👨‍👩‍👧']));
+  $('#mv-name').textContent=it.n;
+  $('#mv-dest').innerHTML=dest.map(d=>`<button type="button" class="btn" data-act="mv-go" data-to="${esc(d[0])}">${d[2]} ${esc(d[1].trim())}</button>`).join('');
+  $('#mv').hidden=false;
+}
+async function mvGo(to){
+  const l=shCur(),it=l?(SH.items[l.id]||[]).find(x=>x.id===MV_ID):S.extras.find(x=>x.id===MV_ID);
+  $('#mv').hidden=true;if(!it)return;
+  const name=to?(SH.lists.find(x=>x.id===to)||{}).name:'Ma liste';
+  if(to){if(!await shAdd(it.n,it.q,it.u,it.r,to))return}
+  else S.extras.push({id:uid(),n:it.n,q:it.q||0,u:it.u||'',r:it.r||guessRayon(it.n)});
+  if(l)await shDel([it.id]);else S.extras=S.extras.filter(x=>x.id!==it.id);
+  persist();renderCourses();toast(it.n+' déplacé vers « '+name+' ».');
+}
 function renderListPicker(){
   const el=$('#c-lists');if(!el)return;
   if(!shOn()){el.hidden=true;el.innerHTML='';return}
@@ -1457,7 +1485,7 @@ function renderShared(l){
   if(C_TAB!=='*'&&!cats.some(c=>c[0]===C_TAB))C_TAB='*';
   catTabs($('#c-tabs'),cats.map(c=>[c[0],c[1]]),C_TAB,'c-tab',open.length);
   const vis=i=>C_TAB==='*'||i.rayon===C_TAB;
-  const row=i=>`<li class="citem ${i.done?'done':''}"><button class="chk" role="checkbox" aria-checked="${i.done}" aria-label="${esc(i.n)}" data-act="sh-done" data-id="${esc(i.id)}"></button><span class="sk-ico" aria-hidden="true" style="${rcStyle(i.rayon)}">${itemIco(i.n,i.rayon)}</span><div class="cmain"><button type="button" class="cnm" data-act="fmt-open" data-n="${esc(i.n)}" data-r="${esc(i.rayon)}" title="Catégorie et conditionnement de cet article">${esc(i.n)}</button><span class="cfrom">ajouté par ${esc(who(i.by))}</span></div>${i.q?`<span class="cqty">${esc(fmtQty(i.q,i.u))}</span>`:''}<button type="button" class="cbtn x" data-act="sh-del" data-id="${esc(i.id)}" aria-label="Retirer ${esc(i.n)} de la liste" title="Retirer de la liste">×</button></li>`;
+  const row=i=>`<li class="citem ${i.done?'done':''}"><button class="chk" role="checkbox" aria-checked="${i.done}" aria-label="${esc(i.n)}" data-act="sh-done" data-id="${esc(i.id)}"></button><span class="sk-ico" aria-hidden="true" style="${rcStyle(i.rayon)}">${itemIco(i.n,i.rayon)}</span><div class="cmain"><button type="button" class="cnm" data-act="fmt-open" data-n="${esc(i.n)}" data-r="${esc(i.rayon)}" title="Catégorie et conditionnement de cet article">${esc(i.n)}</button><span class="cfrom">ajouté par ${esc(who(i.by))}</span></div>${i.q?`<span class="cqty">${esc(fmtQty(i.q,i.u))}</span>`:''}<button type="button" class="cbtn x" data-act="mv-open" data-id="${esc(i.id)}" aria-label="Déplacer ${esc(i.n)} vers une autre liste" title="Déplacer vers une autre liste">⇄</button><button type="button" class="cbtn x" data-act="sh-del" data-id="${esc(i.id)}" aria-label="Retirer ${esc(i.n)} de la liste" title="Retirer de la liste">×</button></li>`;
   const group=(t,li,cls,bare)=>{const shut=!bare&&(UI.cClosed||[]).includes(t);return`<section class="cgroup ${cls||''}" ${cls==='got'?'':`style="${rcStyle(t)}"`}>${bare?'':`<button type="button" class="sk-head" data-act="c-toggle" data-r="${esc(t)}" aria-expanded="${!shut}"><span>${esc(cls==='got'?t:rcLabel(t))}</span><span class="n">${li.length}</span><span class="chev" aria-hidden="true">${shut?'▸':'▾'}</span></button>`}${shut?'':`<ul class="citems">${li.map(row).join('')}</ul>`}</section>`};
   const vo=open.filter(vis),vg=got.filter(vis);
   const list=all.length?`<div class="clist"><div class="chead"><b>${vo.length} à acheter</b>${vg.length?`<span>· ${vg.length} dans le panier</span>`:''}</div>`+
@@ -1492,7 +1520,7 @@ function renderCourses(){
     const d=done.has(i.key),pr=bestPrice(i.nk,i.u),fm=fmtOf(i.name),np=fm&&!d?pkPacks(i.q,i.u,fm):null; // plus de « à prendre » une fois coché
     const from=[i.extra?'':i.from.join(', '),i.have?'déjà '+fmtQty(i.have,i.u)+' en stock':'',pr?'meilleur prix : '+pr.shop+' '+eur(unitPrice(pr))+'/'+unitLabel(pr.u):''].filter(Boolean).join(' · ');
     const act=i.extra
-      ?`<button type="button" class="cbtn x" data-act="extra-del" data-id="${esc(i.extra)}" aria-label="Retirer ${esc(i.name)} de la liste" title="Retirer de la liste">×</button>`
+      ?`<button type="button" class="cbtn x" data-act="mv-open" data-id="${esc(i.extra)}" aria-label="Déplacer ${esc(i.name)} vers une autre liste" title="Déplacer vers une autre liste">⇄</button><button type="button" class="cbtn x" data-act="extra-del" data-id="${esc(i.extra)}" aria-label="Retirer ${esc(i.name)} de la liste" title="Retirer de la liste">×</button>`
       :`<button type="button" class="cbtn" data-act="stock" data-k="${esc(i.nk)}" data-n="${esc(i.name)}" title="Je l'ai déjà à la maison">En stock</button>`;
     return`<li class="citem ${d?'done':''}"><button class="chk" role="checkbox" aria-checked="${d}" aria-label="${esc(i.name)}" data-act="bought" data-k="${esc(i.key)}"></button><span class="sk-ico" aria-hidden="true" style="${rcStyle(i.rayon)}">${itemIco(i.name,i.rayon)}</span><div class="cmain"><button type="button" class="cnm" data-act="fmt-open" data-n="${esc(i.name)}" data-r="${esc(i.rayon)}" title="Catégorie et conditionnement de cet article">${esc(i.name)}</button>${np&&!(!fm.l&&fm.c===1&&np===1&&!pkPieces(fm))?`<span class="cpk">à prendre : ${esc(pkPhrase(np,fm))}</span>`:''}${from?`<span class="cfrom">${esc(from)}</span>`:''}</div><span class="cqty">${esc(fmtQty(i.q,i.u)||(i.extra?'':'au goût'))}</span>${act}</li>`;
   };
@@ -2232,6 +2260,9 @@ document.addEventListener('click',e=>{
     case 'sh-rename':shRename();break;
     case 'sh-name':{const v=(prompt('Votre prénom (visible par les membres de vos listes) :',UI.me||'')||'').trim().slice(0,40);if(v){UI.me=v;saveUI();sb.from('shared_list_members').update({name:v}).eq('user_id',sbUid).then(()=>shLoad())}break}
     case 'extra-pick':exAdd(b.dataset.n,b.dataset.r);break;
+    case 'mv-open':mvOpen(b.dataset.id);break;
+    case 'mv-close':$('#mv').hidden=true;break;
+    case 'mv-go':mvGo(b.dataset.to);break;
     case 'extra-del':{S.extras=S.extras.filter(x=>x.id!==b.dataset.id);persist();renderCourses();break}
     case 'bought':{const k=b.dataset.k,i=S.bought.indexOf(k);i>=0?S.bought.splice(i,1):S.bought.push(k);persist();renderCourses();break}
     case 'stock':{const nm=b.dataset.n;if(!S.stock.some(s=>covers(s.n,ckey(nm))))S.stock.push({k:norm(nm),n:nm,q:0,u:'',r:guessRayon(nm)});stockChanged();break}
