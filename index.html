@@ -917,7 +917,7 @@ function stockCover(r){return[r.ingredients.filter(i=>{const k=ckey(i.n);return 
 function shoppingItems(){
   const map=new Map();
   for(const [rid,por] of Object.entries(S.plan)){
-    const r=S.recipes.find(x=>x.id===rid);if(!r)continue;
+    const r=findRec(rid);if(!r)continue;
     const f=(Number(por)||1)/(r.servings||Number(por)||1);
     for(const ing of r.ingredients){
       const nk=ckey(ing.n);
@@ -1028,7 +1028,7 @@ function recipeCard(r){
   return`<article class="card" id="rc-${esc(r.id)}">
     ${rcHero(r,planned?'Dans la liste · '+S.plan[r.id]+' pers.':'')}
     <h3>${esc(r.title)}</h3>
-    <div class="meta">${r.time?`<span class="mono">${esc(r.time)} min</span>`:''}<span class="mono">${esc(r.servings)} pers.</span>${S.stock.length?`<span class="tag ${sh===st?'ok':''}">${sh}/${st} en stock</span>`:''}${(r.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}${r.source==='ia'?'<span class="tag ia">Claude</span>':''}${r.source==='exemple'?'<span class="tag">Exemple</span>':''}${r.source==='site'?'<span class="tag">Site</span>':''}</div>
+    <div class="meta">${r.time?`<span class="mono">${esc(r.time)} min</span>`:''}<span class="mono">${esc(r.servings)} pers.</span>${S.stock.length?`<span class="tag ${sh===st?'ok':''}">${sh}/${st} en stock</span>`:''}${(r.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}${r._by&&r._by!==sbUid&&r._au?`<span class="tag">par ${esc(r._au)}</span>`:''}${r.source==='ia'?'<span class="tag ia">Claude</span>':''}${r.source==='exemple'?'<span class="tag">Exemple</span>':''}${r.source==='site'?'<span class="tag">Site</span>':''}</div>
     <ul class="ings">${shown.map(i=>ingChip(i,'li')).join('')}${more>0?`<li class="ing more">+${more}</li>`:''}</ul>
     ${open&&r.steps&&r.steps.length?`<ol class="steps">${r.steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol>`:''}${open&&/^https?:\/\//i.test(r.url||'')?`<p class="hint" style="margin:0">Source : <a href="${esc(r.url)}" target="_blank" rel="noopener noreferrer">${esc((()=>{try{return new URL(r.url).hostname.replace(/^www\./,'')}catch(e){return r.url}})())}</a></p>`:''}
     <div class="spacer"></div>
@@ -1037,17 +1037,17 @@ function recipeCard(r){
         :`<button class="btn sm primary" data-act="plan-add" data-id="${esc(r.id)}">Ajouter aux courses</button>`}
       <button class="btn sm" data-act="cook" data-id="${esc(r.id)}">J'ai cuisiné</button>
       <button class="btn sm" data-act="open" data-id="${esc(r.id)}" aria-expanded="${open}">${open?'Réduire':'Voir la recette'}</button>
-      <button class="btn sm" data-act="edit-recipe" data-id="${esc(r.id)}">Modifier</button>
-      <button class="btn sm danger" data-act="del-recipe" data-id="${esc(r.id)}">Supprimer</button>
+      ${canEdit(r)?`<button class="btn sm" data-act="edit-recipe" data-id="${esc(r.id)}">Modifier</button>
+      <button class="btn sm danger" data-act="del-recipe" data-id="${esc(r.id)}">Supprimer</button>`:''}
     </div>
   </article>`;
 }
 function renderRecipes(){
-  const list=S.recipes.filter(matches),hidden=S.recipes.filter(r=>excludedIn(r).length).length;
+  const all=allRec(),list=all.filter(matches),hidden=all.filter(r=>excludedIn(r).length).length;
   if(UI.az)list.sort((a,b)=>(a.title||'').localeCompare(b.title||'','fr',{sensitivity:'base'}));
-  $('#recipe-count').textContent=`${list.length} recette${list.length>1?'s':''} affichée${list.length>1?'s':''} sur ${S.recipes.length}`+(hidden?` · ${hidden} masquée${hidden>1?'s':''} par vos exclusions`:'');
-  $('#recipe-list').innerHTML=list.length?list.map(recipeCard).join(''):`<div class="empty">${S.recipes.length?'Aucune recette ne correspond à ces filtres.':'Aucune recette pour le moment. Ajoutez la vôtre ou demandez des idées à Claude.'}</div>`;
-  const names=new Set();S.recipes.forEach(r=>r.ingredients.forEach(i=>names.add(i.n.toLowerCase())));
+  $('#recipe-count').textContent=`${list.length} recette${list.length>1?'s':''} affichée${list.length>1?'s':''} sur ${all.length}`+(hidden?` · ${hidden} masquée${hidden>1?'s':''} par vos exclusions`:'');
+  $('#recipe-list').innerHTML=list.length?list.map(recipeCard).join(''):`<div class="empty">${all.length?'Aucune recette ne correspond à ces filtres.':'Aucune recette pour le moment. Ajoutez la vôtre ou demandez des idées à Claude.'}</div>`;
+  const names=new Set();all.forEach(r=>r.ingredients.forEach(i=>names.add(i.n.toLowerCase())));
   $('#dl-ing').innerHTML=[...names].sort().map(n=>`<option value="${esc(n)}">`).join('')+(DICT?DICT.opts:'');
   renderMenu();
 }
@@ -1082,7 +1082,7 @@ Contraintes :
 - Temps total maximum : ${tmax?tmax+' minutes':'libre'}.
 - Ingrédients à utiliser si possible : ${A.use.length?A.use.join(', '):'aucune contrainte'}.
 - Ingrédients à ÉVITER absolument, y compris sous forme dérivée : ${S.exclude.length?S.exclude.join(', '):'aucun'}.
-${$('#ia-stock').checked&&S.stock.length?`- Ingrédients déjà disponibles à privilégier : ${S.stock.map(s=>s.n+(s.q?' ('+fmtQty(s.q,s.u)+')':'')).join(', ')}.\n`:''}- Recettes déjà enregistrées, à ne pas répéter : ${S.recipes.slice(0,40).map(r=>r.title).join(' ; ')||'aucune'}.
+${$('#ia-stock').checked&&S.stock.length?`- Ingrédients déjà disponibles à privilégier : ${S.stock.map(s=>s.n+(s.q?' ('+fmtQty(s.q,s.u)+')':'')).join(', ')}.\n`:''}- Recettes déjà enregistrées, à ne pas répéter : ${allRec().slice(0,40).map(r=>r.title).join(' ; ')||'aucune'}.
 Réponds uniquement par un objet JSON de cette forme, sans autre texte :
 {"recettes":[{"titre":"","temps_min":0,"portions":${por},"tags":["court"],"ingredients":[{"nom":"singulier, sans quantité","quantite":0,"unite":"g, kg, ml, cl, l, c. à soupe, c. à café, gousse, bouquet, ou vide pour des pièces","rayon":"Fruits et légumes | Boucherie et poissonnerie | Crèmerie | Épicerie | Boulangerie | Surgelés | Autres"}],"etapes":["phrase courte"]}]}
 Les quantités sont pour ${por} personnes (0 si « au goût »).`;
@@ -1282,7 +1282,7 @@ let UI={};try{UI=JSON.parse(localStorage.getItem('lepanier-ui')||'{}')||{}}catch
 function saveUI(){try{localStorage.setItem('lepanier-ui',JSON.stringify(UI))}catch(e){}}
 function renderMenu(){
   const dayIdx=id=>{const i=DAYS.indexOf(S.days[id]);return i<0?99:i};
-  const plan=Object.entries(S.plan).sort((a,b)=>dayIdx(a[0])-dayIdx(b[0])).map(([id,p])=>{const r=S.recipes.find(x=>x.id===id);return r?`<div class="plan-row"><span class="t">${esc(r.title)}</span><div class="row-actions"><select data-day="${esc(id)}" aria-label="Jour pour ${esc(r.title)}" style="width:auto;min-height:34px"><option value="">Jour libre</option>${DAYS.map(d=>`<option ${S.days[id]===d?'selected':''}>${d}</option>`).join('')}</select><div class="stepper"><button data-act="plan-minus" data-id="${esc(id)}" aria-label="Moins de personnes">−</button><span>${esc(p)} pers.</span><button data-act="plan-plus" data-id="${esc(id)}" aria-label="Plus de personnes">+</button></div><button class="btn sm" data-act="cook" data-id="${esc(id)}">Cuisiné</button><button class="btn sm" data-act="plan-del" data-id="${esc(id)}">Retirer</button></div></div>`:''}).join('');
+  const plan=Object.entries(S.plan).sort((a,b)=>dayIdx(a[0])-dayIdx(b[0])).map(([id,p])=>{const r=findRec(id);return r?`<div class="plan-row"><span class="t">${esc(r.title)}</span><div class="row-actions"><select data-day="${esc(id)}" aria-label="Jour pour ${esc(r.title)}" style="width:auto;min-height:34px"><option value="">Jour libre</option>${DAYS.map(d=>`<option ${S.days[id]===d?'selected':''}>${d}</option>`).join('')}</select><div class="stepper"><button data-act="plan-minus" data-id="${esc(id)}" aria-label="Moins de personnes">−</button><span>${esc(p)} pers.</span><button data-act="plan-plus" data-id="${esc(id)}" aria-label="Plus de personnes">+</button></div><button class="btn sm" data-act="cook" data-id="${esc(id)}">Cuisiné</button><button class="btn sm" data-act="plan-del" data-id="${esc(id)}">Retirer</button></div></div>`:''}).join('');
   const n=Object.keys(S.plan).length;
   $('#menu-box').innerHTML=`<h3>Ajoutées à ma liste de courses${n?` (${n})`:''}</h3>${plan||'<p class="hint" style="margin:0">Aucune recette pour l\'instant. Touchez « Ajouter aux courses » sur une recette ci-dessous : ses ingrédients rejoignent la liste de courses. Le jour est facultatif.</p>'}`;
 }
@@ -1297,6 +1297,43 @@ function catTabs(tb,cats,cur,act,total){
   if(sel){const l=sel.offsetLeft,r=l+sel.offsetWidth;if(l<tb.scrollLeft)tb.scrollLeft=Math.max(0,l-8);else if(r>tb.scrollLeft+tb.clientWidth)tb.scrollLeft=r-tb.clientWidth+8}
 }
 let C_TAB='*',SK_TAB='*',FM_NAME='',FM_R0='';
+/* ---------- recettes communes (Supabase : shared_recipes) : tout le monde les voit, seul l'auteur modifie ou supprime ---------- */
+var CR=[],CR_OK=false,crCh=null,crTimer=null;
+const crOn=()=>{try{return!!(sb&&sbUid&&CR_OK)}catch(e){return false}};   // sb est déclaré plus bas
+const allRec=()=>CR.concat(S.recipes);
+const findRec=id=>allRec().find(r=>r.id===id);
+const canEdit=r=>!r._by||r._by===sbUid;
+function crFrom(row){const d=row.data&&typeof row.data==='object'?row.data:{};return{...d,id:row.id,_by:row.owner,_au:row.author||'',ingredients:Array.isArray(d.ingredients)?d.ingredients:[],steps:Array.isArray(d.steps)?d.steps:[],title:String(d.title||'')}}
+async function crSave(r){
+  const data={...r};delete data._by;delete data._au;delete data.id;
+  const {error}=await sb.from('shared_recipes').upsert({id:r.id,owner:sbUid,author:(UI.me||'').slice(0,40),data,updated_at:new Date().toISOString()});
+  if(error)throw error;
+}
+async function crLoad(){
+  if(!sb||!sbUid)return;
+  try{
+    const {data,error}=await sb.from('shared_recipes').select('id,owner,author,data,created_at').order('created_at',{ascending:false});
+    if(error)throw error;
+    CR=(data||[]).map(crFrom);CR_OK=true;
+    crMove();
+  }catch(e){console.error('recettes communes',e)}
+  renderRecipes();renderCourses();
+}
+// première connexion : mes recettes personnelles (hors exemples) passent dans le livre commun
+async function crMove(){
+  const mine=S.recipes.filter(r=>r.source!=='exemple'&&!CR.some(c=>c.id===r.id));
+  if(!mine.length)return;
+  const done=[];
+  for(const r of mine){try{await crSave(r);done.push(r.id);CR.push({...r,_by:sbUid,_au:UI.me||''})}catch(e){console.error('partage',e);break}}
+  if(done.length){S.recipes=S.recipes.filter(r=>!done.includes(r.id));persist();renderRecipes()}
+}
+function crStart(){
+  crStop();crLoad();
+  const again=()=>{clearTimeout(crTimer);crTimer=setTimeout(crLoad,250)};
+  crCh=sb.channel('recettes_'+sbUid).on('postgres_changes',{event:'*',schema:'public',table:'shared_recipes'},again).subscribe();
+}
+function crStop(){if(crCh&&sb){try{sb.removeChannel(crCh)}catch(e){}}crCh=null;clearTimeout(crTimer);CR=[];CR_OK=false}
+async function addRec(r){if(crOn()){await crSave(r);CR.unshift({...r,_by:sbUid,_au:UI.me||''})}else S.recipes.unshift(r)}
 /* ---------- listes partagées (Supabase : shared_lists / shared_list_members / shared_items) ---------- */
 var SH={lists:[],members:{},items:{},ok:false},shCh=null,shTimer=null;
 const shOn=()=>{try{return!!(sb&&sbUid&&SH&&SH.ok)}catch(e){return false}};   // sb est déclaré plus bas : premier rendu avant son initialisation
@@ -1584,7 +1621,7 @@ function cookCalc(r,por){
   });
 }
 function renderCook(){
-  const r=S.recipes.find(x=>x.id===COOK);if(!r)return;
+  const r=findRec(COOK);if(!r)return;
   const por=Math.max(1,parseInt($('#ck-por').value,10)||r.servings||4);
   $('#ck-list').innerHTML=cookCalc(r,por).map(c=>{
     const need=fmtQty(c.need,c.u)||'au goût';
@@ -1595,7 +1632,7 @@ function renderCook(){
   }).join('');
 }
 function openCook(id){
-  const r=S.recipes.find(x=>x.id===id);if(!r)return;
+  const r=findRec(id);if(!r)return;
   COOK=id;
   $('#ck-h').textContent='J\'ai cuisiné : '+r.title;
   $('#ck-por').value=S.plan[id]||r.servings||4;
@@ -1604,7 +1641,7 @@ function openCook(id){
   renderCook();$('#ck').hidden=false;$('#ck-por').focus();
 }
 function confirmCook(){
-  const r=S.recipes.find(x=>x.id===COOK);if(!r){$('#ck').hidden=true;return}
+  const r=findRec(COOK);if(!r){$('#ck').hidden=true;return}
   const por=Math.max(1,parseInt($('#ck-por').value,10)||r.servings||4);
   let n=0;
   for(const c of cookCalc(r,por)){
@@ -1663,7 +1700,7 @@ function foTerms(){return[...FO_SEL].concat($('#fo-extra').value.trim()?[$('#fo-
 function foMine(terms){
   if(!terms.length)return[];
   const tk=terms.map(t=>({k:ckey(t),n:norm(t)}));
-  return S.recipes.filter(r=>!excludedIn(r).length).map(r=>{
+  return allRec().filter(r=>!excludedIn(r).length).map(r=>{
     const ik=r.ingredients.map(i=>({k:ckey(i.n),n:norm(i.n)}));
     const hit=tk.filter(t=>ik.some(i=>i.k===t.k||covers(t.n,i.k)||covers(i.n,t.k)||(!DICT&&(i.n.includes(t.n)||t.n.includes(i.n)))));
     const miss=ik.filter(i=>!S.stock.some(s=>covers(s.n,i.k))&&!tk.some(t=>i.k===t.k||covers(t.n,i.k)||covers(i.n,t.k))).length;
@@ -2079,21 +2116,21 @@ document.addEventListener('click',e=>{
     case 'tab':showTab(b.dataset.t);break;
     case 'chip-del':delChip(b.dataset.kind,b.dataset.v);break;
     case 'open':OPEN.has(id)?OPEN.delete(id):OPEN.add(id);renderRecipes();break;
-    case 'plan-add':{const r=S.recipes.find(x=>x.id===id);if(r)planChange(id,()=>{S.plan[id]=r.servings||4});break}
+    case 'plan-add':{const r=findRec(id);if(r)planChange(id,()=>{S.plan[id]=r.servings||4});break}
     case 'plan-del':planChange(id,()=>{delete S.plan[id];delete S.days[id]});break;
     case 'plan-minus':planChange(id,()=>{S.plan[id]=Math.max(1,(S.plan[id]||1)-1)});break;
     case 'plan-plus':planChange(id,()=>{S.plan[id]=Math.min(30,(S.plan[id]||1)+1)});break;
-    case 'del-recipe':if(b.dataset.arm!=='1'){b.dataset.arm='1';b.textContent='Confirmer ?';setTimeout(()=>{if(b.isConnected){b.dataset.arm='';b.textContent='Supprimer'}},3000)}else{const gone=S.recipes.find(r=>r.id===id);if(gone)photoDel(gone.img);S.recipes=S.recipes.filter(r=>r.id!==id);delete S.plan[id];delete S.days[id];OPEN.delete(id);persist();renderRecipes();renderCourses()}break;
+    case 'del-recipe':if(b.dataset.arm!=='1'){b.dataset.arm='1';b.textContent='Confirmer ?';setTimeout(()=>{if(b.isConnected){b.dataset.arm='';b.textContent='Supprimer'}},3000)}else{(async()=>{const gone=findRec(id);if(!gone||!canEdit(gone))return;if(gone._by){const {error}=await sb.from('shared_recipes').delete().eq('id',id);if(error){toast('Suppression impossible ('+(error.message||error)+').');return}CR=CR.filter(r=>r.id!==id)}else S.recipes=S.recipes.filter(r=>r.id!==id);photoDel(gone.img);delete S.plan[id];delete S.days[id];OPEN.delete(id);persist();renderRecipes();renderCourses()})()}break;
     case 'new-recipe':openForm(null);break;
-    case 'edit-recipe':openForm(S.recipes.find(r=>r.id===id));break;
+    case 'edit-recipe':openForm(findRec(id));break;
     case 'nr-cancel':$('#nr').hidden=true;PENDING_URL='';break;
     case 'nr-img-del':NR_IMG.removed=true;NR_IMG.file=null;$('#nr-file').value='';nrPhoto();break;
     case 'nr-save':saveNew();break;
     case 'nr-save-plan':saveNew(true);break;
     case 'ia-go':generate();break;
     case 'ia-exclude':{const v=b.dataset.v.toLowerCase();if(!S.exclude.some(x=>norm(x)===norm(v))){S.exclude.push(v);persist();renderChips();renderRecipes();renderIA()}break}
-    case 'ia-save':{const p=A.results[+b.dataset.i];if(p){S.recipes.unshift({id:uid(),title:p.title,time:p.time,servings:p.servings,tags:p.tags,source:'ia',ingredients:p.ingredients,steps:p.steps});A.notice={title:p.title,bad:excludedIn(p)};A.results.splice(+b.dataset.i,1);persist();renderIA();renderRecipes()}break}
-    case 'ia-save-plan':{const p=A.results[+b.dataset.i];if(p){S.recipes.unshift({id:p.id,title:p.title,time:p.time,servings:p.servings,tags:p.tags,source:'ia',ingredients:p.ingredients,steps:p.steps});S.plan[p.id]=p.servings||4;A.notice={title:p.title,bad:excludedIn(p),planned:true};A.results.splice(+b.dataset.i,1);persist();renderIA();renderRecipes();renderCourses()}break}
+    case 'ia-save':{const p=A.results[+b.dataset.i];if(p)(async()=>{try{await addRec({id:uid(),title:p.title,time:p.time,servings:p.servings,tags:p.tags,source:'ia',ingredients:p.ingredients,steps:p.steps})}catch(e){toast('Enregistrement impossible ('+(e.message||e)+').');return}A.notice={title:p.title,bad:excludedIn(p)};A.results.splice(A.results.indexOf(p),1);persist();renderIA();renderRecipes()})();break}
+    case 'ia-save-plan':{const p=A.results[+b.dataset.i];if(p)(async()=>{try{await addRec({id:p.id,title:p.title,time:p.time,servings:p.servings,tags:p.tags,source:'ia',ingredients:p.ingredients,steps:p.steps})}catch(e){toast('Enregistrement impossible ('+(e.message||e)+').');return}S.plan[p.id]=p.servings||4;A.notice={title:p.title,bad:excludedIn(p),planned:true};A.results.splice(A.results.indexOf(p),1);persist();renderIA();renderRecipes();renderCourses()})();break}
     case 'stock-add':{const n=$('#sk-name').value.trim();if(n){addStock({n,q:parseFloat($('#sk-qty').value)||0,u:$('#sk-unit').value});$('#sk-name').value='';$('#sk-qty').value='';stockChanged()}break}
     case 'stock-del':
       if(b.dataset.arm!=='1'){b.dataset.arm='1';b.classList.add('armed');b.textContent='Retirer ?';setTimeout(()=>{if(b.isConnected){b.dataset.arm='';b.classList.remove('armed');b.textContent='×'}},3000)}
@@ -2250,7 +2287,7 @@ async function saveNew(addToList){
   if(!title){$('#nr-msg').textContent='Donnez un titre à la recette.';return}
   if(!ings.length){$('#nr-msg').textContent='Ajoutez au moins un ingrédient, un par ligne.';$('#nr-ing').focus();return}
   const time=Math.max(0,parseInt($('#nr-time').value,10)||0),servings=Math.max(1,parseInt($('#nr-serv').value,10)||4);
-  const old=EDIT?S.recipes.find(r=>r.id===EDIT):null;
+  const old=EDIT?findRec(EDIT):null;
   // photo : envoi de la nouvelle, suppression de l'ancienne photo perso remplacée ou retirée
   let img=NR_IMG.removed?'':NR_IMG.cur;
   const rid0=old?old.id:uid();
@@ -2264,11 +2301,16 @@ async function saveNew(addToList){
   if(old&&old.img&&old.img!==img)photoDel(old.img);
   $('#nr-msg').textContent='';
   let rid;
-  if(old){
-    ings.forEach(i=>{const o=old.ingredients.find(x=>norm(x.n)===norm(i.n));if(o&&o.r)i.r=o.r});
-    Object.assign(old,{title,time,servings,ingredients:ings,steps,img:img||undefined});rid=old.id;
-    if(S.plan[old.id]!=null&&!S.plan[old.id])S.plan[old.id]=servings;
-  }else{rid=rid0;S.recipes.unshift({id:rid,title,time,servings,tags:[],source:PENDING_URL?'site':'manuel',url:PENDING_URL||undefined,img:img||undefined,ingredients:ings,steps})}
+  try{
+    if(old){
+      if(!canEdit(old))throw new Error('recette d\'un autre membre');
+      ings.forEach(i=>{const o=old.ingredients.find(x=>norm(x.n)===norm(i.n));if(o&&o.r)i.r=o.r});
+      const upd={...old,title,time,servings,ingredients:ings,steps,img:img||undefined};
+      if(old._by)await crSave(upd);
+      Object.assign(old,upd);rid=old.id;
+      if(S.plan[old.id]!=null&&!S.plan[old.id])S.plan[old.id]=servings;
+    }else{rid=rid0;await addRec({id:rid,title,time,servings,tags:[],source:PENDING_URL?'site':'manuel',url:PENDING_URL||undefined,img:img||undefined,ingredients:ings,steps})}
+  }catch(e){$('#nr-msg').textContent='Enregistrement impossible ('+(e.message||e)+'). Vérifiez la connexion et réessayez.';return}
   if(addToList)S.plan[rid]=S.plan[rid]||servings;
   persist();$('#nr').hidden=true;EDIT=null;PENDING_URL='';renderRecipes();renderCourses();
 }
@@ -2474,10 +2516,10 @@ async function startSupabase(){
         if(session&&session.user&&session.user.id!==sbUid){
           sbUid=session.user.id;$('#auth').hidden=true;$('#signin').hidden=true;$('#signout').hidden=false;
           attach(sbAdapter(sb,sbUid));
-          shStart();
+          shStart();crStart();
         }else if(!session&&sbUid){
           sbUid=null;docRef=null;if(unsub){unsub();unsub=null}
-          shStop();UI.cl='';saveUI();
+          shStop();crStop();UI.cl='';saveUI();
           $('#signout').hidden=true;$('#signin').hidden=false;
           try{localStorage.removeItem(LS)}catch(e){}
           S=fresh();OPEN.clear();renderAll();setSync('local');showAuth('');

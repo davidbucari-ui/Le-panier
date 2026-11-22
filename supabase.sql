@@ -136,3 +136,32 @@ create policy "photos de recettes : remplacer les siennes" on storage.objects
   with check (bucket_id = 'recettes' and (storage.foldername(name))[1] = (select auth.uid())::text);
 create policy "photos de recettes : supprimer les siennes" on storage.objects
   for delete to authenticated using (bucket_id = 'recettes' and (storage.foldername(name))[1] = (select auth.uid())::text);
+
+-- ============================================================
+-- Recettes communes (migration « recettes_communes ») : tout membre connecté lit toutes les recettes ;
+-- chacun n'ajoute, ne modifie et ne supprime que les siennes. Les photos deviennent lisibles par tous
+-- les membres connectés (l'espace reste privé : liens signés seulement).
+-- ============================================================
+create table if not exists public.shared_recipes (
+  id text primary key,
+  owner uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  author text not null default '',
+  data jsonb not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists shared_recipes_owner on public.shared_recipes(owner);
+alter table public.shared_recipes enable row level security;
+create policy "recettes : tous les membres lisent" on public.shared_recipes
+  for select to authenticated using (true);
+create policy "recettes : ajouter les siennes" on public.shared_recipes
+  for insert to authenticated with check (owner = (select auth.uid()));
+create policy "recettes : modifier les siennes" on public.shared_recipes
+  for update to authenticated using (owner = (select auth.uid())) with check (owner = (select auth.uid()));
+create policy "recettes : supprimer les siennes" on public.shared_recipes
+  for delete to authenticated using (owner = (select auth.uid()));
+alter publication supabase_realtime add table public.shared_recipes;
+
+drop policy if exists "photos de recettes : lire les siennes" on storage.objects;
+create policy "photos de recettes : lire (tous les membres)" on storage.objects
+  for select to authenticated using (bucket_id = 'recettes');
