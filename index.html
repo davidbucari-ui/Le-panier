@@ -288,6 +288,8 @@ body.loading main{opacity:.5;pointer-events:none}
 .rc-hero.rc-photo.noimg{height:auto;padding:14px 16px 12px}
 .rc-hero.rc-photo.noimg::after{display:none}
 .rc-hero.rc-photo.noimg .rc-over{padding:0}
+.au-ok{background:var(--leaf-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
+.au-ok .btn{display:block;margin-top:8px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 /* Recettes : bandeau des ingrédients principaux, ingrédients colorés par rayon (✓ = en stock) */
 .card{box-shadow:0 1px 2px rgba(20,40,28,.05),0 4px 14px -8px rgba(20,40,28,.18);border-radius:14px}
@@ -1313,7 +1315,7 @@ async function shJoin(code){
 const shLink=l=>location.origin+location.pathname+'?liste='+l.code;
 async function shInvite(){
   const l=shCur();if(!l)return;
-  const url=shLink(l),txt='Rejoignez ma liste de courses « '+l.name+' » sur Le Panier : '+url;
+  const url=shLink(l),txt='Rejoignez ma liste de courses « '+l.name+' » sur Le Panier : '+url+'\n(Créez votre compte, confirmez-le avec l\'e-mail reçu, puis rouvrez ce lien. Code d\'invitation : '+l.code+')';
   if(navigator.share){try{await navigator.share({title:'Le Panier',text:txt});return}catch(e){if(e&&e.name==='AbortError')return}}
   try{await navigator.clipboard.writeText(txt);toast('Lien d\'invitation copié : collez-le dans un SMS ou un message.')}catch(e){prompt('Copiez ce lien d\'invitation :',url)}
 }
@@ -2100,6 +2102,7 @@ document.addEventListener('click',e=>{
     case 'ia-import':{const m=$('#ia-imp-msg');try{const por=ideasPrompt().por;const res=ingestIdeas(parsePasted($('#ia-paste').value),por);A.notice=null;A.results=res;m.textContent=res.length?res.length+' recette'+(res.length>1?'s importées':' importée')+' ci-dessous.':'Aucune recette trouvée dans cette réponse.';renderIA()}catch(e){m.textContent='Réponse illisible : collez la réponse complète de Claude, sans la modifier.'}break}
     case 'auth-login':authGo(false);break;
     case 'auth-signup':authGo(true);break;
+    case 'auth-resend':authResend();break;
     case 'auth-skip':$('#auth').hidden=true;break;
     case 'auth-open':showAuth('');break;
     case 'signout':if(sb)sb.auth.signOut();break;
@@ -2315,28 +2318,52 @@ async function pwLeaked(pw){
     return (await r.text()).split('\n').some(l=>{const [x,n]=l.trim().split(':');return x===suf&&Number(n)>0});
   }catch(e){return null}
 }
+// messages d'erreur de connexion, en français
+function authErr(e){
+  const m=String(e&&e.message||''),c=String(e&&(e.code||e.error_code)||''),st=e&&e.status;
+  if(/invalid login|invalid_credentials/i.test(m+c))return'E-mail ou mot de passe incorrect. Si vous venez de créer votre compte, confirmez-le d\'abord avec le lien reçu par e-mail.';
+  if(/not confirmed|email_not_confirmed/i.test(m+c))return'Adresse pas encore confirmée : cliquez sur le lien reçu par e-mail (regardez aussi dans les courriers indésirables).';
+  if(st===429||/rate limit|security purposes|over_email_send/i.test(m+c)){const s=(/after (\d+) seconds?/i.exec(m)||[])[1];return'Trop de demandes d\'affilée : patientez '+(s?s+' secondes':'quelques minutes')+' avant de réessayer. Si vous venez de créer votre compte, l\'e-mail de confirmation est déjà parti.'}
+  if(/already registered|user_already_exists/i.test(m+c))return'Un compte existe déjà avec cette adresse : touchez « Se connecter ».';
+  if(/weak|pwned|password/i.test(m+c)&&st===422)return'Mot de passe refusé : choisissez-en un plus long ou moins courant.';
+  if(/invalid.*email|email_address_invalid/i.test(m+c))return'Cette adresse e-mail n\'est pas valide.';
+  if(/fetch|network|failed to fetch/i.test(m))return'Pas de connexion Internet : réessayez quand le réseau revient.';
+  return'Échec : '+m;
+}
+let AUTH_BUSY=false;
+function authBusy(on){AUTH_BUSY=on;document.querySelectorAll('#auth [data-act^="auth-"]').forEach(b=>{if(b.dataset.act!=='auth-skip')b.disabled=on})}
+function authSent(email){
+  $('#au-msg').innerHTML=`<div class="au-ok"><b>📧 Compte créé : il reste à le confirmer.</b><br>Un e-mail vient d'être envoyé à <b>${esc(email)}</b>. Ouvrez-le et touchez le lien de confirmation (regardez aussi dans les courriers indésirables). Revenez ensuite ici et touchez « Se connecter ».${localStorage.getItem('lepanier-join')?' <b>Si l\'application s\'ouvre ailleurs, rouvrez le lien d\'invitation reçu (WhatsApp, SMS…)</b> : vous rejoindrez la liste après vous être connecté.':''}<br><span class="hint">Si le lien de l'e-mail ouvre une page d'erreur, le compte est quand même confirmé : revenez simplement ici.</span><br><button type="button" class="btn sm" data-act="auth-resend">Renvoyer l'e-mail</button></div>`;
+}
+function authBack(){const c=localStorage.getItem('lepanier-join');return location.origin+location.pathname+(c?'?liste='+encodeURIComponent(c):'')}
 async function authGo(signup){
+  if(AUTH_BUSY||!sb)return;   // un seul envoi à la fois : un double toucher déclenchait la limite anti-abus
   const email=$('#au-mail').value.trim(),pw=$('#au-pass').value,msg=$('#au-msg');
-  if(!sb)return;
   if(!email||pw.length<8){msg.textContent='Entrez votre e-mail et un mot de passe de 8 caractères minimum.';return}
-  msg.textContent='Connexion…';
+  authBusy(true);msg.textContent='Connexion…';
   try{
     if(signup){
       msg.textContent='Vérification du mot de passe…';
       if(await pwLeaked(pw)){msg.textContent='Ce mot de passe figure dans des fuites de données connues : choisissez-en un autre (une phrase de plusieurs mots, par exemple).';$('#au-pass').focus();return}
       msg.textContent='Création du compte…';
-      const {data,error}=await sb.auth.signUp({email,password:pw,options:{emailRedirectTo:location.origin+location.pathname}});
+      const {data,error}=await sb.auth.signUp({email,password:pw,options:{emailRedirectTo:authBack()}});
       if(error)throw error;
-      msg.textContent=data.session?'':'Compte créé. Cliquez sur le lien reçu par e-mail pour le confirmer, puis revenez vous connecter.';
+      if(data.session)msg.textContent='';else authSent(email);
     }else{
       const {error}=await sb.auth.signInWithPassword({email,password:pw});
       if(error)throw error;
       msg.textContent='';
     }
-  }catch(e){
-    const m=String(e&&e.message||'');
-    msg.textContent=/invalid login/i.test(m)?'E-mail ou mot de passe incorrect.':/not confirmed/i.test(m)?'Adresse non confirmée : cliquez sur le lien reçu par e-mail.':'Échec : '+m;
-  }
+  }catch(e){msg.textContent=authErr(e)}
+  finally{authBusy(false)}
+}
+async function authResend(){
+  if(AUTH_BUSY||!sb)return;
+  const email=$('#au-mail').value.trim();if(!email)return;
+  authBusy(true);
+  try{const {error}=await sb.auth.resend({type:'signup',email,options:{emailRedirectTo:authBack()}});if(error)throw error;authSent(email);toast('E-mail de confirmation renvoyé.')}
+  catch(e){$('#au-msg').textContent=authErr(e)}
+  finally{authBusy(false)}
 }
 // lien d'invitation « ?liste=CODE » : gardé jusqu'à la connexion (survit à la confirmation par e-mail)
 (function(){try{const c=new URLSearchParams(location.search).get('liste');if(c){localStorage.setItem('lepanier-join',c);history.replaceState(null,'',location.pathname+location.hash)}}catch(e){}})();
