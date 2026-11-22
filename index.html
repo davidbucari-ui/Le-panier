@@ -424,6 +424,7 @@ a.btn.primary{color:var(--leaf-ink)}
       </div>
     </div>
     <label class="check" style="margin-bottom:12px"><input type="checkbox" id="f-stock"> Réalisables avec mon stock (au moins 70 % des ingrédients)</label>
+    <label class="check" style="margin-bottom:12px"><input type="checkbox" id="f-az"> Trier de A à Z</label>
     <div class="row-actions">
       <button class="btn primary" data-act="new-recipe">Ajouter une recette</button>
       <button class="btn" data-act="imp-open">Importer depuis un site</button>
@@ -1043,6 +1044,7 @@ function recipeCard(r){
 }
 function renderRecipes(){
   const list=S.recipes.filter(matches),hidden=S.recipes.filter(r=>excludedIn(r).length).length;
+  if(UI.az)list.sort((a,b)=>(a.title||'').localeCompare(b.title||'','fr',{sensitivity:'base'}));
   $('#recipe-count').textContent=`${list.length} recette${list.length>1?'s':''} affichée${list.length>1?'s':''} sur ${S.recipes.length}`+(hidden?` · ${hidden} masquée${hidden>1?'s':''} par vos exclusions`:'');
   $('#recipe-list').innerHTML=list.length?list.map(recipeCard).join(''):`<div class="empty">${S.recipes.length?'Aucune recette ne correspond à ces filtres.':'Aucune recette pour le moment. Ajoutez la vôtre ou demandez des idées à Claude.'}</div>`;
   const names=new Set();S.recipes.forEach(r=>r.ingredients.forEach(i=>names.add(i.n.toLowerCase())));
@@ -1735,6 +1737,8 @@ $('#pr-d').value=todayISO();
 $('#ex-ray').addEventListener('change',exSearch);
 $('#ex-q').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const v=e.target.value;if(v.trim()){exAdd(v);e.target.value='';exSearch()}}});
 $('#ck-por').addEventListener('input',renderCook);
+$('#f-az').checked=!!UI.az;
+$('#f-az').addEventListener('change',e=>{UI.az=e.target.checked;saveUI();renderRecipes()});
 $('#f-stock').addEventListener('change',e=>{F.stockOnly=e.target.checked;renderRecipes()});
 
 /* ---------- ticket de caisse : lecture + rapprochement avec la liste ---------- */
