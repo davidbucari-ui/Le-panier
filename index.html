@@ -185,6 +185,29 @@ body.loading main{opacity:.5;pointer-events:none}
 .srow .stp:disabled{opacity:.3;cursor:default}
 .srow .del{font-size:17px;color:var(--radis-ink);margin-left:6px}
 .srow .del.armed{width:auto;background:var(--radis-soft);border-color:var(--radis);font-size:12px;padding:0 8px}
+/* Stock : une carte par rayon, une pastille illustrée par article, compteur − / + d'un seul tenant */
+.sk-group{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 1px 2px rgba(20,40,28,.05),0 4px 14px -8px rgba(20,40,28,.18)}
+.sk-group .sk-head{border-radius:0;padding:10px 14px;min-height:50px;font-family:var(--display);font-size:1.08rem;letter-spacing:-.01em;border-bottom:0;background:linear-gradient(90deg,var(--s),var(--s) 60%,var(--card))}
+.sk-group .sk-head .n{background:var(--c);border-color:var(--c);color:var(--card);font-family:var(--body)}
+.sk-group .sk-head .chev{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--card);color:var(--c)}
+.sk-rows{display:grid;grid-template-columns:1fr;border-top:2px solid var(--c)}
+@media (min-width:820px){.sk-rows{grid-template-columns:1fr 1fr}.sk-rows .srow:nth-child(odd){border-right:1px solid var(--line)}}
+.sk-group .srow{box-shadow:none;padding:8px 10px 8px 12px;gap:10px;min-height:58px}
+.sk-group .srow:hover{background:color-mix(in srgb,var(--s) 35%,transparent)}
+.sk-ico{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--s);font-size:20px;line-height:1;box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--c) 30%,transparent)}
+.sk-group .srow .nm{font-size:1rem}
+.sk-group .srow .sub{display:inline-block;margin-top:2px;padding:0 7px;border-radius:999px;background:var(--s);color:var(--ink);font-size:11.5px;opacity:.85}
+.sk-group .srow .ctl{gap:6px}
+.sk-step{display:flex;align-items:center;border:1px solid var(--line);border-radius:999px;background:var(--paper);padding:2px}
+.sk-group .sk-step .stp{border:0;border-radius:50%;width:34px;height:34px;min-width:34px;background:transparent;color:var(--c);font-size:20px}
+.sk-group .sk-step .stp:not(:disabled):hover{background:var(--s)}
+.sk-group .sk-step input[type=number]{width:58px;min-height:34px;border:0;background:transparent;font-weight:700;font-size:15px;padding:0}
+.sk-group .sk-step input[type=number]::placeholder{font-weight:500;font-style:italic}
+.sk-group .sk-step .u{margin:0 2px 0 -6px;font-weight:600;width:16px;text-align:left}
+.sk-group .srow .del{border-color:transparent;background:transparent;margin-left:0;color:var(--muted)}
+.sk-group .srow .del:hover{color:var(--radis-ink);background:var(--radis-soft)}
+.sk-group .srow .del.armed{color:var(--radis-ink);border-color:var(--radis)}
+@media (max-width:480px){.sk-ico{width:32px;height:32px;font-size:17px}.sk-group .sk-step input[type=number]{width:48px}.sk-group .srow{padding-left:8px;gap:8px}}
 .pr-tabs .tab[style]{background:var(--s);border-color:transparent;color:var(--ink)}
 .pr-tabs .tab[style] .badge{background:var(--c);color:var(--paper)}
 .pr-tabs .tab[style][aria-selected="true"]{background:var(--c);color:var(--paper)}
@@ -1171,14 +1194,33 @@ function bestPrice(k,u){const l=priceByShop(k,u);return l.length?l[0]:null}
 function stockChanged(){persist();renderStock();renderRecipes();renderCourses()}
 // pas des boutons − / + : 1 pièce ; 100 g ou ml (500 au-delà d'un kilo / litre)
 function skStep(s){return s.u==='g'||s.u==='ml'?((s.q||0)>=1000?500:100):1}
+// pastille illustrée d'un article : d'après son nom, sinon l'icône de son rayon
+const ITEM_ICO=[[/\b(pommes? de terre|patates?)\b/,'🥔'],[/\bpommes?\b/,'🍎'],[/\bpoires?\b/,'🍐'],[/\bbananes?\b/,'🍌'],[/\b(oranges?|clementines?|mandarines?)\b/,'🍊'],[/\bcitrons?\b/,'🍋'],
+ [/\b(fraises?|framboises?)\b/,'🍓'],[/\braisins?\b/,'🍇'],[/\b(peches?|abricots?|nectarines?)\b/,'🍑'],[/\bcerises?\b/,'🍒'],[/\b(melons?|pasteques?)\b/,'🍈'],[/\bananas\b/,'🍍'],[/\bkiwis?\b/,'🥝'],[/\bmangues?\b/,'🥭'],
+ [/\bavocats?\b/,'🥑'],[/\btomates?\b/,'🍅'],[/\bcarottes?\b/,'🥕'],[/\bchampignons?\b/,'🍄'],[/\b(salades?|batavia|laitues?|endives?|epinards?|mache|roquette|chou|choux)\b/,'🥬'],
+ [/\bbrocolis?\b/,'🥦'],[/\b(concombres?|courgettes?|cornichons?)\b/,'🥒'],[/\b(poivrons?|piments?)\b/,'🫑'],[/\baubergines?\b/,'🍆'],[/\bmais\b/,'🌽'],[/\b(oignons?|echalotes?)\b/,'🧅'],[/\bail\b/,'🧄'],
+ [/\b(persil|basilic|coriandre|ciboulette|menthe|thym|herbes?)\b/,'🌿'],[/\b(haricots?|petits? pois|lentilles?|pois chiches?)\b/,'🫘'],
+ [/\b(poulet|dinde|volaille)\b/,'🍗'],[/\b(lardons?|bacon|jambon)\b/,'🥓'],[/\b(steak|boeuf|veau|porc|agneau|viande|saucisses?|merguez|escalope)\b/,'🥩'],
+ [/\b(saumon|thon|cabillaud|poissons?|sardines?|truite|colin|maquereau)\b/,'🐟'],[/\b(crevettes?|gambas)\b/,'🦐'],
+ [/\boeufs?\b/,'🥚'],[/\b(lait|creme)\b/,'🥛'],[/\bbeurre\b/,'🧈'],[/\b(fromages?|emmental|gruyere|comte|camembert|mozzarella|parmesan|chevre|feta|raclette)\b/,'🧀'],[/\b(yaourts?|skyr|fromage blanc|faisselle)\b/,'🥣'],
+ [/\b(baguette|pain|brioche)\b/,'🥖'],[/\bcroissants?\b/,'🥐'],[/\b(pates?|spaghetti|tagliatelles?|coquillettes?|penne)\b/,'🍝'],[/\briz\b/,'🍚'],[/\b(farine|semoule)\b/,'🌾'],
+ [/\bhuile\b/,'🫒'],[/\bsel\b/,'🧂'],[/\b(sucre|confiture)\b/,'🍯'],[/\bmiel\b/,'🍯'],[/\bchocolat\b/,'🍫'],[/\b(biscuits?|cookies?|gateaux?)\b/,'🍪'],[/\b(cafe|the)\b/,'☕'],[/\bcereales?\b/,'🥣'],
+ [/\b(jus|sodas?|limonade|sirop)\b/,'🧃'],[/\beau\b/,'💧'],[/\bvin\b/,'🍷'],[/\bbieres?\b/,'🍺'],[/\b(glaces?|surgeles?)\b/,'🧊'],[/\bpizzas?\b/,'🍕'],[/\bfrites\b/,'🍟'],
+ [/\b(dentifrice|brosse a dents)\b/,'🪥'],[/\b(savon|gel douche|shampo+ing)\b/,'🧼'],[/\b(papier toilette|essuie tout|mouchoirs?)\b/,'🧻'],[/\b(lessive|vaisselle|nettoyant|eponges?)\b/,'🧽'],[/\b(couches?|lingettes?)\b/,'🍼']];
+function itemIco(name,r){
+  const n=String(name||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]+/g,' ');
+  for(const [re,ic] of ITEM_ICO)if(re.test(n))return ic;
+  return RAYON_ICO[rcIdx(r)];
+}
 function skRow(s){
-  const id=esc(sid(s)),step=skStep(s),nm=esc(s.n);
-  const fm=fmtOf(s.n),lots=fm?pkLots(s.q,s.u,fm):null,sub=fm?pkText(fm)+(lots?` · ${pkCount(lots,fm)} en stock`:''):'';
-  return`<div class="srow"><div class="nmw"><button type="button" class="nm" data-act="fmt-open" data-n="${nm}" data-r="${esc(rayonOf(s.n,s.r))}" title="Catégorie et conditionnement de cet article">${nm}</button>${sub?`<span class="sub">${esc(sub)}</span>`:''}</div><div class="ctl">`+
+  const id=esc(sid(s)),step=skStep(s),nm=esc(s.n),r=rayonOf(s.n,s.r);
+  const fm=fmtOf(s.n),lots=fm?pkLots(s.q,s.u,fm):null;
+  const sub=!fm||(pkPieces(fm)&&fm.c===1)?'':pkText(fm)+(lots?` · ${pkCount(lots,fm)} en stock`:''); // « lot de 1 » n'apporte rien
+  return`<div class="srow"><span class="sk-ico" aria-hidden="true">${itemIco(s.n,r)}</span><div class="nmw"><button type="button" class="nm" data-act="fmt-open" data-n="${nm}" data-r="${esc(r)}" title="Catégorie et conditionnement de cet article">${nm}</button>${sub?`<span class="sub">${esc(sub)}</span>`:''}</div><div class="ctl"><div class="sk-step">`+
     `<button type="button" class="stp" data-act="stock-step" data-d="-1" data-sid="${id}" aria-label="Moins de ${nm}" ${s.q>step?'':'disabled'}>−</button>`+
     `<input type="number" inputmode="decimal" min="0" step="any" data-sq="${id}" value="${s.q?esc(Math.round(s.q*100)/100):''}" placeholder="dispo" aria-label="Quantité de ${nm}">`+
-    (s.u?`<span class="u">${esc(s.u)}</span>`:'')+
-    `<button type="button" class="stp" data-act="stock-step" data-d="1" data-sid="${id}" aria-label="Plus de ${nm}">+</button>`+
+    `<span class="u">${esc(s.u||'')}</span>`+
+    `<button type="button" class="stp" data-act="stock-step" data-d="1" data-sid="${id}" aria-label="Plus de ${nm}">+</button></div>`+
     `<button type="button" class="del" data-act="stock-del" data-sid="${id}" aria-label="Retirer ${nm}">×</button>`+
   `</div></div>`;
 }
@@ -1197,9 +1239,9 @@ function renderStock(){
   el.innerHTML=RAYONS.filter(r=>tab==='*'||r===tab).map(r=>{
     const l=list.filter(s=>rayonOf(s.n,s.r)===r);
     if(!l.length)return'';
-    if(tab!=='*')return`<section class="sk-group" style="${rcStyle(r)}">${l.map(skRow).join('')}</section>`; // un onglet de catégorie remplace l'en-tête
+    if(tab!=='*')return`<section class="sk-group" style="${rcStyle(r)}"><div class="sk-rows">${l.map(skRow).join('')}</div></section>`; // un onglet de catégorie remplace l'en-tête
     const shut=closed.has(r)&&!f; // une recherche déplie tout
-    return`<section class="sk-group" style="${rcStyle(r)}"><button type="button" class="sk-head" data-act="sk-toggle" data-r="${esc(r)}" aria-expanded="${!shut}"><span>${esc(rcLabel(r))}</span><span class="n">${l.length}</span><span class="chev" aria-hidden="true">${shut?'▸':'▾'}</span></button>${shut?'':l.map(skRow).join('')}</section>`;
+    return`<section class="sk-group" style="${rcStyle(r)}"><button type="button" class="sk-head" data-act="sk-toggle" data-r="${esc(r)}" aria-expanded="${!shut}"><span>${esc(rcLabel(r))}</span><span class="n">${l.length}</span><span class="chev" aria-hidden="true">${shut?'▸':'▾'}</span></button>${shut?'':`<div class="sk-rows">${l.map(skRow).join('')}</div>`}</section>`;
   }).join('');
 }
 function parsePasted(t){

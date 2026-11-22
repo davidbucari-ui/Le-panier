@@ -60,6 +60,7 @@ fmts     : conditionnement d'un produit : c unités par lot × q·u de contenu (
 
 ## Écran Stock
 - Une ligne par article (`skRow`) : nom, boutons − / + (`stock-step`, pas de 1 pièce, 100 g/ml, 500 au-delà d'un kilo/litre), quantité modifiable, × (retrait avec confirmation par second toucher). Quantité vide = « dispo » (`q=0`, considéré disponible). Le − est désactivé au minimum (le retrait passe par ×).
+- Présentation : une carte par rayon (`.sk-group`, lignes dans `.sk-rows`, 2 colonnes à partir de 820 px), pastille illustrée par article (`itemIco` : emoji d'après le nom via `ITEM_ICO`, sinon icône du rayon), compteur − / + d'un seul tenant (`.sk-step`). Le format « lot de 1 » n'est pas affiché.
 - Catégories repliables (`sk-toggle`, état dans `UI.skClosed`, local à l'appareil) ; une recherche les déplie. L'ajout à la main est masqué derrière « ＋ Ajouter ».
 
 ## Rapprochement d'ingrédients (important)
