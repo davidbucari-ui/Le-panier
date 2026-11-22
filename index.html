@@ -7,6 +7,10 @@
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2f7d4a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Le Panier">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -1968,6 +1972,32 @@ async function startSupabase(){
   if(db&&id){try{attach(db.doc('data/users/'+id+'/app'));return}catch(e){docRef=null}}
   startSupabase();
 })();
+})();
+/* Installation sur l'écran d'accueil : service worker + proposition d'installer */
+(function(){
+  if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){
+    window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})});
+  }
+  if(matchMedia('(display-mode: standalone)').matches||navigator.standalone)return;
+  var dismissed=false;try{dismissed=localStorage.getItem('lepanier-install-no')==='1'}catch(e){}
+  if(dismissed)return;
+  function bar(txt,btn,go){
+    var d=document.createElement('div');
+    d.setAttribute('role','region');d.setAttribute('aria-label','Installer l\u2019application');
+    d.style.cssText='position:fixed;left:8px;right:8px;bottom:8px;z-index:9999;background:#2f7d4a;color:#fff;border-radius:12px;padding:10px 12px;display:flex;gap:8px;align-items:center;box-shadow:0 4px 16px rgba(0,0,0,.3);font:500 14px/1.3 system-ui,sans-serif';
+    var t=document.createElement('span');t.style.flex='1';t.textContent=txt;d.appendChild(t);
+    function mk(label,fn){var b=document.createElement('button');b.type='button';b.textContent=label;b.style.cssText='min-height:36px;padding:0 12px;border-radius:8px;border:1px solid rgba(255,255,255,.7);background:transparent;color:#fff;font:inherit;cursor:pointer';b.onclick=fn;d.appendChild(b)}
+    if(btn)mk(btn,function(){d.remove();go&&go()});
+    mk('Plus tard',function(){d.remove();try{localStorage.setItem('lepanier-install-no','1')}catch(e){}});
+    document.body.appendChild(d);
+  }
+  window.addEventListener('beforeinstallprompt',function(e){
+    e.preventDefault();
+    bar('Installer Le Panier sur votre écran d\u2019accueil ?','Installer',function(){e.prompt()});
+  });
+  if(/iphone|ipad|ipod/i.test(navigator.userAgent)){
+    setTimeout(function(){bar('Pour installer : touchez Partager, puis \u00ab\u00a0Sur l\u2019écran d\u2019accueil\u00a0\u00bb.')},2500);
+  }
 })();
 </script>
 </body>
