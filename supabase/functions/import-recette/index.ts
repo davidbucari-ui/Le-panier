@@ -129,7 +129,27 @@ function steps(ins) {
   return out;
 }
 
-function extractRecipe(html) {
+// image de la recette : chaîne, liste ou ImageObject ; https uniquement
+function imageOf(img, base) {
+  const pick = (x) => {
+    if (!x) return "";
+    if (typeof x === "string") return x;
+    if (Array.isArray(x)) { for (const y of x) { const u = pick(y); if (u) return u; } return ""; }
+    if (typeof x === "object") return pick(x.url || x.contentUrl || x["@id"]);
+    return "";
+  };
+  try {
+    const u = new URL(clean(pick(img)), base);
+    return u.protocol === "https:" && u.href.length <= 1000 ? u.href : "";
+  } catch (_e) { return ""; }
+}
+function ogImage(html, base) {
+  const m = /<meta[^>]+(?:property|name)=["']og:image(?::secure_url)?["'][^>]*content=["']([^"']+)["']/i.exec(html) ||
+    /<meta[^>]+content=["']([^"']+)["'][^>]*(?:property|name)=["']og:image["']/i.exec(html);
+  return m ? imageOf(m[1], base) : "";
+}
+
+function extractRecipe(html, base) {
   const re = /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
   let m;
   while ((m = re.exec(html))) {
@@ -143,7 +163,8 @@ function extractRecipe(html) {
     const ing = (Array.isArray(r.recipeIngredient) ? r.recipeIngredient : Array.isArray(r.ingredients) ? r.ingredients : [])
       .map(clean).filter(Boolean);
     if (!ing.length) continue;
-    return { titre: clean(r.name), portions, temps_min: total, ingredients: ing, etapes: steps(r.recipeInstructions) };
+    const image = imageOf(r.image || r.thumbnailUrl, base) || ogImage(html, base);
+    return { titre: clean(r.name), portions, temps_min: total, ingredients: ing, etapes: steps(r.recipeInstructions), image };
   }
   return null;
 }
@@ -167,7 +188,7 @@ Deno.serve(async (req) => {
     let url;
     try { url = new URL(String(body.url || "")); } catch (_e) { return json({ error: "bad_url" }, 400); }
     const html = await fetchPage(url);
-    const rec = extractRecipe(html);
+    const rec = extractRecipe(html, url);
     if (!rec) return json({ error: "no_recipe" }, 422);
     return json({ ...rec, source: url.href });
   } catch (e) {

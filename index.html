@@ -276,6 +276,18 @@ body.loading main{opacity:.5;pointer-events:none}
 .sh-who{display:flex;flex-wrap:wrap;gap:6px}
 .sh-who span{font-size:13px;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--leaf-soft)}
 .sh-code{font-family:var(--mono);font-size:14px;letter-spacing:.06em;padding:2px 8px;border-radius:6px;background:var(--paper);border:1px solid var(--line)}
+.nr-lbl{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.nr-ph{display:flex;flex-direction:column;gap:8px}
+.nr-prev{border-radius:12px;overflow:hidden;max-height:180px;background:var(--paper)}
+.nr-prev img{display:block;width:100%;height:180px;object-fit:cover}
+.rc-hero.rc-photo{position:relative;height:150px;padding:0;align-items:flex-end;overflow:hidden;background:var(--s)}
+.rc-hero.rc-photo img.rc-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.rc-hero.rc-photo::after{content:"";position:absolute;inset:auto 0 0 0;height:60%;background:linear-gradient(transparent,rgba(0,0,0,.45));pointer-events:none}
+.rc-hero.rc-photo .rc-over{position:relative;z-index:1;display:flex;align-items:center;width:100%;padding:0 12px 10px}
+.rc-hero.rc-photo .sk-ico{width:34px;height:34px;font-size:18px;margin-right:-6px}
+.rc-hero.rc-photo.noimg{height:auto;padding:14px 16px 12px}
+.rc-hero.rc-photo.noimg::after{display:none}
+.rc-hero.rc-photo.noimg .rc-over{padding:0}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 /* Recettes : bandeau des ingrédients principaux, ingrédients colorés par rayon (✓ = en stock) */
 .card{box-shadow:0 1px 2px rgba(20,40,28,.05),0 4px 14px -8px rgba(20,40,28,.18);border-radius:14px}
@@ -608,6 +620,10 @@ a.btn.primary{color:var(--leaf-ink)}
     <div class="field"><label for="nr-ing">Ingrédients (collez ou tapez, un par ligne)</label>
       <textarea id="nr-ing" placeholder="400 g courgettes&#10;2 oignons&#10;1 c. à soupe huile d'olive&#10;sel"></textarea>
       <span class="hint" id="nr-count" aria-live="polite"></span></div>
+    <div class="field nr-photo"><span class="nr-lbl">Photo (facultatif)</span>
+      <div class="nr-ph"><div class="nr-prev" id="nr-prev" hidden><img id="nr-img" alt="Photo de la recette" referrerpolicy="no-referrer"></div>
+        <div class="row-actions"><label class="btn" id="nr-file-btn" for="nr-file">📷 Prendre ou choisir une photo</label><input type="file" id="nr-file" accept="image/*" hidden><button type="button" class="btn danger" data-act="nr-img-del" id="nr-img-del" hidden>Retirer la photo</button></div>
+        <span class="hint" id="nr-img-hint"></span></div></div>
     <details id="nr-more" class="box" style="margin-bottom:12px">
       <summary><b>Plus de détails</b> <span class="hint">personnes, durée, étapes (facultatif)</span></summary>
       <div class="two" style="margin-top:10px">
@@ -935,12 +951,36 @@ function ingLine(i){return(fmtQty(Number(i.q)||0,i.u)+' '+i.n).trim()}
 // ingrédients « de base » (sel, huile…) : jamais dans le bandeau d'une recette
 const ING_BASIC=/\b(sel|poivre|eau|huile|vinaigre|farine|sucre|epices?|levure|bicarbonate|moutarde|beurre|lait|ail|thym|laurier|persil|herbes?)\b/;
 const ingNorm=n=>String(n||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]+/g,' ');
+/* ---------- photos de recettes : r.img = 'https://…' (image du site) ou 'sb:<chemin>' (photo perso, stockage privé « recettes ») ---------- */
+const IMG_URL=new Map(),IMG_WAIT=new Set();
+function imgSrc(v){
+  v=String(v||'');
+  if(/^https:\/\//i.test(v))return v;
+  if(!v.startsWith('sb:'))return'';
+  const path=v.slice(3);if(IMG_URL.has(path))return IMG_URL.get(path);
+  let ok=false;try{ok=!!(sb&&sbUid)}catch(e){}
+  if(ok&&!IMG_WAIT.has(path)){IMG_WAIT.add(path);clearTimeout(imgSrc.t);imgSrc.t=setTimeout(imgFetch,30)}
+  return'';
+}
+async function imgFetch(){
+  const paths=[...IMG_WAIT].filter(p=>!IMG_URL.has(p));if(!paths.length)return;
+  try{
+    const {data,error}=await sb.storage.from('recettes').createSignedUrls(paths,7*86400);   // liens valables 7 jours, renouvelés à chaque lancement
+    if(error)throw error;
+    for(const d of data||[])if(d&&d.signedUrl)IMG_URL.set(d.path||paths[(data||[]).indexOf(d)],d.signedUrl);
+  }catch(e){console.error('photos',e)}
+  paths.forEach(p=>{if(!IMG_URL.has(p))IMG_URL.set(p,'')});IMG_WAIT.clear();renderRecipes();
+}
 function rcHero(r,badge){
   const seen=new Set(),pick=[];
   const main=r.ingredients.filter(i=>!ING_BASIC.test(ingNorm(i.n)));
   for(const i of main.concat(r.ingredients)){const ry=rayonOf(i.n,i.r),ic=itemIco(i.n,ry);if(seen.has(ic))continue;seen.add(ic);pick.push([ic,ry]);if(pick.length>=4)break}
-  if(!pick.length)return'';
-  return`<div class="rc-hero" style="${rcStyle(pick[0][1])}">${pick.map(([ic,ry])=>`<span class="sk-ico" aria-hidden="true" style="${rcStyle(ry)}">${ic}</span>`).join('')}${badge?`<span class="rc-on">${esc(badge)}</span>`:''}</div>`;
+  const src=imgSrc(r.img);
+  if(!pick.length&&!src)return'';
+  const st=pick.length?rcStyle(pick[0][1]):'';
+  const icons=pick.map(([ic,ry])=>`<span class="sk-ico" aria-hidden="true" style="${rcStyle(ry)}">${ic}</span>`).join('')+(badge?`<span class="rc-on">${esc(badge)}</span>`:'');
+  if(src)return`<div class="rc-hero rc-photo" style="${st}"><img class="rc-img" src="${esc(src)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.classList.add('noimg');this.remove()"><div class="rc-over">${icons}</div></div>`;
+  return`<div class="rc-hero" style="${st}">${icons}</div>`;
 }
 // pastille d'ingrédient : icône + texte, couleur du rayon, ✓ si en stock
 function ingChip(i,tag,extra){
@@ -1556,11 +1596,11 @@ function ingestRecipe(res){
   const x=(res&&res.recette)||res||{};
   const ings=(Array.isArray(x.ingredients)?x.ingredients:[]).map(i=>typeof i==='string'?parseLine(i):(i&&i.nom?{n:String(i.nom).trim(),q:Number(i.quantite)||0,u:String(i.unite||'').trim(),r:RAYONS.includes(i.rayon)?i.rayon:guessRayon(i.nom)}:null)).filter(Boolean);
   if(!ings.length)throw new Error('no_recipe');
-  return{title:String(x.titre||'').trim(),servings:Math.max(1,parseInt(x.portions,10)||4),time:Math.max(0,parseInt(x.temps_min,10)||0),ingredients:ings,steps:(Array.isArray(x.etapes)?x.etapes:[]).map(t=>String(t).trim()).filter(Boolean)};
+  return{img:/^https:\/\//i.test(String(x.image||''))?String(x.image).slice(0,1000):'',title:String(x.titre||'').trim(),servings:Math.max(1,parseInt(x.portions,10)||4),time:Math.max(0,parseInt(x.temps_min,10)||0),ingredients:ings,steps:(Array.isArray(x.etapes)?x.etapes:[]).map(t=>String(t).trim()).filter(Boolean)};
 }
 function finishImport(d,url){
   $('#imp').hidden=true;
-  openForm({title:d.title,servings:d.servings,time:d.time,ingredients:d.ingredients,steps:d.steps,url:url||''},true);
+  openForm({title:d.title,servings:d.servings,time:d.time,ingredients:d.ingredients,steps:d.steps,url:url||'',img:d.img||''},true);
 }
 /* ---------- trouver une recette en ligne ---------- */
 // ingrédients de base qu'on ne choisit pas comme point de départ d'une recette
@@ -1994,10 +2034,11 @@ document.addEventListener('click',e=>{
     case 'plan-del':planChange(id,()=>{delete S.plan[id];delete S.days[id]});break;
     case 'plan-minus':planChange(id,()=>{S.plan[id]=Math.max(1,(S.plan[id]||1)-1)});break;
     case 'plan-plus':planChange(id,()=>{S.plan[id]=Math.min(30,(S.plan[id]||1)+1)});break;
-    case 'del-recipe':if(b.dataset.arm!=='1'){b.dataset.arm='1';b.textContent='Confirmer ?';setTimeout(()=>{if(b.isConnected){b.dataset.arm='';b.textContent='Supprimer'}},3000)}else{S.recipes=S.recipes.filter(r=>r.id!==id);delete S.plan[id];delete S.days[id];OPEN.delete(id);persist();renderRecipes();renderCourses()}break;
+    case 'del-recipe':if(b.dataset.arm!=='1'){b.dataset.arm='1';b.textContent='Confirmer ?';setTimeout(()=>{if(b.isConnected){b.dataset.arm='';b.textContent='Supprimer'}},3000)}else{const gone=S.recipes.find(r=>r.id===id);if(gone)photoDel(gone.img);S.recipes=S.recipes.filter(r=>r.id!==id);delete S.plan[id];delete S.days[id];OPEN.delete(id);persist();renderRecipes();renderCourses()}break;
     case 'new-recipe':openForm(null);break;
     case 'edit-recipe':openForm(S.recipes.find(r=>r.id===id));break;
     case 'nr-cancel':$('#nr').hidden=true;PENDING_URL='';break;
+    case 'nr-img-del':NR_IMG.removed=true;NR_IMG.file=null;$('#nr-file').value='';nrPhoto();break;
     case 'nr-save':saveNew();break;
     case 'nr-save-plan':saveNew(true);break;
     case 'ia-go':generate();break;
@@ -2111,7 +2152,26 @@ document.addEventListener('click',e=>{
     case 'copy':copyList();break;
   }
 });
-let EDIT=null,PENDING_URL='';
+let EDIT=null,PENDING_URL='',NR_IMG={cur:'',file:null,removed:false};
+function nrPhoto(){
+  let on=false;try{on=!!(sb&&sbUid)}catch(e){}
+  const src=NR_IMG.file?NR_IMG.preview:NR_IMG.removed?'':imgSrc(NR_IMG.cur);
+  $('#nr-prev').hidden=!src;if(src)$('#nr-img').src=src;
+  $('#nr-img-del').hidden=!(src||(!NR_IMG.removed&&NR_IMG.cur));
+  $('#nr-file-btn').hidden=!on;
+  $('#nr-img-hint').textContent=on?(NR_IMG.file?'Nouvelle photo : elle sera envoyée à l\'enregistrement.':''):'Connectez-vous pour ajouter vos propres photos.';
+}
+// photo réduite (900 px au plus, JPEG) avant envoi : ménage la place et le réseau
+async function shrinkPhoto(file){
+  const url=URL.createObjectURL(file);
+  try{
+    const im=await new Promise((ok,ko)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=ko;i.src=url});
+    const k=Math.min(1,900/Math.max(im.naturalWidth,im.naturalHeight)),w=Math.round(im.naturalWidth*k),h=Math.round(im.naturalHeight*k);
+    const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(im,0,0,w,h);
+    return await new Promise(ok=>c.toBlob(ok,'image/jpeg',0.82));
+  }finally{URL.revokeObjectURL(url)}
+}
+async function photoDel(v){if(String(v||'').startsWith('sb:')){try{await sb.storage.from('recettes').remove([v.slice(3)])}catch(e){}}}
 function openForm(r,isNew){
   EDIT=r&&!isNew?r.id:null;PENDING_URL=isNew&&r&&r.url?r.url:'';
   $('#nr-h').textContent=isNew?'Recette importée : vérifiez, puis enregistrez':r?'Modifier la recette':'Nouvelle recette';
@@ -2121,24 +2181,38 @@ function openForm(r,isNew){
   $('#nr-ing').value=r?r.ingredients.map(ingLine).join('\n'):'';
   $('#nr-steps').value=r?(r.steps||[]).join('\n'):'';
   $('#nr-more').open=!!r;nrCount();
+  if(NR_IMG.preview)URL.revokeObjectURL(NR_IMG.preview);
+  NR_IMG={cur:r&&r.img||'',file:null,removed:false,preview:''};$('#nr-file').value='';nrPhoto();
   $('#nr-msg').textContent='';$('#nr').hidden=false;$('#nr-title').focus();
 }
 function nrCount(){
   const n=$('#nr-ing').value.split('\n').map(parseLine).filter(Boolean).length;
   $('#nr-count').textContent=n?n+' ingrédient'+(n>1?'s':'')+' reconnu'+(n>1?'s':''):'';
 }
-function saveNew(addToList){
+async function saveNew(addToList){
   const title=$('#nr-title').value.trim(),ings=$('#nr-ing').value.split('\n').map(parseLine).filter(Boolean),steps=$('#nr-steps').value.split('\n').map(s=>s.trim()).filter(Boolean);
   if(!title){$('#nr-msg').textContent='Donnez un titre à la recette.';return}
   if(!ings.length){$('#nr-msg').textContent='Ajoutez au moins un ingrédient, un par ligne.';$('#nr-ing').focus();return}
   const time=Math.max(0,parseInt($('#nr-time').value,10)||0),servings=Math.max(1,parseInt($('#nr-serv').value,10)||4);
   const old=EDIT?S.recipes.find(r=>r.id===EDIT):null;
+  // photo : envoi de la nouvelle, suppression de l'ancienne photo perso remplacée ou retirée
+  let img=NR_IMG.removed?'':NR_IMG.cur;
+  const rid0=old?old.id:uid();
+  if(NR_IMG.file){
+    $('#nr-msg').textContent='Envoi de la photo…';
+    const path=sbUid+'/'+rid0+'-'+Date.now()+'.jpg';
+    const {error}=await sb.storage.from('recettes').upload(path,NR_IMG.file,{contentType:'image/jpeg',upsert:false});
+    if(error){$('#nr-msg').textContent='La photo n\'a pas pu être envoyée ('+(error.message||error)+'). Réessayez, ou enregistrez sans photo.';return}
+    IMG_URL.set(path,NR_IMG.preview);NR_IMG.preview='';img='sb:'+path;
+  }
+  if(old&&old.img&&old.img!==img)photoDel(old.img);
+  $('#nr-msg').textContent='';
   let rid;
   if(old){
     ings.forEach(i=>{const o=old.ingredients.find(x=>norm(x.n)===norm(i.n));if(o&&o.r)i.r=o.r});
-    Object.assign(old,{title,time,servings,ingredients:ings,steps});rid=old.id;
+    Object.assign(old,{title,time,servings,ingredients:ings,steps,img:img||undefined});rid=old.id;
     if(S.plan[old.id]!=null&&!S.plan[old.id])S.plan[old.id]=servings;
-  }else{rid=uid();S.recipes.unshift({id:rid,title,time,servings,tags:[],source:PENDING_URL?'site':'manuel',url:PENDING_URL||undefined,ingredients:ings,steps})}
+  }else{rid=rid0;S.recipes.unshift({id:rid,title,time,servings,tags:[],source:PENDING_URL?'site':'manuel',url:PENDING_URL||undefined,img:img||undefined,ingredients:ings,steps})}
   if(addToList)S.plan[rid]=S.plan[rid]||servings;
   persist();$('#nr').hidden=true;EDIT=null;PENDING_URL='';renderRecipes();renderCourses();
 }
@@ -2164,6 +2238,12 @@ $('#nr-ing').addEventListener('input',nrCount);
 $('#fo-extra').addEventListener('input',foUpdate);
 $('#fo-site').addEventListener('change',foUpdate);
 $('#nr-title').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#nr-ing').focus()}});
+$('#nr-file').addEventListener('change',async e=>{
+  const f=e.target.files&&e.target.files[0];if(!f)return;
+  $('#nr-img-hint').textContent='Préparation de la photo…';
+  try{const b=await shrinkPhoto(f);if(!b)throw new Error('image');if(NR_IMG.preview)URL.revokeObjectURL(NR_IMG.preview);NR_IMG.file=b;NR_IMG.preview=URL.createObjectURL(b);NR_IMG.removed=false;nrPhoto()}
+  catch(err){$('#nr-img-hint').textContent='Cette image n\'a pas pu être lue. Essayez une autre photo.'}
+});
 $('#tk-doc').addEventListener('change',e=>readTicketDoc(e.target.files[0]));
 $('#tk-pdf').addEventListener('change',e=>readTicketDoc(e.target.files[0]));
 document.addEventListener('input',e=>{

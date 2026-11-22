@@ -120,3 +120,19 @@ grant execute on function public.create_shared_list(text, text) to authenticated
 grant execute on function public.join_shared_list(text, text) to authenticated;
 
 alter publication supabase_realtime add table public.shared_lists, public.shared_list_members, public.shared_items;
+
+-- ============================================================
+-- Photos de recettes : espace de stockage privé « recettes », un dossier par utilisateur (<uid>/<recette>-<date>.jpg).
+-- ============================================================
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('recettes', 'recettes', false, 2097152, array['image/jpeg','image/webp','image/png'])
+on conflict (id) do nothing;
+create policy "photos de recettes : lire les siennes" on storage.objects
+  for select to authenticated using (bucket_id = 'recettes' and (storage.foldername(name))[1] = (select auth.uid())::text);
+create policy "photos de recettes : ajouter dans son dossier" on storage.objects
+  for insert to authenticated with check (bucket_id = 'recettes' and (storage.foldername(name))[1] = (select auth.uid())::text);
+create policy "photos de recettes : remplacer les siennes" on storage.objects
+  for update to authenticated using (bucket_id = 'recettes' and (storage.foldername(name))[1] = (select auth.uid())::text)
+  with check (bucket_id = 'recettes' and (storage.foldername(name))[1] = (select auth.uid())::text);
+create policy "photos de recettes : supprimer les siennes" on storage.objects
+  for delete to authenticated using (bucket_id = 'recettes' and (storage.foldername(name))[1] = (select auth.uid())::text);

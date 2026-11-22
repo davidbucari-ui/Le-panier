@@ -74,6 +74,12 @@ fmts     : conditionnement d'un produit : c unités par lot × q·u de contenu (
 ## Écran Recettes
 - Carte : bandeau `rcHero` (jusqu'à 4 pastilles `itemIco` des ingrédients principaux — hors ingrédients de base `ING_BASIC` sauf pour compléter —, couleur du rayon du premier, badge « Dans la liste · N pers. »). Ingrédients en pastilles `ingChip` (icône, couleur du rayon via `rayonOf`, contour vert + ✓ si couvert par le stock, `covers`). Même rendu pour les idées de Claude (`proposalCard`, pastilles cliquables pour exclure).
 
+## Photos de recettes
+- Champ `r.img` d'une recette : `'https://…'` (image du site, renvoyée par l'Edge Function `import-recette` depuis le JSON-LD `image`/`thumbnailUrl`, sinon `og:image` ; https seulement) ou `'sb:<uid>/<recette>-<date>.jpg'` (photo perso). Rien d'autre n'est affiché (`imgSrc`).
+- Photos perso : espace de stockage Supabase **privé** `recettes` (migration `photos_recettes`, un dossier par utilisateur, 2 Mo max, jpeg/webp/png). Réduites dans le navigateur à 900 px, JPEG 0,82 (`shrinkPhoto`) ; affichées par liens signés valables 7 jours (`createSignedUrls`, groupés, en mémoire `IMG_URL`). Ancienne photo supprimée quand elle est remplacée, retirée, ou quand la recette est supprimée (`photoDel`). Bouton masqué hors connexion.
+- Formulaire `#nr` : bloc « Photo » (`#nr-file`, état `NR_IMG`, `nrPhoto`) ; `saveNew` est asynchrone (envoi avant enregistrement ; en cas d'échec, le formulaire reste ouvert).
+- Carte : `rcHero` affiche la photo (150 px, pastilles par-dessus) ; si l'image ne charge pas (`onerror`), retour au bandeau de pastilles. Images de sites chargées avec `referrerpolicy="no-referrer"`.
+
 ## Écran Stock
 - Une ligne par article (`skRow`) : nom, boutons − / + (`stock-step`, pas de 1 pièce, 100 g/ml, 500 au-delà d'un kilo/litre), quantité modifiable, × (retrait avec confirmation par second toucher). Quantité vide = « dispo » (`q=0`, considéré disponible). Le − est désactivé au minimum (le retrait passe par ×).
 - Présentation : une carte par rayon (`.sk-group`, lignes dans `.sk-rows`, 2 colonnes à partir de 820 px), pastille illustrée par article (`itemIco` : emoji d'après le nom via `ITEM_ICO`, sinon icône du rayon), compteur − / + d'un seul tenant (`.sk-step`). Le format « lot de 1 » n'est pas affiché.
