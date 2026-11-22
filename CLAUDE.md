@@ -58,6 +58,9 @@ fmts     : conditionnement d'un produit : c unités par lot × q·u de contenu (
 ## Onglets par catégorie (Courses et Stock)
 - Composant commun `catTabs` (même style `.pr-tabs` que l'onglet Prix) : « Tous » puis un onglet par rayon avec son nombre (✓ = rien à acheter dans Courses). Masqué s'il n'y a qu'une catégorie. État en mémoire seulement (`C_TAB`, `SK_TAB`, pas persisté) ; retour automatique à « Tous » si la catégorie se vide. La barre défile horizontalement et garde sa position à chaque rendu. Dans un onglet de catégorie, l'en-tête de rayon est omis (l'onglet le remplace) ; dans « Tous », le Stock garde ses groupes repliables.
 
+## Écran Prix
+- Même habillage que Stock et Courses : barre `catTabs` (« Tous » d'abord, par défaut), une carte par rayon (`.sk-group` + en-tête `.pr-head`), une fiche par article (`.pr-item` : pastille `itemIco`, meilleur prix €/kg·l·pièce en grand, une ligne par magasin `.pr-shop`, la moins chère colorée ; en pied, historique/suppression et choix du rayon `data-prr`). 2 colonnes à partir de 820 px. Comparaison du panier : `.pr-cmp`, magasin le mieux classé surligné.
+
 ## Écran Stock
 - Une ligne par article (`skRow`) : nom, boutons − / + (`stock-step`, pas de 1 pièce, 100 g/ml, 500 au-delà d'un kilo/litre), quantité modifiable, × (retrait avec confirmation par second toucher). Quantité vide = « dispo » (`q=0`, considéré disponible). Le − est désactivé au minimum (le retrait passe par ×).
 - Présentation : une carte par rayon (`.sk-group`, lignes dans `.sk-rows`, 2 colonnes à partir de 820 px), pastille illustrée par article (`itemIco` : emoji d'après le nom via `ITEM_ICO`, sinon icône du rayon), compteur − / + d'un seul tenant (`.sk-step`). Le format « lot de 1 » n'est pas affiché.

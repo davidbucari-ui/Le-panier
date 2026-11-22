@@ -228,6 +228,41 @@ body.loading main{opacity:.5;pointer-events:none}
 .citem.done .sk-ico{filter:grayscale(.7);opacity:.6}
 .citem.done .cqty{background:transparent}
 @media (max-width:480px){.clist .cgroup .citem{padding:8px 10px;gap:8px}.cgroup .sk-ico{width:30px;height:30px;font-size:16px}}
+/* Prix : une carte par rayon, une fiche par article (pastille, meilleur prix mis en avant) */
+.pr-head{display:flex;align-items:center;gap:8px;margin:0;padding:10px 14px;min-height:50px;font-family:var(--display);font-size:1.08rem;letter-spacing:-.01em;background:linear-gradient(90deg,var(--s),var(--s) 60%,var(--card));border-bottom:2px solid var(--c)}
+.pr-head .n{margin-left:auto;font-family:var(--body);font-size:.8rem;font-weight:600;background:var(--c);color:var(--card);border-radius:999px;padding:1px 9px}
+.pr-items{display:grid;grid-template-columns:1fr}
+@media (min-width:820px){.pr-items{grid-template-columns:1fr 1fr}.pr-items .pr-item:nth-child(odd){border-right:1px solid var(--line)}}
+.pr-item{padding:12px 14px 8px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:6px;min-width:0}
+.pr-top{display:flex;align-items:center;gap:10px}
+.pr-top .nmw{flex:1 1 0;min-width:0;display:flex;flex-direction:column}
+.pr-top .nm{font-weight:700;font-size:1.02rem;line-height:1.2;overflow-wrap:anywhere}
+.pr-top .sub{font-size:12px;color:var(--muted)}
+.pr-best{flex:none;text-align:right;font-family:var(--display);font-weight:800;font-size:1.25rem;line-height:1;color:var(--c);white-space:nowrap}
+.pr-best small{display:block;font-family:var(--body);font-size:11px;font-weight:600;color:var(--muted);margin-top:3px}
+.pr-shops{display:flex;flex-direction:column;gap:4px;padding-left:48px}
+.pr-shop{display:flex;align-items:center;flex-wrap:wrap;gap:2px 8px;padding:5px 10px;border-radius:10px;background:var(--paper);font-size:14px}
+.pr-shop.best{background:var(--s)}
+.pr-shop .sh{font-weight:700}
+.pr-shop .up{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
+.pr-shop .dt{flex-basis:100%;font-size:12px;color:var(--muted)}
+.pr-shop .tag{font-size:11px;font-weight:700;padding:1px 8px;border-radius:999px;background:var(--c);color:var(--card)}
+.pr-foot{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;padding-left:48px}
+.pr-foot{flex-wrap:nowrap}.pr-foot details{flex:1 1 0;min-width:0}
+.pr-foot summary{font-size:12.5px;color:var(--muted);cursor:pointer;min-height:32px;display:flex;align-items:center}
+.pr-foot .mini-sel{margin-left:auto;max-width:170px;font-size:.75rem;border-radius:999px}
+.pr-hist{display:flex;align-items:center;gap:8px;font-size:13px;padding:2px 0;border-bottom:1px dashed var(--line)}
+.pr-hist span:first-child{flex:1;min-width:0}
+.pr-hist .btn{min-height:32px;border-radius:999px;border-color:transparent;background:transparent}
+.pr-hist .btn:hover{background:var(--radis-soft)}
+.pr-cmp{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:16px;box-shadow:0 1px 2px rgba(20,40,28,.05),0 4px 14px -8px rgba(20,40,28,.18)}
+.pr-cmp h3{margin-bottom:8px}
+.pr-crow{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;background:var(--paper);margin-top:6px}
+.pr-crow.top{background:var(--leaf-soft)}
+.pr-crow .sh{font-weight:700;flex:1;min-width:0}
+.pr-crow b{font-family:var(--display);font-size:1.15rem}
+.pr-crow .cnt{font-size:12px;font-weight:600;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 8px;background:var(--card)}
+@media (max-width:480px){.pr-shops,.pr-foot{padding-left:0}.pr-item{padding:10px 10px 6px}.pr-foot .mini-sel{max-width:44%}.pr-foot details[open]{flex-basis:100%}.pr-foot:has(details[open]){flex-wrap:wrap}}
 .pr-tabs .tab[style]{background:var(--s);border-color:transparent;color:var(--ink)}
 .pr-tabs .tab[style] .badge{background:var(--c);color:var(--paper)}
 .pr-tabs .tab[style][aria-selected="true"]{background:var(--c);color:var(--paper)}
@@ -1718,7 +1753,7 @@ function showTab(t){
   try{if(location.hash!=='#'+t)history.replaceState(null,'','#'+t)}catch(e){}
   renderAll();
 }
-let PR_TAB='';
+let PR_TAB='*';
 function renderPrix(){
   const dl=$('#dl-shop');if(!dl)return;
   const shops=[...new Map(S.prices.map(e=>[norm(e.shop),e.shop])).values()].sort((a,b)=>a.localeCompare(b,'fr'));
@@ -1729,7 +1764,8 @@ function renderPrix(){
   if(items.length&&shops.length){
     const rows=shops.map(sh=>{let tot=0,n=0;for(const i of items){const e=priceByShop(i.nk,i.u).find(x=>norm(x.shop)===norm(sh));if(e){tot+=unitPrice(e)*(i.q||1)/(PBASE[i.u]||1);n++}}return{sh,tot,n}}).filter(r=>r.n).sort((a,b)=>b.n-a.n||a.tot-b.tot);
     let mix=0,mn=0;for(const i of items){const b=bestPrice(i.nk,i.u);if(b){mix+=unitPrice(b)*(i.q||1)/(PBASE[i.u]||1);mn++}}
-    if(rows.length)cmp=`<div class="box" style="margin-bottom:16px"><h3>Ma liste de courses (${items.length} article${items.length>1?'s':''})</h3><div>${rows.map(r=>`<div class="srow"><span class="nm">${esc(r.sh)}</span><span class="dots"></span><b>${eur(r.tot)}</b><span class="hint" style="margin-left:8px">${r.n}/${items.length} chiffré${r.n>1?'s':''}</span></div>`).join('')}<div class="srow"><span class="nm">En prenant le meilleur prix de chaque article</span><span class="dots"></span><b>${eur(mix)}</b><span class="hint" style="margin-left:8px">${mn}/${items.length} chiffré${mn>1?'s':''}</span></div></div><p class="hint" style="margin:8px 0 0">Seuls les articles dont le prix est connu sont comptés : comparez d'abord les magasins qui ont le même nombre d'articles chiffrés.</p></div>`;
+    const crow=(sh,tot,k,cls)=>`<div class="pr-crow ${cls}"><span class="sh">${esc(sh)}</span><span class="cnt">${k}/${items.length} chiffré${k>1?'s':''}</span><b>${eur(tot)}</b></div>`;
+    if(rows.length)cmp=`<div class="pr-cmp"><h3>🧺 Ma liste de courses (${items.length} article${items.length>1?'s':''})</h3>${rows.map((r,i)=>crow(r.sh,r.tot,r.n,i===0?'top':'')).join('')}${crow('🏷️ En prenant le meilleur prix de chaque article',mix,mn,'')}<p class="hint" style="margin:8px 0 0">Seuls les articles dont le prix est connu sont comptés : comparez d'abord les magasins qui ont le même nombre d'articles chiffrés.</p></div>`;
   }
   $('#pr-cmp').innerHTML=cmp;
   // détail par article
@@ -1738,16 +1774,20 @@ function renderPrix(){
   for(const e of S.prices){const ek=ckey(e.n),g=ek+'|'+(e.u||'');if(!groups.has(g))groups.set(g,{k:ek,u:e.u||'',n:e.n,all:[],r:''});const gg=groups.get(g);gg.all.push(e);if(!gg.r&&e.r)gg.r=e.r}
   const list=[...groups.values()].filter(g=>!f||norm(g.n).includes(f)).sort((a,b)=>a.n.localeCompare(b.n,'fr'));
   if(!list.length){$('#pr-tabs').hidden=true;$('#pr-list').innerHTML=`<div class="empty">${S.prices.length?'Aucun article ne correspond.':'Aucun prix noté pour le moment. Saisissez un prix ci-dessus.'}</div>`;return}
+  const dfr=d=>d?new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'}):'';
   const card=g=>{
-    const best=priceByShop(g.k,g.u),multi=best.length>1;
+    const best=priceByShop(g.k,g.u),multi=best.length>1,ul=esc(unitLabel(g.u));
     const hist=[...g.all].sort((a,b)=>b.d.localeCompare(a.d));
-    return`<div class="box" style="margin-bottom:12px"><h3>${esc(g.n)} <span class="hint">(par ${esc(unitLabel(g.u))})</span> <select class="mini-sel" data-prr="${esc(g.k+'|'+g.u)}" aria-label="Rayon de ${esc(g.n)}">${RAYONS.map(r=>`<option${r===g.r?' selected':''}>${esc(r)}</option>`).join('')}</select></h3>${best.map((e,i)=>`<div class="srow"><span class="nm">${esc(e.shop)}${multi&&i===0?' <span class="chip">le moins cher</span>':''}</span><span class="dots"></span><b>${eur(unitPrice(e))}/${esc(unitLabel(g.u))}</b><span class="hint" style="margin-left:8px">${esc(fmtQty(e.q,e.u)||'1')} à ${eur(e.p)}${e.d?' · '+esc(new Date(e.d+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'})):''}</span></div>`).join('')}<details><summary class="hint">Historique et suppression (${hist.length})</summary>${hist.map(e=>`<div class="srow"><span class="nm">${esc(e.shop)} · ${esc(e.d)}</span><span class="dots"></span><span>${eur(unitPrice(e))}/${esc(unitLabel(g.u))}</span><button class="btn sm danger" data-act="pr-del" data-id="${esc(e.id)}" aria-label="Supprimer ce prix">×</button></div>`).join('')}</details></div>`};
+    return`<article class="pr-item"><div class="pr-top"><span class="sk-ico" aria-hidden="true">${itemIco(g.n,g.r)}</span><div class="nmw"><span class="nm">${esc(g.n)}</span><span class="sub">${g.u==='g'?'prix au kilo':g.u==='ml'?'prix au litre':'prix à la pièce'}${multi?` · ${best.length} magasins`:''}</span></div>`+
+      (best.length?`<div class="pr-best">${eur(unitPrice(best[0]))}<small>/${ul}${multi?' · '+esc(best[0].shop):''}</small></div>`:'')+`</div>`+
+      `<div class="pr-shops">${best.map((e,i)=>`<div class="pr-shop${multi&&i===0?' best':''}"><span class="sh">${esc(e.shop)}</span>${multi&&i===0?'<span class="tag">le moins cher</span>':''}<span class="up">${eur(unitPrice(e))}/${ul}</span><span class="dt">${esc(fmtQty(e.q,e.u)||'1')} à ${eur(e.p)}${e.d?' · '+esc(dfr(e.d)):''}</span></div>`).join('')}</div>`+
+      `<div class="pr-foot"><details><summary>Historique et suppression (${hist.length})</summary>${hist.map(e=>`<div class="pr-hist"><span>${esc(e.shop)} · ${esc(dfr(e.d)||e.d)}</span><span>${eur(unitPrice(e))}/${ul}</span><button class="btn sm danger" data-act="pr-del" data-id="${esc(e.id)}" aria-label="Supprimer ce prix">×</button></div>`).join('')}</details><select class="mini-sel" data-prr="${esc(g.k+'|'+g.u)}" aria-label="Rayon de ${esc(g.n)}">${RAYONS.map(r=>`<option${r===g.r?' selected':''}>${esc(r)}</option>`).join('')}</select></div></article>`};
   for(const g of list)g.r=rayonOf(g.n,g.r);
   const cats=RAYONS.map(r=>[r,list.filter(g=>g.r===r)]).filter(c=>c[1].length);
-  if(PR_TAB!=='*'&&!cats.some(c=>c[0]===PR_TAB))PR_TAB=cats.length?cats[0][0]:'*';
-  const tb=$('#pr-tabs');tb.hidden=false;
-  tb.innerHTML=cats.map(([r,l])=>`<button class="tab" role="tab" style="${rcStyle(r)}" data-act="pr-tab" data-r="${esc(r)}" aria-selected="${PR_TAB===r}">${esc(rcLabel(r))} <span class="badge">${l.length}</span></button>`).join('')+`<button class="tab" role="tab" data-act="pr-tab" data-r="*" aria-selected="${PR_TAB==='*'}">Tous <span class="badge">${list.length}</span></button>`;
-  $('#pr-list').innerHTML=PR_TAB==='*'?cats.map(([r,l])=>`<h3 class="pr-cat">${esc(r)}</h3>${l.map(card).join('')}`).join(''):(cats.find(c=>c[0]===PR_TAB)||[0,[]])[1].map(card).join('');
+  if(PR_TAB!=='*'&&!cats.some(c=>c[0]===PR_TAB))PR_TAB='*';
+  catTabs($('#pr-tabs'),cats.map(([r,l])=>[r,l.length]),PR_TAB,'pr-tab',list.length); // même barre que Courses et Stock : « Tous » d'abord
+  const grp=(r,l,head)=>`<section class="sk-group" style="${rcStyle(r)}">${head?`<h3 class="pr-head"><span>${esc(rcLabel(r))}</span><span class="n">${l.length}</span></h3>`:''}<div class="pr-items">${l.map(card).join('')}</div></section>`;
+  $('#pr-list').innerHTML=PR_TAB==='*'?cats.map(([r,l])=>grp(r,l,true)).join(''):cats.filter(c=>c[0]===PR_TAB).map(([r,l])=>grp(r,l,false)).join('');
 }
 function safe(fn,name){try{fn()}catch(e){console.error(name,e);try{toast('Erreur d\'affichage ('+name+') : '+(e&&e.message||e))}catch(_){}}}
 function renderAll(){[['chips',renderChips],['recettes',renderRecipes],['idées',renderIA],['courses',renderCourses],['stock',renderStock],['prix',renderPrix]].forEach(([n,f])=>safe(f,n))}
