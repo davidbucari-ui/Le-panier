@@ -225,6 +225,11 @@ body.loading main{opacity:.5;pointer-events:none}
 .cgroup .cbtn{border-radius:999px;padding:0 12px}
 .cgroup .cbtn.x{border-color:transparent;background:transparent;color:var(--muted);padding:0}
 .cgroup .cbtn.x:hover{color:var(--radis-ink);background:var(--radis-soft)}
+.cgroup .sk-head{border-radius:0;padding:10px 14px;min-height:46px;font-family:var(--display);font-size:1.05rem;letter-spacing:-.01em;border-bottom:0;background:linear-gradient(90deg,var(--s),var(--s) 60%,var(--card))}
+.cgroup .sk-head .n{background:var(--c);border-color:var(--c);color:var(--card);font-family:var(--body)}
+.cgroup.got .sk-head .n{background:var(--muted);border-color:var(--muted)}
+.cgroup.got .sk-head{background:var(--paper)}
+.cgroup .sk-head .chev{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--card);color:var(--c)}
 .cgroup.got{opacity:.8}
 .cgroup.got .crayon{background:var(--paper)}
 .cgroup.got .crayon .n{background:var(--muted);border-color:var(--muted)}
@@ -1452,7 +1457,7 @@ function renderShared(l){
   catTabs($('#c-tabs'),cats.map(c=>[c[0],c[1]]),C_TAB,'c-tab',open.length);
   const vis=i=>C_TAB==='*'||i.rayon===C_TAB;
   const row=i=>`<li class="citem ${i.done?'done':''}"><button class="chk" role="checkbox" aria-checked="${i.done}" aria-label="${esc(i.n)}" data-act="sh-done" data-id="${esc(i.id)}"></button><span class="sk-ico" aria-hidden="true" style="${rcStyle(i.rayon)}">${itemIco(i.n,i.rayon)}</span><div class="cmain"><button type="button" class="cnm" data-act="fmt-open" data-n="${esc(i.n)}" data-r="${esc(i.rayon)}" title="Catégorie et conditionnement de cet article">${esc(i.n)}</button><span class="cfrom">ajouté par ${esc(who(i.by))}</span></div>${i.q?`<span class="cqty">${esc(fmtQty(i.q,i.u))}</span>`:''}<button type="button" class="cbtn x" data-act="sh-del" data-id="${esc(i.id)}" aria-label="Retirer ${esc(i.n)} de la liste" title="Retirer de la liste">×</button></li>`;
-  const group=(t,li,cls,bare)=>`<section class="cgroup ${cls||''}" ${cls==='got'?'':`style="${rcStyle(t)}"`}>${bare?'':`<h4 class="crayon"><span>${esc(cls==='got'?t:rcLabel(t))}</span><span class="n">${li.length}</span></h4>`}<ul class="citems">${li.map(row).join('')}</ul></section>`;
+  const group=(t,li,cls,bare)=>{const shut=!bare&&(UI.cClosed||[]).includes(t);return`<section class="cgroup ${cls||''}" ${cls==='got'?'':`style="${rcStyle(t)}"`}>${bare?'':`<button type="button" class="sk-head" data-act="c-toggle" data-r="${esc(t)}" aria-expanded="${!shut}"><span>${esc(cls==='got'?t:rcLabel(t))}</span><span class="n">${li.length}</span><span class="chev" aria-hidden="true">${shut?'▸':'▾'}</span></button>`}${shut?'':`<ul class="citems">${li.map(row).join('')}</ul>`}</section>`};
   const vo=open.filter(vis),vg=got.filter(vis);
   const list=all.length?`<div class="clist"><div class="chead"><b>${vo.length} à acheter</b>${vg.length?`<span>· ${vg.length} dans le panier</span>`:''}</div>`+
       RAYONS.map(r=>[r,vo.filter(i=>i.rayon===r)]).filter(g=>g[1].length).map(([r,li])=>group(r,li,'',C_TAB!=='*')).join('')+(vg.length?group('Dans le panier',vg,'got'):'')+`</div>`
@@ -1490,7 +1495,7 @@ function renderCourses(){
       :`<button type="button" class="cbtn" data-act="stock" data-k="${esc(i.nk)}" data-n="${esc(i.name)}" title="Je l'ai déjà à la maison">En stock</button>`;
     return`<li class="citem ${d?'done':''}"><button class="chk" role="checkbox" aria-checked="${d}" aria-label="${esc(i.name)}" data-act="bought" data-k="${esc(i.key)}"></button><span class="sk-ico" aria-hidden="true" style="${rcStyle(i.rayon)}">${itemIco(i.name,i.rayon)}</span><div class="cmain"><button type="button" class="cnm" data-act="fmt-open" data-n="${esc(i.name)}" data-r="${esc(i.rayon)}" title="Catégorie et conditionnement de cet article">${esc(i.name)}</button>${np&&!(!fm.l&&fm.c===1&&np===1&&!pkPieces(fm))?`<span class="cpk">à prendre : ${esc(pkPhrase(np,fm))}</span>`:''}${from?`<span class="cfrom">${esc(from)}</span>`:''}</div><span class="cqty">${esc(fmtQty(i.q,i.u)||(i.extra?'':'au goût'))}</span>${act}</li>`;
   };
-  const group=(t,l,cls,bare)=>`<section class="cgroup ${cls||''}" ${cls==='got'?'':`style="${rcStyle(t)}"`}>${bare?'':`<h4 class="crayon"><span>${esc(cls==='got'?t:rcLabel(t))}</span><span class="n">${l.length}</span></h4>`}<ul class="citems">${l.map(row).join('')}</ul></section>`;
+  const group=(t,l,cls,bare)=>{const shut=!bare&&(UI.cClosed||[]).includes(t);return`<section class="cgroup ${cls||''}" ${cls==='got'?'':`style="${rcStyle(t)}"`}>${bare?'':`<button type="button" class="sk-head" data-act="c-toggle" data-r="${esc(t)}" aria-expanded="${!shut}"><span>${esc(cls==='got'?t:rcLabel(t))}</span><span class="n">${l.length}</span><span class="chev" aria-hidden="true">${shut?'▸':'▾'}</span></button>`}${shut?'':`<ul class="citems">${l.map(row).join('')}</ul>`}</section>`};
   let list;
   if(UI.hideList){
     list=`<div class="clist"><p class="hint" style="margin:12px 0">Liste masquée · ${open.length} article${open.length>1?'s':''} à acheter.</p></div>`;
@@ -2162,6 +2167,7 @@ document.addEventListener('click',e=>{
     case 'sk-add-toggle':{const f=$('#sk-add'),open=f.hidden;f.hidden=!open;b.setAttribute('aria-expanded',String(open));if(open)$('#sk-name').focus();break}
     case 'stock-step':{const it=S.stock.find(x=>sid(x)===b.dataset.sid);if(it){const st=skStep(it),d=Number(b.dataset.d)||0;it.q=Math.max(0,Math.round(((it.q||0)+d*st)*100)/100);stockChanged()}break}
     case 'pr-toggle':{const r=b.dataset.r,o=new Set(UI.prOpen||[]);o.has(r)?o.delete(r):o.add(r);UI.prOpen=[...o];saveUI();renderPrix();break}
+    case 'c-toggle':{const r=b.dataset.r,c=new Set(UI.cClosed||[]);c.has(r)?c.delete(r):c.add(r);UI.cClosed=[...c];saveUI();renderCourses();break}
     case 'sk-toggle':{const r=b.dataset.r,c=new Set(UI.skClosed||[]);c.has(r)?c.delete(r):c.add(r);UI.skClosed=[...c];saveUI();renderStock();break}
     case 'stock-clear':if(b.dataset.arm!=='1'){b.dataset.arm='1';b.textContent='Confirmer ?';setTimeout(()=>{if(b.isConnected){b.dataset.arm='';b.textContent='Vider le stock'}},3000)}else{S.stock=[];stockChanged();b.dataset.arm='';b.textContent='Vider le stock'}break;
     case 'cook':openCook(id);break;
