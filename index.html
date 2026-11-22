@@ -230,7 +230,10 @@ body.loading main{opacity:.5;pointer-events:none}
 .citem.done .cqty{background:transparent}
 @media (max-width:480px){.clist .cgroup .citem{padding:8px 10px;gap:8px}.cgroup .sk-ico{width:30px;height:30px;font-size:16px}}
 /* Prix : une carte par rayon, une fiche par article (pastille, meilleur prix mis en avant) */
-.pr-head{display:flex;align-items:center;gap:8px;margin:0;padding:10px 14px;min-height:50px;font-family:var(--display);font-size:1.08rem;letter-spacing:-.01em;background:linear-gradient(90deg,var(--s),var(--s) 60%,var(--card));border-bottom:2px solid var(--c)}
+.pr-head{display:flex;align-items:center;gap:8px;margin:0;width:100%;border:0;border-radius:0;color:var(--ink);text-align:left;cursor:pointer;padding:10px 14px;min-height:50px;font-family:var(--display);font-size:1.08rem;letter-spacing:-.01em;background:linear-gradient(90deg,var(--s),var(--s) 60%,var(--card));border-bottom:2px solid var(--c)}
+.pr-head .chev{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--card);color:var(--c);font-size:.9rem}
+.pr-head[aria-expanded="false"]{border-bottom-color:transparent}
+.pr-head .best{font-family:var(--body);font-size:12.5px;font-weight:600;color:var(--muted)}
 .pr-head .n{margin-left:auto;font-family:var(--body);font-size:.8rem;font-weight:600;background:var(--c);color:var(--card);border-radius:999px;padding:1px 9px}
 .pr-items{display:grid;grid-template-columns:1fr}
 @media (min-width:820px){.pr-items{grid-template-columns:1fr 1fr}.pr-items .pr-item:nth-child(odd){border-right:1px solid var(--line)}}
@@ -273,6 +276,19 @@ body.loading main{opacity:.5;pointer-events:none}
 .sh-who{display:flex;flex-wrap:wrap;gap:6px}
 .sh-who span{font-size:13px;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--leaf-soft)}
 .sh-code{font-family:var(--mono);font-size:14px;letter-spacing:.06em;padding:2px 8px;border-radius:6px;background:var(--paper);border:1px solid var(--line)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+/* Recettes : bandeau des ingrédients principaux, ingrédients colorés par rayon (✓ = en stock) */
+.card{box-shadow:0 1px 2px rgba(20,40,28,.05),0 4px 14px -8px rgba(20,40,28,.18);border-radius:14px}
+.rc-hero{--c:var(--muted);--s:var(--paper);margin:-16px -16px 2px;padding:14px 16px 12px;border-radius:14px 14px 0 0;background:linear-gradient(120deg,var(--s),var(--s) 45%,var(--card));border-bottom:2px solid var(--c);display:flex;align-items:center;gap:0}
+.rc-hero .sk-ico{width:46px;height:46px;font-size:25px;margin-right:-8px;border:2px solid var(--card);box-shadow:0 2px 6px -2px rgba(20,40,28,.25)}
+.rc-hero .rc-on{margin-left:auto;white-space:nowrap;font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--leaf);color:var(--leaf-ink)}
+.ings .ing{display:inline-flex;align-items:center;gap:5px;background:var(--s,var(--paper));border-color:transparent;border-radius:999px;padding:3px 10px 3px 4px}
+.ings .ing .ii{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--card);font-size:13px;line-height:1}
+.ings .ing.more{padding:3px 10px;background:var(--paper);border-color:var(--line)}
+.ings .ing.have{box-shadow:inset 0 0 0 1.5px var(--leaf)}
+.ings .ing.have::after{content:"✓";font-weight:800;color:var(--leaf);margin-left:2px}
+.ings .ing.bad .ii{filter:grayscale(1)}
+@media (max-width:480px){.rc-hero .sk-ico{width:40px;height:40px;font-size:22px}}
 .pr-tabs .tab[style]{background:var(--s);border-color:transparent;color:var(--ink)}
 .pr-tabs .tab[style] .badge{background:var(--c);color:var(--paper)}
 .pr-tabs .tab[style][aria-selected="true"]{background:var(--c);color:var(--paper)}
@@ -916,15 +932,31 @@ function delChip(kind,v){
 
 /* ---------- rendu : recettes ---------- */
 function ingLine(i){return(fmtQty(Number(i.q)||0,i.u)+' '+i.n).trim()}
+// ingrédients « de base » (sel, huile…) : jamais dans le bandeau d'une recette
+const ING_BASIC=/\b(sel|poivre|eau|huile|vinaigre|farine|sucre|epices?|levure|bicarbonate|moutarde|beurre|lait|ail|thym|laurier|persil|herbes?)\b/;
+const ingNorm=n=>String(n||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]+/g,' ');
+function rcHero(r,badge){
+  const seen=new Set(),pick=[];
+  const main=r.ingredients.filter(i=>!ING_BASIC.test(ingNorm(i.n)));
+  for(const i of main.concat(r.ingredients)){const ry=rayonOf(i.n,i.r),ic=itemIco(i.n,ry);if(seen.has(ic))continue;seen.add(ic);pick.push([ic,ry]);if(pick.length>=4)break}
+  if(!pick.length)return'';
+  return`<div class="rc-hero" style="${rcStyle(pick[0][1])}">${pick.map(([ic,ry])=>`<span class="sk-ico" aria-hidden="true" style="${rcStyle(ry)}">${ic}</span>`).join('')}${badge?`<span class="rc-on">${esc(badge)}</span>`:''}</div>`;
+}
+// pastille d'ingrédient : icône + texte, couleur du rayon, ✓ si en stock
+function ingChip(i,tag,extra){
+  const ry=rayonOf(i.n,i.r),k=ckey(i.n),have=S.stock.some(s=>covers(s.n,k));
+  return`<${tag} class="ing${have?' have':''}${extra&&extra.cls?' '+extra.cls:''}" style="${rcStyle(ry)}"${extra&&extra.attrs||''}${have?' title="En stock"':''}><span class="ii" aria-hidden="true">${itemIco(i.n,ry)}</span>${esc(ingLine(i))}${have?'<span class="sr">, en stock</span>':''}</${tag}>`;
+}
 function recipeCard(r){
   const open=OPEN.has(r.id),planned=S.plan[r.id]!=null;
   const [sh,st]=stockCover(r);
   const shown=open?r.ingredients:r.ingredients.slice(0,5);
   const more=open?0:r.ingredients.length-shown.length;
   return`<article class="card">
+    ${rcHero(r,planned?'Dans la liste · '+S.plan[r.id]+' pers.':'')}
     <h3>${esc(r.title)}</h3>
     <div class="meta">${r.time?`<span class="mono">${esc(r.time)} min</span>`:''}<span class="mono">${esc(r.servings)} pers.</span>${S.stock.length?`<span class="tag ${sh===st?'ok':''}">${sh}/${st} en stock</span>`:''}${(r.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}${r.source==='ia'?'<span class="tag ia">Claude</span>':''}${r.source==='exemple'?'<span class="tag">Exemple</span>':''}${r.source==='site'?'<span class="tag">Site</span>':''}</div>
-    <ul class="ings">${shown.map(i=>`<li class="ing">${esc(ingLine(i))}</li>`).join('')}${more>0?`<li class="ing">+${more}</li>`:''}</ul>
+    <ul class="ings">${shown.map(i=>ingChip(i,'li')).join('')}${more>0?`<li class="ing more">+${more}</li>`:''}</ul>
     ${open&&r.steps&&r.steps.length?`<ol class="steps">${r.steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol>`:''}${open&&/^https?:\/\//i.test(r.url||'')?`<p class="hint" style="margin:0">Source : <a href="${esc(r.url)}" target="_blank" rel="noopener noreferrer">${esc((()=>{try{return new URL(r.url).hostname.replace(/^www\./,'')}catch(e){return r.url}})())}</a></p>`:''}
     <div class="spacer"></div>
     <div class="row-actions">
@@ -950,11 +982,12 @@ function renderRecipes(){
 function proposalCard(p,idx){
   const bad=excludedIn(p);
   return`<article class="card ${bad.length?'flag':''}">
+    ${rcHero(p,'')}
     <h3>${esc(p.title)}</h3>
     <div class="meta">${p.time?`<span class="mono">${esc(p.time)} min</span>`:''}<span class="mono">${esc(p.servings)} pers.</span>${(p.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
     ${bad.length?`<div class="warn">Contient : ${esc(bad.join(', '))}</div>`:''}
     <div class="lbl">Ingrédients <span style="text-transform:none;letter-spacing:0;font-weight:400">(cliquez pour exclure)</span></div>
-    <ul class="ings">${p.ingredients.map(i=>`<li><button type="button" class="ing ${S.exclude.some(x=>norm(i.n).includes(norm(x)))?'bad':''}" data-act="ia-exclude" data-v="${esc(i.n)}">${esc(ingLine(i))}</button></li>`).join('')}</ul>
+    <ul class="ings">${p.ingredients.map(i=>`<li>${ingChip(i,'button',{cls:S.exclude.some(x=>norm(i.n).includes(norm(x)))?'bad':'',attrs:` type="button" data-act="ia-exclude" data-v="${esc(i.n)}"`})}</li>`).join('')}</ul>
     <ol class="steps">${(p.steps||[]).map(s=>`<li>${esc(s)}</li>`).join('')}</ol>
     <div class="spacer"></div>
     <div class="row-actions"><button class="btn sm primary" data-act="ia-save-plan" data-i="${idx}">Garder et ajouter aux courses</button><button class="btn sm" data-act="ia-save" data-i="${idx}">Garder seulement</button><button class="btn sm" data-act="ia-drop" data-i="${idx}">Écarter</button></div>
@@ -1937,7 +1970,11 @@ function renderPrix(){
   const cats=RAYONS.map(r=>[r,list.filter(g=>g.r===r)]).filter(c=>c[1].length);
   if(PR_TAB!=='*'&&!cats.some(c=>c[0]===PR_TAB))PR_TAB='*';
   catTabs($('#pr-tabs'),cats.map(([r,l])=>[r,l.length]),PR_TAB,'pr-tab',list.length); // même barre que Courses et Stock : « Tous » d'abord
-  const grp=(r,l,head)=>`<section class="sk-group" style="${rcStyle(r)}">${head?`<h3 class="pr-head"><span>${esc(rcLabel(r))}</span><span class="n">${l.length}</span></h3>`:''}<div class="pr-items">${l.map(card).join('')}</div></section>`;
+  // dans « Tous », les catégories sont repliées par défaut (UI.prOpen : celles ouvertes, local à l'appareil) ; une recherche les déplie
+  const opened=new Set(UI.prOpen||[]);
+  const grp=(r,l,head)=>{
+    const shut=head&&!f&&!opened.has(r);
+    return`<section class="sk-group" style="${rcStyle(r)}">${head?`<h3 style="margin:0"><button type="button" class="pr-head" data-act="pr-toggle" data-r="${esc(r)}" aria-expanded="${!shut}"><span>${esc(rcLabel(r))}</span><span class="n">${l.length}</span><span class="chev" aria-hidden="true">${shut?'▸':'▾'}</span></button></h3>`:''}${shut?'':`<div class="pr-items">${l.map(card).join('')}</div>`}</section>`};
   $('#pr-list').innerHTML=PR_TAB==='*'?cats.map(([r,l])=>grp(r,l,true)).join(''):cats.filter(c=>c[0]===PR_TAB).map(([r,l])=>grp(r,l,false)).join('');
 }
 function safe(fn,name){try{fn()}catch(e){console.error(name,e);try{toast('Erreur d\'affichage ('+name+') : '+(e&&e.message||e))}catch(_){}}}
@@ -1997,6 +2034,7 @@ document.addEventListener('click',e=>{
     case 'sk-tab':SK_TAB=b.dataset.r;renderStock();break;
     case 'sk-add-toggle':{const f=$('#sk-add'),open=f.hidden;f.hidden=!open;b.setAttribute('aria-expanded',String(open));if(open)$('#sk-name').focus();break}
     case 'stock-step':{const it=S.stock.find(x=>sid(x)===b.dataset.sid);if(it){const st=skStep(it),d=Number(b.dataset.d)||0;it.q=Math.max(0,Math.round(((it.q||0)+d*st)*100)/100);stockChanged()}break}
+    case 'pr-toggle':{const r=b.dataset.r,o=new Set(UI.prOpen||[]);o.has(r)?o.delete(r):o.add(r);UI.prOpen=[...o];saveUI();renderPrix();break}
     case 'sk-toggle':{const r=b.dataset.r,c=new Set(UI.skClosed||[]);c.has(r)?c.delete(r):c.add(r);UI.skClosed=[...c];saveUI();renderStock();break}
     case 'stock-clear':if(b.dataset.arm!=='1'){b.dataset.arm='1';b.textContent='Confirmer ?';setTimeout(()=>{if(b.isConnected){b.dataset.arm='';b.textContent='Vider le stock'}},3000)}else{S.stock=[];stockChanged();b.dataset.arm='';b.textContent='Vider le stock'}break;
     case 'cook':openCook(id);break;
