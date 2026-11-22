@@ -288,6 +288,10 @@ body.loading main{opacity:.5;pointer-events:none}
 .rc-hero.rc-photo.noimg{height:auto;padding:14px 16px 12px}
 .rc-hero.rc-photo.noimg::after{display:none}
 .rc-hero.rc-photo.noimg .rc-over{padding:0}
+.au-note{margin:0;font-size:14px;line-height:1.45;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:8px 12px}
+.au-mode{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:12px;background:var(--paper);border:1px solid var(--line)}
+.au-mode button{border:0;border-radius:9px;background:transparent;padding:8px 6px;min-height:44px;font-weight:600;font-size:14px;line-height:1.2;color:var(--muted)}
+.au-mode button[aria-selected="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(20,40,28,.18)}
 .au-ok{background:var(--leaf-soft);border-radius:10px;padding:10px 12px;line-height:1.45}
 .au-ok .btn{display:block;margin-top:8px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
@@ -544,12 +548,30 @@ a.btn.primary{color:var(--leaf-ink)}
 
 <div class="overlay" id="auth" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="au-h">
-    <h3 id="au-h">Connexion au Panier</h3>
-    <p class="hint" style="margin:0">Connectez-vous pour retrouver vos recettes, votre menu et votre stock sur tous vos appareils.</p>
-    <div class="field"><label for="au-mail">E-mail</label><input type="text" id="au-mail" autocomplete="email" inputmode="email"></div>
-    <div class="field"><label for="au-pass">Mot de passe (8 caractères minimum)</label><input type="password" id="au-pass" autocomplete="current-password"></div>
+    <h3 id="au-h">Votre compte Le Panier</h3>
+    <p class="au-note">🔑 Ce compte est <b>propre à l'application Le Panier</b> : ce n'est ni votre compte Google, ni votre messagerie. Choisissez un mot de passe <b>différent</b> de celui de votre e-mail.</p>
+    <div class="au-mode" role="tablist" aria-label="Connexion ou création de compte">
+      <button type="button" role="tab" id="au-m-in" data-act="auth-mode" data-m="in" aria-selected="true">J'ai déjà un compte Le Panier</button>
+      <button type="button" role="tab" id="au-m-up" data-act="auth-mode" data-m="up" aria-selected="false">Créer mon compte Le Panier</button>
+    </div>
+    <p class="hint" id="au-lead" style="margin:0"></p>
+    <div class="field"><label for="au-mail">Votre adresse e-mail</label><input type="text" id="au-mail" autocomplete="email" inputmode="email"></div>
+    <div class="field"><label for="au-pass" id="au-pass-l">Mot de passe Le Panier</label><input type="password" id="au-pass" autocomplete="current-password"></div>
+    <div class="field" id="au-pass2-f" hidden><label for="au-pass2">Retapez ce mot de passe</label><input type="password" id="au-pass2" autocomplete="new-password"></div>
     <div id="au-msg" role="alert" style="min-height:20px;font-size:14px"></div>
-    <div class="row-actions"><button class="btn primary" data-act="auth-login">Se connecter</button><button class="btn" data-act="auth-signup">Créer un compte</button><button class="btn" data-act="auth-skip">Plus tard</button></div>
+    <div class="row-actions"><button class="btn primary" id="au-go" data-act="auth-go">Se connecter</button><button class="btn" data-act="auth-skip">Plus tard</button></div>
+    <button type="button" class="mini" id="au-forgot" data-act="auth-forgot" style="align-self:flex-start">Mot de passe oublié ?</button>
+  </div>
+</div>
+
+<div class="overlay" id="au-reset" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="ar-h">
+    <h3 id="ar-h">Choisir un nouveau mot de passe Le Panier</h3>
+    <p class="hint" style="margin:0">Vous êtes connecté grâce au lien reçu par e-mail. Choisissez maintenant votre nouveau mot de passe (8 caractères minimum, différent de celui de votre e-mail).</p>
+    <div class="field"><label for="ar-pass">Nouveau mot de passe</label><input type="password" id="ar-pass" autocomplete="new-password"></div>
+    <div class="field"><label for="ar-pass2">Retapez-le</label><input type="password" id="ar-pass2" autocomplete="new-password"></div>
+    <div id="ar-msg" role="alert" style="min-height:20px;font-size:14px"></div>
+    <div class="row-actions"><button class="btn primary" id="ar-go" data-act="auth-newpw">Enregistrer le nouveau mot de passe</button><button class="btn" data-act="auth-reset-close">Plus tard</button></div>
   </div>
 </div>
 
@@ -2102,6 +2124,11 @@ document.addEventListener('click',e=>{
     case 'ia-import':{const m=$('#ia-imp-msg');try{const por=ideasPrompt().por;const res=ingestIdeas(parsePasted($('#ia-paste').value),por);A.notice=null;A.results=res;m.textContent=res.length?res.length+' recette'+(res.length>1?'s importées':' importée')+' ci-dessous.':'Aucune recette trouvée dans cette réponse.';renderIA()}catch(e){m.textContent='Réponse illisible : collez la réponse complète de Claude, sans la modifier.'}break}
     case 'auth-login':authGo(false);break;
     case 'auth-signup':authGo(true);break;
+    case 'auth-go':authGo(AU_MODE==='up');break;
+    case 'auth-mode':authMode(b.dataset.m);break;
+    case 'auth-forgot':authForgot();break;
+    case 'auth-newpw':authNewPw();break;
+    case 'auth-reset-close':$('#au-reset').hidden=true;break;
     case 'auth-resend':authResend();break;
     case 'auth-skip':$('#auth').hidden=true;break;
     case 'auth-open':showAuth('');break;
@@ -2304,7 +2331,19 @@ function sbAdapter(client,uid){
     }
   };
 }
-function showAuth(msg){$('#auth').hidden=false;$('#au-msg').textContent=msg||(localStorage.getItem('lepanier-join')?'On vous invite sur une liste de courses partagée : connectez-vous, ou créez votre compte, pour la rejoindre.':'');$('#au-mail').focus()}
+let AU_MODE='in';
+function authMode(m){
+  AU_MODE=m==='up'?'up':'in';const up=AU_MODE==='up';
+  $('#au-m-in').setAttribute('aria-selected',String(!up));$('#au-m-up').setAttribute('aria-selected',String(up));
+  $('#au-go').textContent=up?'Créer mon compte Le Panier':'Se connecter';
+  $('#au-pass-l').textContent=up?'Choisissez un mot de passe pour Le Panier (8 caractères minimum)':'Mot de passe Le Panier';
+  $('#au-pass').setAttribute('autocomplete',up?'new-password':'current-password');
+  $('#au-pass2-f').hidden=!up;$('#au-forgot').hidden=up;
+  const inv=!!localStorage.getItem('lepanier-join');
+  $('#au-lead').textContent=up?'Première fois ? Créez votre compte : vous recevrez un e-mail pour le confirmer.'+(inv?' Vous rejoindrez ensuite la liste partagée.':''):'Retrouvez vos recettes, votre liste et votre stock sur tous vos appareils.'+(inv?' On vous invite sur une liste partagée : connectez-vous pour la rejoindre.':'');
+  $('#au-msg').textContent='';
+}
+function showAuth(msg){$('#auth').hidden=false;authMode(localStorage.getItem('lepanier-join')?'up':'in');if(msg)$('#au-msg').textContent=msg;$('#au-mail').focus()}
 // mot de passe déjà divulgué ? (Have I Been Pwned, k-anonymat : seuls les 5 premiers caractères de l'empreinte SHA-1 partent)
 // renvoie true (divulgué), false (non trouvé) ou null (vérification impossible : hors ligne, navigateur ancien)
 async function pwLeaked(pw){
@@ -2324,6 +2363,7 @@ function authErr(e){
   if(/invalid login|invalid_credentials/i.test(m+c))return'E-mail ou mot de passe incorrect. Si vous venez de créer votre compte, confirmez-le d\'abord avec le lien reçu par e-mail.';
   if(/not confirmed|email_not_confirmed/i.test(m+c))return'Adresse pas encore confirmée : cliquez sur le lien reçu par e-mail (regardez aussi dans les courriers indésirables).';
   if(st===429||/rate limit|security purposes|over_email_send/i.test(m+c)){const s=(/after (\d+) seconds?/i.exec(m)||[])[1];return'Trop de demandes d\'affilée : patientez '+(s?s+' secondes':'quelques minutes')+' avant de réessayer. Si vous venez de créer votre compte, l\'e-mail de confirmation est déjà parti.'}
+  if(/different from the old|same_password/i.test(m+c))return'Ce mot de passe est identique à l\'ancien : choisissez-en un nouveau.';
   if(/already registered|user_already_exists/i.test(m+c))return'Un compte existe déjà avec cette adresse : touchez « Se connecter ».';
   if(/weak|pwned|password/i.test(m+c)&&st===422)return'Mot de passe refusé : choisissez-en un plus long ou moins courant.';
   if(/invalid.*email|email_address_invalid/i.test(m+c))return'Cette adresse e-mail n\'est pas valide.';
@@ -2340,6 +2380,7 @@ async function authGo(signup){
   if(AUTH_BUSY||!sb)return;   // un seul envoi à la fois : un double toucher déclenchait la limite anti-abus
   const email=$('#au-mail').value.trim(),pw=$('#au-pass').value,msg=$('#au-msg');
   if(!email||pw.length<8){msg.textContent='Entrez votre e-mail et un mot de passe de 8 caractères minimum.';return}
+  if(signup&&pw!==$('#au-pass2').value){msg.textContent='Les deux mots de passe ne sont pas identiques.';$('#au-pass2').focus();return}
   authBusy(true);msg.textContent='Connexion…';
   try{
     if(signup){
@@ -2357,6 +2398,34 @@ async function authGo(signup){
   }catch(e){msg.textContent=authErr(e)}
   finally{authBusy(false)}
 }
+// mot de passe oublié : e-mail avec un lien qui reconnecte et ouvre « nouveau mot de passe »
+async function authForgot(){
+  if(AUTH_BUSY||!sb)return;
+  const email=$('#au-mail').value.trim(),msg=$('#au-msg');
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){msg.textContent='Tapez d\'abord votre adresse e-mail ci-dessus, puis touchez « Mot de passe oublié ? ».';$('#au-mail').focus();return}
+  authBusy(true);msg.textContent='Envoi…';
+  try{
+    const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:authBack()});if(error)throw error;
+    msg.innerHTML=`<div class="au-ok"><b>📧 E-mail envoyé.</b><br>Si un compte Le Panier existe pour <b>${esc(email)}</b>, vous allez recevoir un lien (regardez aussi dans les courriers indésirables). Touchez-le : l'application s'ouvrira et vous proposera de choisir un nouveau mot de passe.</div>`;
+  }catch(e){msg.textContent=authErr(e)}
+  finally{authBusy(false)}
+}
+function showReset(){$('#au-reset').hidden=false;$('#auth').hidden=true;$('#ar-msg').textContent='';$('#ar-pass').value='';$('#ar-pass2').value='';$('#ar-pass').focus()}
+async function authNewPw(){
+  if(AUTH_BUSY||!sb)return;
+  const pw=$('#ar-pass').value,msg=$('#ar-msg');
+  if(pw.length<8){msg.textContent='8 caractères minimum.';return}
+  if(pw!==$('#ar-pass2').value){msg.textContent='Les deux mots de passe ne sont pas identiques.';return}
+  AUTH_BUSY=true;$('#ar-go').disabled=true;
+  try{
+    msg.textContent='Vérification du mot de passe…';
+    if(await pwLeaked(pw)){msg.textContent='Ce mot de passe figure dans des fuites de données connues : choisissez-en un autre.';return}
+    msg.textContent='Enregistrement…';
+    const {error}=await sb.auth.updateUser({password:pw});if(error)throw error;
+    $('#au-reset').hidden=true;toast('Nouveau mot de passe enregistré.');
+  }catch(e){msg.textContent=authErr(e)}
+  finally{AUTH_BUSY=false;$('#ar-go').disabled=false}
+}
 async function authResend(){
   if(AUTH_BUSY||!sb)return;
   const email=$('#au-mail').value.trim();if(!email)return;
@@ -2372,6 +2441,7 @@ async function startSupabase(){
   try{
     sb=window.supabase.createClient(SB.url,SB.key);
     sb.auth.onAuthStateChange((ev,session)=>{
+      if(ev==='PASSWORD_RECOVERY')setTimeout(showReset,50);   // retour du lien « mot de passe oublié »
       setTimeout(()=>{
         if(session&&session.user&&session.user.id!==sbUid){
           sbUid=session.user.id;$('#auth').hidden=true;$('#signin').hidden=true;$('#signout').hidden=false;
