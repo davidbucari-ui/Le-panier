@@ -9,7 +9,7 @@ Application web personnelle (français) de gestion des courses : recettes, idée
 ## Architecture
 - **Un seul fichier** `index.html` (HTML + CSS + JS vanilla, aucune étape de build). Ne pas introduire de framework ni de bundler.
 - `ingredients.json` : dictionnaire d'ingrédients (~4 200 entrées) chargé par `fetch` au démarrage. Entrée = `[nom, synonymes[], indices_ancêtres[], indice_rayon, code_ciqual]`. Généré depuis la taxonomie Open Food Facts (ODbL) ; absent dans la version Claude (l'appli doit rester fonctionnelle sans).
-- `supabase.sql` : table `app_state` (une ligne par utilisateur, colonne `data` jsonb, RLS par `auth.uid()`, publication realtime).
+- `supabase.sql` : table `app_state` (une ligne par utilisateur, colonne `data` jsonb, RLS par `auth.uid()`, publication realtime) ; tables des listes partagées (`shared_lists`, `shared_list_members`, `shared_items`, migration `listes_partagees` appliquée le 22/11/2026).
 - `supabase/functions/import-recette/index.ts` : Edge Function Deno qui lit le JSON-LD schema.org/Recipe d'une page (JWT obligatoire, protections SSRF, limite 2 Mo / 8 s).
 - Hébergement : **GitHub Pages**, `https://davidbucari-ui.github.io/Le-panier/` (attention à la casse : « Le-panier »). Déploiement = `git push` sur `main` (1 à 2 minutes, un 404 passager est possible pendant la publication).
 - Supabase : projet `uwowtbninyoylwqgrqby` (eu-west-1). La clé *publishable* dans `index.html` est publique par conception ; ne jamais y mettre de clé secrète.
@@ -54,6 +54,13 @@ fmts     : conditionnement d'un produit : c unités par lot × q·u de contenu (
 
 ## Écran Courses
 - Haut : « ＋ Ajouter » (déplie le formulaire de recherche `#ex-box`, masqué par défaut) et « Scanner ». Liste (`renderCourses`) : une ligne par article (`.citem` : case, nom + origine, quantité, bouton « En stock » ou × pour un ajout à la main), regroupée par rayon ; les articles cochés passent dans un groupe « Dans le panier » en bas. À droite (tablette) ou dessous (mobile) : résumé recettes/stock, « Lire mon ticket », « Ranger les courses », « Copier la liste », puis « Plus d'actions » (nouvelle recette, masquer, tout décocher, vider). Même habillage que le Stock : une carte par rayon (`.cgroup`), pastille illustrée `itemIco` après la case, quantité en pastille. L'ancien style « ticket de caisse » (police mono, pointillés) a été retiré.
+
+## Listes de courses partagées (famille)
+- Seule la **liste de courses** se partage (pas le stock, les recettes ni les prix). Visible seulement une fois connecté à Supabase ; hors connexion ou dans Claude, le sélecteur `#c-lists` est masqué.
+- Base : `shared_lists` (nom, propriétaire, `code` d'invitation), `shared_list_members` (prénom affiché), `shared_items` (une ligne par article : `n,q,u,r,done,by`). RLS par appartenance (`is_list_member`, security definer). Création et adhésion **uniquement** par les fonctions `create_shared_list(p_name,p_me)` et `join_shared_list(p_code,p_me)`. Le propriétaire renomme / supprime ; un membre quitte. Realtime sur les 3 tables.
+- Appli : état `SH` (rechargé en entier par `shLoad` à chaque événement realtime, avec un délai de 250 ms), liste courante `UI.cl` (locale à l'appareil). `renderCourses` délègue à `renderShared` quand une liste partagée est choisie ; `exAdd`, le scanner (`sc-list`) et l'historique écrivent dans la liste courante (`shAdd` fusionne un article identique non coché). « Ranger dans mon stock » (`shStore`) met les cochés dans **mon** `S.stock` et les retire de la liste. Prénom : `UI.me` (demandé à la première création ou adhésion).
+- Invitation : lien `?liste=CODE` (partage natif ou copie) ; le code est gardé dans `localStorage['lepanier-join']` jusqu'à la connexion (il survit à la confirmation d'e-mail), puis l'adresse est nettoyée. Saisie manuelle possible : « Rejoindre avec un code ».
+- Tests : faux client Supabase en mémoire partagé entre deux pages Playwright (deux membres) ; le vrai realtime n'est testable que sur appareil.
 
 ## Onglets par catégorie (Courses et Stock)
 - Composant commun `catTabs` (même style `.pr-tabs` que l'onglet Prix) : « Tous » puis un onglet par rayon avec son nombre (✓ = rien à acheter dans Courses). Masqué s'il n'y a qu'une catégorie. État en mémoire seulement (`C_TAB`, `SK_TAB`, pas persisté) ; retour automatique à « Tous » si la catégorie se vide. La barre défile horizontalement et garde sa position à chaque rendu. Dans un onglet de catégorie, l'en-tête de rayon est omis (l'onglet le remplace) ; dans « Tous », le Stock garde ses groupes repliables.

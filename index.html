@@ -218,6 +218,7 @@ body.loading main{opacity:.5;pointer-events:none}
 .cgroup .citem:last-child{border-bottom:0}
 .cgroup .citem:hover{background:color-mix(in srgb,var(--s) 35%,transparent)}
 .cgroup .sk-ico{width:36px;height:36px;font-size:19px}
+.cgroup .cqty:empty{display:none}
 .cgroup .cqty{font-weight:700;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:4px 10px}
 .cgroup .cbtn{border-radius:999px;padding:0 12px}
 .cgroup .cbtn.x{border-color:transparent;background:transparent;color:var(--muted);padding:0}
@@ -263,6 +264,15 @@ body.loading main{opacity:.5;pointer-events:none}
 .pr-crow b{font-family:var(--display);font-size:1.15rem}
 .pr-crow .cnt{font-size:12px;font-weight:600;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 8px;background:var(--card)}
 @media (max-width:480px){.pr-shops,.pr-foot{padding-left:0}.pr-item{padding:10px 10px 6px}.pr-foot .mini-sel{max-width:44%}.pr-foot details[open]{flex-basis:100%}.pr-foot:has(details[open]){flex-wrap:wrap}}
+.c-lists{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;margin-bottom:4px;-webkit-overflow-scrolling:touch}
+.c-lists button{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:6px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);font-weight:600;white-space:nowrap;color:var(--ink)}
+.c-lists button[aria-pressed="true"]{background:var(--leaf);border-color:var(--leaf);color:var(--leaf-ink)}
+.c-lists button .badge{font-size:.75rem;padding:0 7px;border-radius:999px;background:var(--paper);color:var(--ink)}
+.c-lists button.ghost{border-style:dashed;color:var(--muted);background:transparent}
+.sh-box h3{display:flex;align-items:center;gap:8px}
+.sh-who{display:flex;flex-wrap:wrap;gap:6px}
+.sh-who span{font-size:13px;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--leaf-soft)}
+.sh-code{font-family:var(--mono);font-size:14px;letter-spacing:.06em;padding:2px 8px;border-radius:6px;background:var(--paper);border:1px solid var(--line)}
 .pr-tabs .tab[style]{background:var(--s);border-color:transparent;color:var(--ink)}
 .pr-tabs .tab[style] .badge{background:var(--c);color:var(--paper)}
 .pr-tabs .tab[style][aria-selected="true"]{background:var(--c);color:var(--paper)}
@@ -435,6 +445,7 @@ a.btn.primary{color:var(--leaf-ink)}
   <!-- COURSES -->
   <section class="panel" id="p-courses" role="tabpanel" aria-labelledby="tab-courses" hidden>
     <h2>Liste de courses</h2>
+    <div class="c-lists" id="c-lists" role="group" aria-label="Choix de la liste" hidden></div>
     <div class="row-actions c-top"><button class="btn primary" id="ex-btn" data-act="ex-toggle" aria-expanded="false" aria-controls="ex-box">＋ Ajouter</button><button class="btn" data-act="scan-open">Scanner</button></div>
     <div class="box" id="ex-box" hidden style="margin-bottom:16px">
       <h3>Ajouter un article</h3>
@@ -998,6 +1009,8 @@ async function generate(){
 function exAdd(n,r){
   n=String(n||'').trim();if(!n)return;
   const q=parseFloat($('#ex-qty').value)||0,u=q?$('#ex-unit').value:'';
+  const sl=shCur();
+  if(sl){shAdd(n,q,u,r||guessRayon(n));$('#ex-qty').value='';$('#ex-q').value='';exSearch();$('#ex-q').focus();const m=$('#ex-hint');if(m)m.innerHTML='<span class="ex-ok">✓ '+esc(n)+' ajouté à « '+esc(sl.name)+' »</span>';return}
   S.extras.push({id:uid(),n,q,u,r:r||guessRayon(n)});
   persist();renderCourses();$('#ex-qty').value='';$('#ex-q').value='';exSearch();$('#ex-q').focus();
   const m=$('#ex-hint');if(m)m.innerHTML='<span class="ex-ok">✓ '+esc(n)+' ajouté</span> · '+S.extras.length+' article'+(S.extras.length>1?'s':'')+' ajouté'+(S.extras.length>1?'s':'')+' à la main. Continuez ou consultez la liste ci-dessous.';
@@ -1025,7 +1038,7 @@ function renderHist(){
   const all=histItems();
   if(!all.length){box.innerHTML=`<p class="hint" style="margin:0">Votre historique d'achat se remplira avec vos tickets de caisse.</p>`;return}
   const qn=norm(($('#ex-q')&&$('#ex-q').value||'').trim()),ray=($('#ex-ray')&&$('#ex-ray').value)||'';
-  const onList=new Set(shoppingItems().map(i=>i.nk));
+  const sl=shCur(),onList=new Set(sl?(SH.items[sl.id]||[]).filter(i=>!i.done).map(i=>ckey(i.n)):shoppingItems().map(i=>i.nk));
   const sort=UI.hSort||'freq',dd=h=>h.d||'';
   let l=all.filter(h=>(!ray||h.r===ray)&&(!qn||norm(h.n).includes(qn)));
   l.sort(sort==='az'?(a,b)=>a.n.localeCompare(b.n,'fr'):sort==='recent'?(a,b)=>dd(b).localeCompare(dd(a))||b.count-a.count:(a,b)=>b.count-a.count||dd(b).localeCompare(dd(a)));
@@ -1177,7 +1190,145 @@ function catTabs(tb,cats,cur,act,total){
   if(sel){const l=sel.offsetLeft,r=l+sel.offsetWidth;if(l<tb.scrollLeft)tb.scrollLeft=Math.max(0,l-8);else if(r>tb.scrollLeft+tb.clientWidth)tb.scrollLeft=r-tb.clientWidth+8}
 }
 let C_TAB='*',SK_TAB='*',FM_NAME='',FM_R0='';
+/* ---------- listes partagées (Supabase : shared_lists / shared_list_members / shared_items) ---------- */
+var SH={lists:[],members:{},items:{},ok:false},shCh=null,shTimer=null;
+const shOn=()=>{try{return!!(sb&&sbUid&&SH&&SH.ok)}catch(e){return false}};   // sb est déclaré plus bas : premier rendu avant son initialisation
+const shCur=()=>shOn()&&UI.cl?SH.lists.find(l=>l.id===UI.cl)||null:null;
+async function shLoad(){
+  if(!sb||!sbUid)return;
+  try{
+    const [a,b,c]=await Promise.all([sb.from('shared_lists').select('id,name,owner,code').order('created_at'),sb.from('shared_list_members').select('list_id,user_id,name'),sb.from('shared_items').select('id,list_id,n,q,u,r,done,by,created_at').order('created_at')]);
+    if(a.error||b.error||c.error)throw a.error||b.error||c.error;
+    SH={lists:a.data||[],members:{},items:{},ok:true};
+    for(const m of b.data||[])(SH.members[m.list_id]=SH.members[m.list_id]||[]).push(m);
+    for(const i of c.data||[])(SH.items[i.list_id]=SH.items[i.list_id]||[]).push({...i,q:Number(i.q)||0});
+  }catch(e){console.error('listes partagées',e)}
+  renderCourses();
+}
+function shStart(){
+  shStop();shLoad();
+  const again=()=>{clearTimeout(shTimer);shTimer=setTimeout(shLoad,250)};
+  shCh=sb.channel('listes_'+sbUid);
+  for(const t of['shared_items','shared_lists','shared_list_members'])shCh.on('postgres_changes',{event:'*',schema:'public',table:t},again);
+  shCh.subscribe();
+  document.addEventListener('visibilitychange',shVis);
+  const code=localStorage.getItem('lepanier-join');if(code)shJoin(code);
+}
+function shVis(){if(document.visibilityState==='visible')shLoad()}
+function shStop(){if(shCh&&sb){try{sb.removeChannel(shCh)}catch(e){}}shCh=null;document.removeEventListener('visibilitychange',shVis);SH={lists:[],members:{},items:{},ok:false}}
+function shMe(){
+  if(UI.me)return UI.me;
+  const v=(prompt('Votre prénom (visible par les membres de la liste) :','')||'').trim().slice(0,40);
+  if(v){UI.me=v;saveUI()}return v;
+}
+const shErr=e=>toast('Liste partagée : '+(/code inconnu/.test(String(e&&e.message))?'ce code d\'invitation n\'existe pas.':/trop de listes/.test(String(e&&e.message))?'20 listes au maximum.':'échec ('+(e&&e.message||e)+'). Vérifiez la connexion.'));
+async function shNew(){
+  if(!shOn())return;
+  const name=(prompt('Nom de la liste partagée :','Famille')||'').trim().slice(0,60);if(!name)return;
+  const {data,error}=await sb.rpc('create_shared_list',{p_name:name,p_me:shMe()});
+  if(error)return shErr(error);
+  UI.cl=data.id;saveUI();await shLoad();toast('Liste « '+name+' » créée. Touchez « Inviter » pour la partager.');
+}
+async function shJoin(code){
+  code=String(code||'').trim().toLowerCase().replace(/[^a-z0-9]/g,'');
+  localStorage.removeItem('lepanier-join');
+  if(!code||!sb||!sbUid)return;
+  const {data,error}=await sb.rpc('join_shared_list',{p_code:code,p_me:shMe()});
+  if(error)return shErr(error);
+  UI.cl=data.id;saveUI();await shLoad();showTab('courses');toast('Vous avez rejoint la liste « '+data.name+' ».');
+}
+const shLink=l=>location.origin+location.pathname+'?liste='+l.code;
+async function shInvite(){
+  const l=shCur();if(!l)return;
+  const url=shLink(l),txt='Rejoignez ma liste de courses « '+l.name+' » sur Le Panier : '+url;
+  if(navigator.share){try{await navigator.share({title:'Le Panier',text:txt});return}catch(e){if(e&&e.name==='AbortError')return}}
+  try{await navigator.clipboard.writeText(txt);toast('Lien d\'invitation copié : collez-le dans un SMS ou un message.')}catch(e){prompt('Copiez ce lien d\'invitation :',url)}
+}
+async function shAdd(n,q,u,r){
+  const l=shCur();if(!l)return false;
+  n=String(n||'').trim().slice(0,120);if(!n)return false;
+  const [qq,uu]=normQty(q,u),k=ckey(n);
+  const ex=(SH.items[l.id]||[]).find(i=>!i.done&&ckey(i.n)===k&&(i.u||'')===uu);
+  let res;
+  if(ex){ex.q=qq&&ex.q?ex.q+qq:0;res=await sb.from('shared_items').update({q:ex.q,updated_at:new Date().toISOString()}).eq('id',ex.id)}
+  else{const it={list_id:l.id,n,q:qq||0,u:uu,r:RAYONS.includes(r)?r:'',by:sbUid};(SH.items[l.id]=SH.items[l.id]||[]).push({...it,id:'tmp'+uid(),done:false});res=await sb.from('shared_items').insert(it)}
+  renderCourses();
+  if(res.error){shErr(res.error);shLoad();return false}
+  return true;
+}
+async function shDone(id){
+  const l=shCur(),i=l&&(SH.items[l.id]||[]).find(x=>x.id===id);if(!i)return;
+  i.done=!i.done;renderCourses();
+  const {error}=await sb.from('shared_items').update({done:i.done,updated_at:new Date().toISOString()}).eq('id',id);
+  if(error){shErr(error);shLoad()}
+}
+async function shDel(ids){
+  const l=shCur();if(!l||!ids.length)return;
+  SH.items[l.id]=(SH.items[l.id]||[]).filter(x=>!ids.includes(x.id));renderCourses();
+  const {error}=await sb.from('shared_items').delete().in('id',ids);
+  if(error){shErr(error);shLoad()}
+}
+// articles cochés de la liste partagée → mon stock, puis retirés de la liste
+async function shStore(){
+  const l=shCur();if(!l)return;
+  const got=(SH.items[l.id]||[]).filter(i=>i.done);if(!got.length){toast('Aucun article coché.');return}
+  for(const i of got)addStock({n:i.n,q:i.q,u:i.u,r:rayonOf(i.n,i.r)});
+  stockChanged();await shDel(got.map(i=>i.id));
+  toast(got.length+' article'+(got.length>1?'s':'')+' rangé'+(got.length>1?'s':'')+' dans votre stock.');
+}
+async function shLeave(){
+  const l=shCur();if(!l)return;
+  const own=l.owner===sbUid;
+  if(!confirm(own?'Supprimer la liste « '+l.name+' » pour tous ses membres ?':'Quitter la liste « '+l.name+' » ?'))return;
+  const {error}=own?await sb.from('shared_lists').delete().eq('id',l.id):await sb.from('shared_list_members').delete().eq('list_id',l.id).eq('user_id',sbUid);
+  if(error)return shErr(error);
+  UI.cl='';saveUI();shLoad();
+}
+async function shRename(){
+  const l=shCur();if(!l||l.owner!==sbUid)return;
+  const name=(prompt('Nouveau nom de la liste :',l.name)||'').trim().slice(0,60);if(!name||name===l.name)return;
+  const {error}=await sb.from('shared_lists').update({name}).eq('id',l.id);
+  if(error)return shErr(error);shLoad();
+}
+function renderListPicker(){
+  const el=$('#c-lists');if(!el)return;
+  if(!shOn()){el.hidden=true;el.innerHTML='';return}
+  const cur=shCur();
+  el.hidden=false;
+  el.innerHTML=`<button type="button" data-act="sh-pick" data-id="" aria-pressed="${!cur}">🧺 Ma liste</button>`+
+    SH.lists.map(l=>{const n=(SH.items[l.id]||[]).filter(i=>!i.done).length;return`<button type="button" data-act="sh-pick" data-id="${esc(l.id)}" aria-pressed="${cur&&cur.id===l.id}">👨‍👩‍👧 ${esc(l.name)}${n?` <span class="badge">${n}</span>`:''}</button>`}).join('')+
+    `<button type="button" class="ghost" data-act="sh-new">＋ Liste partagée</button><button type="button" class="ghost" data-act="sh-join">Rejoindre avec un code</button>`;
+}
+function renderShared(l){
+  const all=(SH.items[l.id]||[]).map(i=>({...i,rayon:rayonOf(i.n,i.r)})).sort((a,b)=>a.n.localeCompare(b.n,'fr'));
+  const open=all.filter(i=>!i.done),got=all.filter(i=>i.done);
+  const mem=SH.members[l.id]||[],who=id=>{const m=mem.find(x=>x.user_id===id);return id===sbUid?'vous':m&&m.name||'un membre'};
+  const cats=RAYONS.map(r=>[r,open.filter(i=>i.rayon===r).length,got.filter(i=>i.rayon===r).length]).filter(c=>c[1]+c[2]>0);
+  if(C_TAB!=='*'&&!cats.some(c=>c[0]===C_TAB))C_TAB='*';
+  catTabs($('#c-tabs'),cats.map(c=>[c[0],c[1]]),C_TAB,'c-tab',open.length);
+  const vis=i=>C_TAB==='*'||i.rayon===C_TAB;
+  const row=i=>`<li class="citem ${i.done?'done':''}"><button class="chk" role="checkbox" aria-checked="${i.done}" aria-label="${esc(i.n)}" data-act="sh-done" data-id="${esc(i.id)}"></button><span class="sk-ico" aria-hidden="true" style="${rcStyle(i.rayon)}">${itemIco(i.n,i.rayon)}</span><div class="cmain"><button type="button" class="cnm" data-act="fmt-open" data-n="${esc(i.n)}" data-r="${esc(i.rayon)}" title="Catégorie et conditionnement de cet article">${esc(i.n)}</button><span class="cfrom">ajouté par ${esc(who(i.by))}</span></div>${i.q?`<span class="cqty">${esc(fmtQty(i.q,i.u))}</span>`:''}<button type="button" class="cbtn x" data-act="sh-del" data-id="${esc(i.id)}" aria-label="Retirer ${esc(i.n)} de la liste" title="Retirer de la liste">×</button></li>`;
+  const group=(t,li,cls,bare)=>`<section class="cgroup ${cls||''}" ${cls==='got'?'':`style="${rcStyle(t)}"`}>${bare?'':`<h4 class="crayon"><span>${esc(cls==='got'?t:rcLabel(t))}</span><span class="n">${li.length}</span></h4>`}<ul class="citems">${li.map(row).join('')}</ul></section>`;
+  const vo=open.filter(vis),vg=got.filter(vis);
+  const list=all.length?`<div class="clist"><div class="chead"><b>${vo.length} à acheter</b>${vg.length?`<span>· ${vg.length} dans le panier</span>`:''}</div>`+
+      RAYONS.map(r=>[r,vo.filter(i=>i.rayon===r)]).filter(g=>g[1].length).map(([r,li])=>group(r,li,'',C_TAB!=='*')).join('')+(vg.length?group('Dans le panier',vg,'got'):'')+`</div>`
+    :`<div class="clist"><p class="hint" style="margin:12px 0">La liste « ${esc(l.name)} » est vide. Touchez « ＋ Ajouter » : chaque membre voit les ajouts en direct.</p></div>`;
+  const own=l.owner===sbUid;
+  const side=`<div class="side">
+    <div class="box sh-box"><h3>👨‍👩‍👧 ${esc(l.name)}</h3>
+      <div class="sh-who">${mem.map(m=>`<span>${esc(m.user_id===sbUid?(m.name||'Vous')+' (vous)':m.name||'Membre')}</span>`).join('')}</div>
+      <button class="btn primary" data-act="sh-invite">Inviter quelqu'un</button>
+      <span class="hint">Code d'invitation : <span class="sh-code">${esc(l.code)}</span></span>
+    </div>
+    <div class="row-actions"><button class="btn" data-act="sh-store" ${got.length?'':'disabled'} title="Met les articles cochés dans votre stock et les retire de la liste">Ranger dans mon stock${got.length?` (${got.length})`:''}</button><button class="btn" data-act="sh-clear" ${got.length?'':'disabled'}>Retirer les cochés</button></div>
+    <details class="more"><summary>Plus d'actions</summary><div class="row-actions">${own?'<button class="btn" data-act="sh-rename">Renommer</button>':''}<button class="btn" data-act="sh-name">Mon prénom${UI.me?' : '+esc(UI.me):''}</button><button class="btn danger" data-act="sh-leave">${own?'Supprimer la liste':'Quitter la liste'}</button></div></details>
+  </div>`;
+  $('#courses').innerHTML=list+side;
+  renderHist();
+}
 function renderCourses(){
+  renderListPicker();
+  {const l=shCur();if(l)return renderShared(l)}
   const items=shoppingItems(),done=new Set(S.bought);
   const open=items.filter(i=>!done.has(i.key)),got=items.filter(i=>done.has(i.key));
   const b=$('#badge');b.textContent=open.length;b.hidden=!open.length;
@@ -1884,11 +2035,22 @@ document.addEventListener('click',e=>{
     case 'scan-cam':scStart();break;
     case 'scan-find':scLookup($('#sc-code').value);break;
     case 'sc-stock':{const x=scRead();if(!x)break;addStock({n:x.n,q:x.q*x.c,u:x.u,r:x.r});stockChanged();scDone(x.n+' ajouté au stock.');break}
-    case 'sc-list':{const x=scRead();if(!x)break;S.extras.push({id:uid(),n:x.n,q:x.q*x.c,u:x.u,r:x.r});renderCourses();scDone(x.n+' ajouté à la liste.');break}
+    case 'sc-list':{const x=scRead();if(!x)break;if(shCur()){shAdd(x.n,x.q*x.c,x.u,x.r);scDone(x.n+' ajouté à « '+shCur().name+' ».');break}S.extras.push({id:uid(),n:x.n,q:x.q*x.c,u:x.u,r:x.r});renderCourses();scDone(x.n+' ajouté à la liste.');break}
     case 'sc-price':{const x=scRead();if(!x)break;const pr=Number($('#sc-p').value)||0,shop=$('#sc-shop').value.trim();
       if(pr<=0||!shop){$('#sc-st').textContent='Pour noter un prix, indiquez le prix et le magasin.';break}
       addPrice(x.n,pr,x.q,x.u,shop,todayISO(),x.r);renderPrix();renderCourses();scDone('Prix noté : '+x.n+' chez '+shop+'.');break}
     case 'toggle-list':UI.hideList=!UI.hideList;saveUI();renderCourses();break;
+    case 'sh-pick':UI.cl=b.dataset.id||'';saveUI();C_TAB='*';renderCourses();exSearch();break;
+    case 'sh-new':shNew();break;
+    case 'sh-join':{const c=prompt('Code d\'invitation reçu (ou le lien complet) :','');if(c){const m=String(c).match(/[?&]liste=([a-z0-9]+)/i);shJoin(m?m[1]:c)}break}
+    case 'sh-invite':shInvite();break;
+    case 'sh-done':shDone(b.dataset.id);break;
+    case 'sh-del':shDel([b.dataset.id]);break;
+    case 'sh-store':shStore();break;
+    case 'sh-clear':{const l=shCur();if(l)shDel((SH.items[l.id]||[]).filter(i=>i.done).map(i=>i.id));break}
+    case 'sh-leave':shLeave();break;
+    case 'sh-rename':shRename();break;
+    case 'sh-name':{const v=(prompt('Votre prénom (visible par les membres de vos listes) :',UI.me||'')||'').trim().slice(0,40);if(v){UI.me=v;saveUI();sb.from('shared_list_members').update({name:v}).eq('user_id',sbUid).then(()=>shLoad())}break}
     case 'extra-pick':exAdd(b.dataset.n,b.dataset.r);break;
     case 'extra-del':{S.extras=S.extras.filter(x=>x.id!==b.dataset.id);persist();renderCourses();break}
     case 'bought':{const k=b.dataset.k,i=S.bought.indexOf(k);i>=0?S.bought.splice(i,1):S.bought.push(k);persist();renderCourses();break}
@@ -2021,7 +2183,7 @@ function sbAdapter(client,uid){
     }
   };
 }
-function showAuth(msg){$('#auth').hidden=false;$('#au-msg').textContent=msg||'';$('#au-mail').focus()}
+function showAuth(msg){$('#auth').hidden=false;$('#au-msg').textContent=msg||(localStorage.getItem('lepanier-join')?'On vous invite sur une liste de courses partagée : connectez-vous, ou créez votre compte, pour la rejoindre.':'');$('#au-mail').focus()}
 async function authGo(signup){
   const email=$('#au-mail').value.trim(),pw=$('#au-pass').value,msg=$('#au-msg');
   if(!sb)return;
@@ -2042,6 +2204,8 @@ async function authGo(signup){
     msg.textContent=/invalid login/i.test(m)?'E-mail ou mot de passe incorrect.':/not confirmed/i.test(m)?'Adresse non confirmée : cliquez sur le lien reçu par e-mail.':'Échec : '+m;
   }
 }
+// lien d'invitation « ?liste=CODE » : gardé jusqu'à la connexion (survit à la confirmation par e-mail)
+(function(){try{const c=new URLSearchParams(location.search).get('liste');if(c){localStorage.setItem('lepanier-join',c);history.replaceState(null,'',location.pathname+location.hash)}}catch(e){}})();
 async function startSupabase(){
   if(!SB.url||!SB.key||!window.supabase){setSync('local');ready();return}
   try{
@@ -2051,8 +2215,10 @@ async function startSupabase(){
         if(session&&session.user&&session.user.id!==sbUid){
           sbUid=session.user.id;$('#auth').hidden=true;$('#signin').hidden=true;$('#signout').hidden=false;
           attach(sbAdapter(sb,sbUid));
+          shStart();
         }else if(!session&&sbUid){
           sbUid=null;docRef=null;if(unsub){unsub();unsub=null}
+          shStop();UI.cl='';saveUI();
           $('#signout').hidden=true;$('#signin').hidden=false;
           try{localStorage.removeItem(LS)}catch(e){}
           S=fresh();OPEN.clear();renderAll();setSync('local');showAuth('');
