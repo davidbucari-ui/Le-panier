@@ -73,6 +73,7 @@ h3{font-family:var(--display);font-weight:700;font-size:17px;margin:0}
 .bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px 16px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:12px}
 .field{display:flex;flex-direction:column;gap:6px;min-width:0}
 .field>label,.lbl{font-size:12.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.pw{position:relative}.pw input{padding-right:48px}.pw-eye{position:absolute;right:2px;top:50%;transform:translateY(-50%);width:40px;height:36px;border:0;background:none;font-size:18px;cursor:pointer;opacity:.6}.pw-eye[aria-pressed=true]{opacity:1}
 input[type=text],input[type=search],input[type=number],input[type=password],select,textarea{width:100%;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-height:40px}
 textarea{resize:vertical;min-height:96px}
 .chipbox{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-height:0}
@@ -568,8 +569,8 @@ a.btn.primary{color:var(--leaf-ink)}
     </div>
     <p class="hint" id="au-lead" style="margin:0"></p>
     <div class="field"><label for="au-mail">Votre adresse e-mail</label><input type="text" id="au-mail" autocomplete="email" inputmode="email"></div>
-    <div class="field"><label for="au-pass" id="au-pass-l">Mot de passe Le Panier</label><input type="password" id="au-pass" autocomplete="current-password"></div>
-    <div class="field" id="au-pass2-f" hidden><label for="au-pass2">Retapez ce mot de passe</label><input type="password" id="au-pass2" autocomplete="new-password"></div>
+    <div class="field"><label for="au-pass" id="au-pass-l">Mot de passe Le Panier</label><div class="pw"><input type="password" id="au-pass" autocomplete="current-password"><button type="button" class="pw-eye" data-act="pw-eye" aria-label="Afficher le mot de passe" aria-pressed="false">👁</button></div></div>
+    <div class="field" id="au-pass2-f" hidden><label for="au-pass2">Retapez ce mot de passe</label><div class="pw"><input type="password" id="au-pass2" autocomplete="new-password"><button type="button" class="pw-eye" data-act="pw-eye" aria-label="Afficher le mot de passe" aria-pressed="false">👁</button></div></div>
     <div id="au-msg" role="alert" style="min-height:20px;font-size:14px"></div>
     <div class="row-actions"><button class="btn primary" id="au-go" data-act="auth-go">Se connecter</button><button class="btn" data-act="auth-skip">Plus tard</button></div>
     <button type="button" class="mini" id="au-forgot" data-act="auth-forgot" style="align-self:flex-start">Mot de passe oublié ?</button>
@@ -580,8 +581,8 @@ a.btn.primary{color:var(--leaf-ink)}
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="ar-h">
     <h3 id="ar-h">Choisir un nouveau mot de passe Le Panier</h3>
     <p class="hint" style="margin:0">Vous êtes connecté grâce au lien reçu par e-mail. Choisissez maintenant votre nouveau mot de passe (8 caractères minimum, différent de celui de votre e-mail).</p>
-    <div class="field"><label for="ar-pass">Nouveau mot de passe</label><input type="password" id="ar-pass" autocomplete="new-password"></div>
-    <div class="field"><label for="ar-pass2">Retapez-le</label><input type="password" id="ar-pass2" autocomplete="new-password"></div>
+    <div class="field"><label for="ar-pass">Nouveau mot de passe</label><div class="pw"><input type="password" id="ar-pass" autocomplete="new-password"><button type="button" class="pw-eye" data-act="pw-eye" aria-label="Afficher le mot de passe" aria-pressed="false">👁</button></div></div>
+    <div class="field"><label for="ar-pass2">Retapez-le</label><div class="pw"><input type="password" id="ar-pass2" autocomplete="new-password"><button type="button" class="pw-eye" data-act="pw-eye" aria-label="Afficher le mot de passe" aria-pressed="false">👁</button></div></div>
     <div id="ar-msg" role="alert" style="min-height:20px;font-size:14px"></div>
     <div class="row-actions"><button class="btn primary" id="ar-go" data-act="auth-newpw">Enregistrer le nouveau mot de passe</button><button class="btn" data-act="auth-reset-close">Plus tard</button></div>
   </div>
@@ -2167,6 +2168,7 @@ document.addEventListener('click',e=>{
     case 'sk-add-toggle':{const f=$('#sk-add'),open=f.hidden;f.hidden=!open;b.setAttribute('aria-expanded',String(open));if(open)$('#sk-name').focus();break}
     case 'stock-step':{const it=S.stock.find(x=>sid(x)===b.dataset.sid);if(it){const st=skStep(it),d=Number(b.dataset.d)||0;it.q=Math.max(0,Math.round(((it.q||0)+d*st)*100)/100);stockChanged()}break}
     case 'pr-toggle':{const r=b.dataset.r,o=new Set(UI.prOpen||[]);o.has(r)?o.delete(r):o.add(r);UI.prOpen=[...o];saveUI();renderPrix();break}
+    case 'pw-eye':{const i=b.previousElementSibling,on=i.type==='password';i.type=on?'text':'password';b.setAttribute('aria-pressed',on);b.setAttribute('aria-label',on?'Masquer le mot de passe':'Afficher le mot de passe');break}
     case 'c-toggle':{const r=b.dataset.r,c=new Set(UI.cClosed||[]);c.has(r)?c.delete(r):c.add(r);UI.cClosed=[...c];saveUI();renderCourses();break}
     case 'sk-toggle':{const r=b.dataset.r,c=new Set(UI.skClosed||[]);c.has(r)?c.delete(r):c.add(r);UI.skClosed=[...c];saveUI();renderStock();break}
     case 'stock-clear':if(b.dataset.arm!=='1'){b.dataset.arm='1';b.textContent='Confirmer ?';setTimeout(()=>{if(b.isConnected){b.dataset.arm='';b.textContent='Vider le stock'}},3000)}else{S.stock=[];stockChanged();b.dataset.arm='';b.textContent='Vider le stock'}break;
