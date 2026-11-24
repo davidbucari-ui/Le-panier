@@ -1081,16 +1081,19 @@ function nutOf(r){
     if(g===null||!v){miss.push(i);if(g!==null&&v===undefined)need.push(i);continue}
     k+=g*(v.k||0)/100;p+=g*(v.p||0)/100;c+=g*(v.c||0)/100;l+=g*(v.l||0)/100;
   }
-  const n=Math.max(1,Number(r.servings)||1);
-  return{k:k/n,p:p/n,c:c/n,l:l/n,miss,need,counted:r.ingredients.length-miss.length};
+  const n=Math.max(1,Number(r.servings)||1),zero=r.ingredients.filter(i=>nutGrams(i)===0).length;
+  return{k:k/n,p:p/n,c:c/n,l:l/n,miss,need,zero,counted:r.ingredients.length-zero-miss.length};
 }
 function nutBlock(r){
   if(!r.ingredients.length)return'';
   const o=nutOf(r),busy=NUT_BUSY===r.id;
   const btn=o.need.length||busy?`<button class="btn sm" data-act="nut-calc" data-id="${esc(r.id)}"${NUT_BUSY?' disabled':''}>${busy?'Calcul en cours…':o.counted?'Compléter':'Calculer les calories'}</button>`:'';
-  if(!o.counted)return`<div class="nut">${btn}<span class="hint">${o.need.length?'Valeurs Open Food Facts, réseau requis.':'Pas assez de données pour estimer cette recette.'}</span></div>`;
+  if(!o.counted||!(o.k>0)){
+    const unk=o.miss.filter(i=>nutGrams(i)===null).map(i=>i.n);
+    return`<div class="nut">${btn}<span class="hint">${o.need.length?'Valeurs Open Food Facts, réseau requis.':'Estimation impossible : quantité inconnue ou produit introuvable'+(unk.length?' ('+esc(unk.slice(0,4).join(', '))+(unk.length>4?'…':'')+')':'')+'.'}</span></div>`;
+  }
   const r0=x=>Math.round(x);
-  return`<div class="nut"><span><b>≈ ${r0(o.k)} kcal</b> · ${r0(o.p)} g protéines · ${r0(o.c)} g glucides · ${r0(o.l)} g lipides <span class="hint">par personne</span></span>${o.miss.length?`<span class="hint">estimation sur ${o.counted}/${r.ingredients.length} ingrédients</span>`:''}${btn}</div>`;
+  return`<div class="nut"><span><b>≈ ${r0(o.k)} kcal</b> · ${r0(o.p)} g protéines · ${r0(o.c)} g glucides · ${r0(o.l)} g lipides <span class="hint">par personne</span></span>${o.miss.length?`<span class="hint">estimation sur ${o.counted}/${r.ingredients.length-o.zero} ingrédients</span>`:''}${btn}</div>`;
 }
 async function nutCalc(id){
   const r=allRec().find(x=>x.id===id);if(!r||NUT_BUSY)return;
