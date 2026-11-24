@@ -46,6 +46,7 @@ function shopping(menu,recs,kids){ // {lignes:[{n,g}], avertissements:[...]}
   recs.forEach(function(r){byId[r.id]=r});
   Object.keys(menu).forEach(function(slot){
     var r=byId[menu[slot]];if(!r)return;
+    if(/-din$/.test(slot))return; // le dîner est proposé aux parents : pas servi à la crèche, pas dans la liste de courses
     var gf=groupFactor(r,kids);
     gf.bad.forEach(function(b){warn.push(r.titre+' ('+slot.split('-').slice(0,1)+') ne convient pas aux '+b.age.label+' ('+b.n+' enfant'+(b.n>1?'s':'')+').')});
     r.ing.forEach(function(i){var k=nk(i[0]);names[k]=names[k]||i[0];tot[k]=(tot[k]||0)+i[1]*gf.f});
@@ -71,6 +72,16 @@ var CSS='.pe{font:17px/1.5 ui-rounded,"SF Pro Rounded","Nunito","Quicksand",syst
 '.pe input[type=number]{width:84px}.pe textarea,.pe input[type=text],.pe select{width:100%;box-sizing:border-box;border:2px solid #e3d4f5;border-radius:14px;padding:6px 10px;background:#fffdf8}.pe label{font-weight:600;color:#5b3f8c}'+
 '.pe ol{padding-left:22px}';
 
+function menuText(menu,recs){ // menu de la semaine à transmettre aux parents
+  var byId={};recs.forEach(function(r){byId[r.id]=r});
+  var J=[['lun','Lundi'],['mar','Mardi'],['mer','Mercredi'],['jeu','Jeudi'],['ven','Vendredi']],R=[['dej','Déjeuner'],['des','Dessert'],['gou','Goûter'],['din','Dîner conseillé à la maison']];
+  var out=['Menu de la semaine'];
+  J.forEach(function(j){
+    var l=R.map(function(m){var r=byId[menu[j[0]+'-'+m[0]]];return r?'  '+m[1]+' : '+r.titre:''}).filter(Boolean);
+    if(l.length){out.push('');out.push(j[1]);out=out.concat(l)}
+  });
+  return out.length>1?out.join('\n'):'';
+}
 function mount(root,opts){
   opts=opts||{};
   var KEY=opts.storageKey||'petite-enfance-v1';
@@ -79,7 +90,7 @@ function mount(root,opts){
   var save=function(){try{localStorage.setItem(KEY,JSON.stringify({age:st.age,kids:st.kids,menu:st.menu,custom:st.custom}))}catch(e){}};
   var recs=function(){return D.recettes.concat(st.custom)};
   var JOURS=[['lun','Lundi'],['mar','Mardi'],['mer','Mercredi'],['jeu','Jeudi'],['ven','Vendredi']];
-  var REPAS=[['dej','Déjeuner',['plat']],['des','Dessert',['dessert']],['gou','Goûter',['goûter','dessert']]];
+  var REPAS=[['dej','Déjeuner',['plat']],['des','Dessert',['dessert']],['gou','Goûter',['goûter','dessert']],['din','Dîner (suggestion aux parents)',['plat']]];
 
   function recipeCard(r){
     var age=ageOf(st.age),al=allergensOf(r),alerts=alertsFor(r,age),n=Number(st.kids[age.id])||0;
@@ -133,6 +144,7 @@ function mount(root,opts){
     Object.keys(st.menu).forEach(function(k){var r=byId[st.menu[k]];if(r)allergensOf(r).forEach(function(a){al[a]=1})});
     h+=(sh.avertissements.length?'<div class="warn">'+sh.avertissements.map(function(w){return'<div>⚠ '+esc(w)+'</div>'}).join('')+'</div>':'');
     h+=Object.keys(al).length?'<p><b>Allergènes de la semaine :</b> '+Object.keys(al).map(function(id){return esc(D.allergenes.filter(function(a){return a.id===id})[0].label)}).join(', ')+'</p>':'';
+    h+='<p class="hint">Le dîner est une suggestion pour les parents : il n\'est pas compté dans la liste de courses.</p><p><button class="btn sec" data-act="copy-menu">Copier le menu pour les parents</button> <span class="hint" id="pe-copied2"></span></p>';
     h+='<h2>Liste de courses</h2>'+(sh.lignes.length?'<table>'+sh.lignes.map(function(l){return'<tr><td>'+esc(l.n)+'</td><td>'+(l.g?esc(fmtG(l.g)):'à doser')+'</td></tr>'}).join('')+'</table><p><button class="btn sec" data-act="copy">Copier la liste</button> <span class="hint" id="pe-copied"></span></p>':'<p class="hint">Aucun menu choisi, ou aucun enfant saisi.</p>');
     return h;
   }
@@ -162,6 +174,11 @@ function mount(root,opts){
       st.custom.push({id:'perso'+Date.now(),perso:1,titre:t,min:m,type:root.querySelector('#pf-ty').value,ing:lines.map(parseLine),etapes:root.querySelector('#pf-e').value.split('\n').map(function(x){return x.trim()}).filter(Boolean)});
       st.form=false;save();
     }
+    else if(a==='copy-menu'){
+      var mt=menuText(st.menu,recs()),d2=function(ok){var el=root.querySelector('#pe-copied2');if(el)el.textContent=!mt?'Aucun menu choisi.':ok?'Menu copié.':'Copie impossible : recopiez le menu à la main.'};
+      if(mt&&navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(mt).then(function(){d2(true)},function(){d2(false)});else d2(false);
+      return;
+    }
     else if(a==='copy'){
       var sh=shopping(st.menu,recs(),st.kids),txt=sh.lignes.map(function(l){return'- '+l.n+(l.g?' : '+fmtG(l.g):'')}).join('\n');
       var done=function(ok){var el=root.querySelector('#pe-copied');if(el)el.textContent=ok?'Liste copiée.':'Copie impossible : sélectionnez la liste à la main.'};
@@ -181,5 +198,5 @@ function mount(root,opts){
   render();
   return{state:st,render:render};
 }
-g.PetiteEnfance={mount:mount,nk:nk,allergensOf:allergensOf,alertsFor:alertsFor,parseLine:parseLine,groupFactor:groupFactor,shopping:shopping,data:D};
+g.PetiteEnfance={mount:mount,nk:nk,allergensOf:allergensOf,alertsFor:alertsFor,parseLine:parseLine,groupFactor:groupFactor,shopping:shopping,menuText:menuText,data:D};
 })(typeof window!=='undefined'?window:globalThis);
