@@ -33,6 +33,8 @@ function parseLine(l){ // « 100 g carotte », « 2 cl d'huile », « sel » →
   if(u==='kg'||u==='l')q*=1000;else if(u==='cl')q*=10;
   return[m[3].trim(),q];
 }
+var VPO=/\b(poulet|dinde|boeuf|veau|porc|jambon|lardons?|saumon|thon|cabillaud|colin|poisson|crevettes?|oeufs?|steak|agneau|saucisses?)\b/;
+function hasVPO(r){return r.ing.some(function(i){return VPO.test(nk(i[0]))})} // viande, poisson ou œuf
 function groupFactor(r,kids){ // somme(nb enfants × facteur) des tranches auxquelles la recette convient ; + enfants non concernés
   var f=0,bad=[];
   D.ages.forEach(function(a){
@@ -57,7 +59,7 @@ function shopping(menu,recs,kids){ // {lignes:[{n,g}], avertissements:[...]}
 
 /* ---------- interface ---------- */
 var AGE_UI={'0-6':['🍼','#ffe0ea','#ff9fbd'],'6-8':['🥄','#d6f2e4','#7fd3a6'],'8-10':['🥕','#ffe6c7','#ffb866'],'10-12':['🍌','#fff3b8','#ffd93d'],'12-36':['🍝','#dcebff','#7db7ff']};
-var TYPE_UI={'plat':['🍽️','#ffb866'],'dessert':['🍓','#ff9fbd'],'goûter':['🍪','#ffd93d']};
+var TYPE_UI={'plat':['🍽️','#ffb866'],'dîner':['🌙','#a99af0'],'dessert':['🍓','#ff9fbd'],'goûter':['🍪','#ffd93d']};
 var CSS='.pe{font:17px/1.5 ui-rounded,"SF Pro Rounded","Nunito","Quicksand",system-ui,sans-serif;color:#4a3b52;max-width:980px;margin:0 auto;padding:14px}'+
 '.pe h2{margin:.2em 0 .4em;font-size:1.35rem;color:#7a4fb3}.pe h3{margin:.2em 0;font-size:1.1rem;color:#5b3f8c}.pe .hello{font-size:1.6rem;color:#ff7a59;margin:.1em 0 .3em}'+
 '.pe .warn{background:#fff6cf;border:2px dashed #ffd93d;border-radius:18px;padding:10px 14px;font-size:.88rem;margin:8px 0}.pe .tabs,.pe .chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}'+
@@ -90,7 +92,7 @@ function mount(root,opts){
   var save=function(){try{localStorage.setItem(KEY,JSON.stringify({age:st.age,kids:st.kids,menu:st.menu,custom:st.custom}))}catch(e){}};
   var recs=function(){return D.recettes.concat(st.custom)};
   var JOURS=[['lun','Lundi'],['mar','Mardi'],['mer','Mercredi'],['jeu','Jeudi'],['ven','Vendredi']];
-  var REPAS=[['dej','Déjeuner',['plat']],['des','Dessert',['dessert']],['gou','Goûter',['goûter','dessert']],['din','Dîner (suggestion aux parents)',['plat']]];
+  var REPAS=[['dej','Déjeuner',['plat']],['des','Dessert',['dessert']],['gou','Goûter',['goûter','dessert']],['din','Dîner (suggestion aux parents)',['dîner','plat']]];
 
   function recipeCard(r){
     var age=ageOf(st.age),al=allergensOf(r),alerts=alertsFor(r,age),n=Number(st.kids[age.id])||0;
@@ -137,8 +139,12 @@ function mount(root,opts){
     JOURS.forEach(function(j){
       h+='<div class="card"><h3>'+j[1]+'</h3><div class="grid">'+REPAS.map(function(m){
         var key=j[0]+'-'+m[0],opts=all.filter(function(r){return m[2].indexOf(r.type)>=0});
-        return'<label>'+m[1]+'<select data-slot="'+key+'"><option value="">—</option>'+opts.map(function(r){return'<option value="'+esc(r.id)+'"'+(st.menu[key]===r.id?' selected':'')+'>'+esc(r.titre)+' (dès '+r.min+' m)</option>'}).join('')+'</select></label>';
-      }).join('')+'</div></div>';
+        if(m[0]==='din')opts.sort(function(a,b){return(b.type==='dîner')-(a.type==='dîner')});
+        return'<label>'+m[1]+'<select data-slot="'+key+'"><option value="">—</option>'+opts.map(function(r){return'<option value="'+esc(r.id)+'"'+(st.menu[key]===r.id?' selected':'')+'>'+(m[0]==='din'&&!hasVPO(r)?'🌱 ':'')+esc(r.titre)+' (dès '+r.min+' m)</option>'}).join('')+'</select></label>';
+      }).join('')+'</div>';
+      var L=byId[st.menu[j[0]+'-dej']],Dn=byId[st.menu[j[0]+'-din']];
+      if(L&&hasVPO(L))h+=Dn&&hasVPO(Dn)?'<p class="al-msg">⚠ Viande, poisson ou œuf au déjeuner et au dîner : conseillez plutôt un dîner sans (🌱).</p>':'<p class="hint">Le déjeuner contient viande, poisson ou œuf : le soir, conseillez de préférence un dîner sans (🌱).</p>';
+      h+='</div>';
     });
     var sh=shopping(st.menu,all,st.kids),al={};
     Object.keys(st.menu).forEach(function(k){var r=byId[st.menu[k]];if(r)allergensOf(r).forEach(function(a){al[a]=1})});
@@ -198,5 +204,5 @@ function mount(root,opts){
   render();
   return{state:st,render:render};
 }
-g.PetiteEnfance={mount:mount,nk:nk,allergensOf:allergensOf,alertsFor:alertsFor,parseLine:parseLine,groupFactor:groupFactor,shopping:shopping,menuText:menuText,data:D};
+g.PetiteEnfance={hasVPO:hasVPO,mount:mount,nk:nk,allergensOf:allergensOf,alertsFor:alertsFor,parseLine:parseLine,groupFactor:groupFactor,shopping:shopping,menuText:menuText,data:D};
 })(typeof window!=='undefined'?window:globalThis);

@@ -30,7 +30,7 @@ allergenes:[
  {id:'poisson',label:'Poissons',re:/\b(saumon|thon|cabillaud|colin|merlu|sardines?|maquereaux?|poisson|lieu|truite|sole|anchois|dorade)\b/},
  {id:'arachide',label:'Arachides',re:/\b(arachides?|cacahuetes?)\b/},
  {id:'soja',label:'Soja',re:/\b(soja|tofu|edamame|tempeh)\b/},
- {id:'lait',label:'Lait',re:/\b(lait|fromages?|yaourts?|yogourts?|creme|beurre|ricotta|mozzarella|gruyere|emmental|parmesan|skyr|petits? suisses?|kefir|comte)\b/},
+ {id:'lait',label:'Lait',re:/\b(lait(?! de (?:coco|soja|amande|avoine|riz))|fromages?|yaourts?|yogourts?|creme|beurre(?! de (?:cacahuetes?|cajou|amande))|ricotta|mozzarella|gruyere|emmental|parmesan|skyr|petits? suisses?|kefir|comte)\b/},
  {id:'coque',label:'Fruits à coque',re:/\b(noix(?! de (?:coco|muscade))|noisettes?|amandes?|pistaches?|cajou|pecans?|macadamia)\b/},
  {id:'celeri',label:'Céleri',re:/\bceleri\b/},
  {id:'moutarde',label:'Moutarde',re:/\bmoutarde\b/},
@@ -93,7 +93,23 @@ recettes:[
  {id:'pe14',titre:'Bouillie de semoule au lait infantile',min:8,type:'goûter',ing:[['semoule',15],['lait infantile',150]],
   etapes:['Chauffer le lait infantile.','Verser la semoule en pluie et cuire 5 min en remuant.','Laisser tiédir.']},
  {id:'pe15',titre:'Pancakes banane-œuf sans sucre ajouté',min:12,type:'goûter',ing:[['banane',60],['oeuf',25],['farine de blé',20],['lait',20]],
-  etapes:['Écraser la banane, ajouter l\'œuf, la farine et le lait.','Cuire à la poêle antiadhésive 2 min de chaque côté.','Laisser tiédir et couper en petits morceaux.']}
+  etapes:['Écraser la banane, ajouter l\'œuf, la farine et le lait.','Cuire à la poêle antiadhésive 2 min de chaque côté.','Laisser tiédir et couper en petits morceaux.']},
+ {id:'pe16',titre:'Velouté de potimarron',min:6,type:'dîner',ing:[['potimarron',120],['pomme de terre',40],['huile de colza',3]],
+  etapes:['Éplucher et couper le potimarron et la pomme de terre.','Cuire à la vapeur ou à l\'eau jusqu\'à tendreté.','Mixer avec un peu d\'eau de cuisson.','Ajouter l\'huile hors du feu.']},
+ {id:'pe17',titre:'Soupe de légumes verts',min:6,type:'dîner',ing:[['poireau',60],['courgette',60],['pomme de terre',50],['huile de colza',3]],
+  etapes:['Cuire les légumes épluchés dans l\'eau sans sel.','Mixer finement ou écraser selon l\'âge.','Ajouter l\'huile hors du feu.']},
+ {id:'pe18',titre:'Omelette douce aux courgettes',min:8,type:'dîner',ing:[['oeuf',50],['courgette',60],['huile d\'olive',3]],
+  etapes:['Faire revenir la courgette râpée 5 min.','Verser l\'œuf battu et cuire à cœur (omelette bien cuite, aucune partie liquide).','Couper en petits morceaux.']},
+ {id:'pe19',titre:'Semoule aux petits légumes',min:8,type:'dîner',ing:[['semoule',40],['carotte',50],['courgette',50],['huile d\'olive',3]],
+  etapes:['Cuire les légumes à la vapeur.','Cuire la semoule dans l\'eau sans sel.','Écraser ou mixer légèrement les légumes, mélanger avec la semoule et l\'huile.']},
+ {id:'pe20',titre:'Dahl doux de lentilles corail',min:10,type:'dîner',ing:[['lentilles corail',30],['carotte',50],['tomate concassée',40],['lait de coco',20],['huile d\'olive',3]],
+  etapes:['Cuire lentilles, carotte et tomate 15 min dans l\'eau sans sel.','Ajouter le lait de coco.','Écraser à la fourchette ou mixer selon l\'âge.']},
+ {id:'pe21',titre:'Gratin de chou-fleur à la ricotta',min:12,type:'dîner',ing:[['chou-fleur',100],['pomme de terre',40],['ricotta',30],['gruyère',5]],
+  etapes:['Cuire le chou-fleur et la pomme de terre.','Mélanger avec la ricotta.','Saupoudrer de gruyère et gratiner au four.']},
+ {id:'pe22',titre:'Riz au thon et haricots verts',min:12,type:'dîner',ing:[['riz',30],['thon',25],['haricots verts',80],['huile d\'olive',3]],
+  etapes:['Cuire le riz dans l\'eau sans sel.','Cuire les haricots verts et les couper petits.','Émietter le thon (en boîte au naturel, égoutté, sans arêtes) et mélanger.']},
+ {id:'pe23',titre:'Pâtes au brocoli et fromage blanc',min:12,type:'dîner',ing:[['pâtes',40],['brocoli',80],['fromage blanc',30],['gruyère',5]],
+  etapes:['Cuire les pâtes dans l\'eau sans sel.','Cuire le brocoli et le hacher finement.','Mélanger avec le fromage blanc et le gruyère.']}
 ]
 };
 })(typeof window!=='undefined'?window:globalThis);
