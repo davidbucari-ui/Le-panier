@@ -539,7 +539,32 @@ recettes:[
  {id:'pe235',titre:'Riz doux aux œufs brouillés et petits pois',min:18,type:'dîner',ing:[['riz',35],['oeuf',40],['petits pois',35],['carotte',30]],
   etapes:['Cuire le riz dans l\'eau sans sel.','Cuire carottes et petits pois, couper petit.','Cuire l\'œuf brouillé à cœur.','Mélanger.']},
  {id:'pe236',titre:'Tortilla de courgettes et ricotta',min:18,type:'dîner',ing:[['oeuf',40],['courgette',60],['ricotta',20],['huile d\'olive',3]],
-  etapes:['Cuire la courgette râpée 5 min.','Mélanger avec l\'œuf et la ricotta.','Cuire à la poêle des deux côtés (bien cuite).','Couper en petits carrés.']}
+  etapes:['Cuire la courgette râpée 5 min.','Mélanger avec l\'œuf et la ricotta.','Cuire à la poêle des deux côtés (bien cuite).','Couper en petits carrés.']},
+ {id:'pe237',titre:'Soupe de potimarron, jambon blanc et croûtons',min:24,type:'dîner',ing:[['potimarron',120],['pomme de terre',40],['jambon blanc',10],['pain',10]],
+  etapes:['Cuire potimarron et pomme de terre dans l\'eau sans sel.','Mixer finement.','Servir avec du jambon blanc haché et de petits croûtons de pain.']},
+ {id:'pe238',titre:'Omelette aux légumes et salade de pommes de terre',min:24,type:'dîner',ing:[['oeuf',50],['courgette',50],['pomme de terre',70],['huile d\'olive',5]],
+  etapes:['Cuire la pomme de terre en dés.','Faire revenir la courgette, verser l\'œuf battu et cuire à cœur.','Couper l\'omelette en bandes, servir avec les pommes de terre tièdes.']},
+ {id:'pe239',titre:'Gratin de pâtes, jambon et petits pois',min:24,type:'dîner',ing:[['pâtes',45],['jambon blanc',20],['petits pois',40],['fromage blanc',30],['gruyère',10]],
+  etapes:['Cuire les pâtes dans l\'eau sans sel.','Mélanger avec jambon coupé, petits pois et fromage blanc.','Saupoudrer de gruyère et gratiner.']},
+ {id:'pe240',titre:'Tarte aux poireaux et au fromage',min:24,type:'dîner',ing:[['pâte brisée',30],['poireau',70],['oeuf',20],['fromage blanc',30],['gruyère',8]],
+  etapes:['Étaler la pâte dans un moule.','Garnir de poireaux étuvés.','Verser œuf et fromage blanc battus, ajouter le gruyère.','Cuire au four à 180 °C, 30 min.']},
+ {id:'pe241',titre:'Riz sauté aux légumes et au poulet',min:24,type:'dîner',ing:[['riz',40],['blanc de poulet',30],['carotte',40],['courgette',40],['huile d\'olive',3]],
+  etapes:['Cuire le riz dans l\'eau sans sel.','Sauter poulet et légumes en petits dés jusqu\'à cuisson à cœur.','Mélanger au riz.']},
+ {id:'pe242',titre:'Poisson blanc au four, semoule et ratatouille',min:24,type:'dîner',ing:[['colin',35],['semoule',35],['courgette',50],['tomate concassée',40],['huile d\'olive',3]],
+  etapes:['Cuire la ratatouille 20 min.','Cuire le colin au four 12 min, retirer toutes les arêtes.','Cuire la semoule dans l\'eau sans sel.','Servir ensemble.']},
+ {id:'pe243',titre:'Galettes de lentilles et de carottes, salade de tomates sans peau',min:24,type:'dîner',ing:[['lentilles corail',30],['carotte',50],['oeuf',15],['tomate',30]],
+  etapes:['Cuire lentilles et carotte, écraser grossièrement.','Ajouter l\'œuf, former des galettes et dorer à la poêle.','Servir avec la tomate épluchée, coupée en petits dés.']},
+ {id:'pe244',titre:'Spaghettis aux courgettes et à la ricotta',min:24,type:'dîner',ing:[['spaghettis',45],['courgette',70],['ricotta',30],['huile d\'olive',3]],
+  etapes:['Cuire les spaghettis dans l\'eau sans sel.','Cuire la courgette râpée 5 min et la mélanger à la ricotta.','Couper les spaghettis et napper.']},
+ {id:'pe245',titre:'Quiche sans pâte au thon et aux poireaux',min:24,type:'dîner',ing:[['oeuf',40],['thon',25],['poireau',50],['fromage blanc',30]],
+  etapes:['Étuver le poireau.','Mélanger avec œuf, fromage blanc et thon au naturel émietté.','Cuire au four à 180 °C, 25 min (bien pris à cœur).']},
+ {id:'pe246',titre:'Dahl de lentilles corail et riz',min:24,type:'dîner',ing:[['lentilles corail',35],['tomate concassée',40],['lait de coco',20],['riz',35],['carotte',40]],
+  etapes:['Cuire lentilles, tomate et carotte 15 min dans l\'eau sans sel.','Ajouter le lait de coco et une pointe de curcuma (sans piment).','Cuire le riz et servir.']},
+ {id:'pe247',titre:'Burger maison de dinde et légumes rôtis',min:24,type:'dîner',ing:[['dinde',35],['pain',30],['courgette',40],['carotte',50],['huile d\'olive',5]],
+  etapes:['Former un petit steak de dinde hachée et le cuire à cœur.','Rôtir carotte et courgette en bâtonnets au four à 200 °C, 20 min.','Servir dans un petit pain, coupé en petits morceaux.']},
+ {id:'pe248',titre:'Croque-monsieur au four et soupe de légumes',min:24,type:'dîner',ing:[['pain',30],['jambon blanc',15],['gruyère',10],['carotte',40],['poireau',30]],
+  etapes:['Cuire carotte et poireau dans l\'eau sans sel et mixer en soupe.','Garnir le pain de jambon blanc et de gruyère, dorer au four.','Couper en petits carrés.']}
+
 
 
 
