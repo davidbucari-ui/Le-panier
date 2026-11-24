@@ -419,7 +419,32 @@ recettes:[
  {id:'pe175',titre:'Omelette nature et tartine de beurre',min:24,type:'petit-déjeuner',ing:[['oeuf',50],['pain',30],['beurre',3]],
   etapes:['Cuire l\'omelette à la poêle, bien cuite à cœur.','Couper en petites bandes.','Servir avec une tartine de beurre fin.']},
  {id:'pe176',titre:'Pancakes à l\'avoine, pomme et yaourt',min:24,type:'petit-déjeuner',ing:[['farine de blé',30],['yaourt nature',50],['oeuf',20],['pomme',30]],
-  etapes:['Mélanger farine, yaourt et œuf.','Ajouter la pomme râpée.','Cuire à la poêle 2 min de chaque côté.','Couper en petits morceaux.']}
+  etapes:['Mélanger farine, yaourt et œuf.','Ajouter la pomme râpée.','Cuire à la poêle 2 min de chaque côté.','Couper en petits morceaux.']},
+ {id:'pe177',titre:'Velouté de courgettes et pommes de terre',min:6,type:'dîner',ing:[['courgette',90],['pomme de terre',50],['huile de colza',3]],
+  etapes:['Cuire la courgette épluchée et la pomme de terre dans l\'eau sans sel.','Mixer très finement avec un peu d\'eau de cuisson.','Ajouter l\'huile hors du feu.']},
+ {id:'pe178',titre:'Soupe de carottes et patate douce',min:6,type:'dîner',ing:[['carotte',70],['patate douce',60],['huile de colza',3]],
+  etapes:['Cuire les légumes épluchés à la vapeur ou à l\'eau.','Mixer très finement.','Ajouter l\'huile hors du feu.']},
+ {id:'pe179',titre:'Velouté de brocoli et pommes de terre',min:6,type:'dîner',ing:[['brocoli',80],['pomme de terre',60],['huile d\'olive',3]],
+  etapes:['Cuire brocoli et pomme de terre à la vapeur.','Mixer très finement avec un peu d\'eau de cuisson.','Ajouter l\'huile.']},
+ {id:'pe180',titre:'Purée de haricots verts et semoule fine',min:6,type:'dîner',ing:[['haricots verts',90],['semoule',15],['huile de colza',3]],
+  etapes:['Cuire les haricots verts et les mixer très finement (filtrer les fils).','Cuire la semoule fine dans l\'eau sans sel.','Mélanger et ajouter l\'huile.']},
+ {id:'pe181',titre:'Soupe de potiron et riz',min:6,type:'dîner',ing:[['potiron',100],['riz',15],['huile de colza',3]],
+  etapes:['Cuire le potiron et le riz dans l\'eau sans sel.','Mixer très finement.','Ajouter l\'huile hors du feu.']},
+ {id:'pe182',titre:'Velouté de petits pois et carottes',min:6,type:'dîner',ing:[['petits pois',60],['carotte',60],['pomme de terre',30],['huile de colza',3]],
+  etapes:['Cuire les légumes dans l\'eau sans sel.','Mixer très finement et passer au tamis (peau des petits pois).','Ajouter l\'huile.']},
+ {id:'pe183',titre:'Purée de blettes et pommes de terre',min:6,type:'dîner',ing:[['blettes',60],['pomme de terre',60],['huile d\'olive',3]],
+  etapes:['Cuire les légumes dans l\'eau sans sel.','Mixer très finement avec un peu d\'eau de cuisson.','Ajouter l\'huile.']},
+ {id:'pe184',titre:'Soupe de navet et carottes',min:6,type:'dîner',ing:[['navet',60],['carotte',60],['pomme de terre',30],['huile de colza',3]],
+  etapes:['Cuire les légumes épluchés dans l\'eau sans sel.','Mixer très finement.','Ajouter l\'huile hors du feu.']},
+ {id:'pe185',titre:'Crème de lentilles corail et courgette',min:6,type:'dîner',ing:[['lentilles corail',20],['courgette',70],['huile d\'olive',3]],
+  etapes:['Rincer les lentilles.','Cuire lentilles et courgette épluchée 15 min dans l\'eau sans sel.','Mixer très finement.','Ajouter l\'huile.']},
+ {id:'pe186',titre:'Velouté de panais et pommes',min:6,type:'dîner',ing:[['panais',80],['pomme',40],['huile de colza',3]],
+  etapes:['Cuire le panais épluché et la pomme à la vapeur.','Mixer très finement avec un peu d\'eau de cuisson.','Ajouter l\'huile hors du feu.']},
+ {id:'pe187',titre:'Bouillie de légumes et flocons de riz',min:6,type:'dîner',ing:[['carotte',60],['courgette',50],['farine de riz',10],['huile de colza',3]],
+  etapes:['Cuire carotte et courgette, mixer très finement.','Délayer la farine de riz dans un peu d\'eau de cuisson et cuire 3 min.','Mélanger aux légumes, ajouter l\'huile.']},
+ {id:'pe188',titre:'Purée de petits pois et poulet',min:6,type:'dîner',ing:[['petits pois',60],['blanc de poulet',20],['pomme de terre',40],['huile de colza',3]],
+  etapes:['Cuire petits pois et pomme de terre.','Cuire le poulet à cœur.','Mixer très finement et passer au tamis.','Ajouter l\'huile.']}
+
 
 
 
