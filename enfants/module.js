@@ -55,15 +55,21 @@ function shopping(menu,recs,kids){ // {lignes:[{n,g}], avertissements:[...]}
 }
 
 /* ---------- interface ---------- */
-var CSS='.pe{font:16px/1.45 system-ui,sans-serif;color:#1f2d27;max-width:980px;margin:0 auto;padding:12px}.pe h2{margin:.2em 0 .4em;font-size:1.25rem}.pe h3{margin:.2em 0;font-size:1.05rem}'+
-'.pe .warn{background:#fff6e0;border:1px solid #f0d58a;border-radius:10px;padding:8px 12px;font-size:.88rem;margin:8px 0}.pe .tabs,.pe .chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}'+
-'.pe button,.pe select,.pe input,.pe textarea{font:inherit;min-height:38px}.pe .tab,.pe .chip{border:1px solid #c7d6cd;background:#fff;border-radius:999px;padding:6px 14px;cursor:pointer}'+
-'.pe .tab[aria-pressed=true],.pe .chip[aria-pressed=true]{background:#2d7a4f;border-color:#2d7a4f;color:#fff}.pe .chip.no[aria-pressed=true]{background:#b3402e;border-color:#b3402e}'+
-'.pe .card{background:#fff;border:1px solid #dfe8e2;border-radius:14px;padding:12px 14px;margin:10px 0}.pe .meta{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0}'+
-'.pe .tag{font-size:.8rem;background:#e8f2ec;border-radius:999px;padding:2px 10px}.pe .tag.al{background:#fde7e3}.pe .al-msg{color:#9b2c1c;font-size:.88rem;margin:4px 0}'+
-'.pe ul.ing{margin:6px 0;padding-left:18px}.pe .hint{color:#5b6b63;font-size:.88rem}.pe .btn{border:1px solid #2d7a4f;background:#2d7a4f;color:#fff;border-radius:10px;padding:6px 14px;cursor:pointer}.pe .btn.sec{background:#fff;color:#2d7a4f}'+
-'.pe .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}.pe table{border-collapse:collapse;width:100%}.pe td,.pe th{border-bottom:1px solid #e3ebe6;padding:6px;text-align:left;font-size:.92rem}'+
-'.pe input[type=number]{width:80px}.pe textarea,.pe input[type=text],.pe select{width:100%;box-sizing:border-box}';
+var AGE_UI={'0-6':['🍼','#ffe0ea','#ff9fbd'],'6-8':['🥄','#d6f2e4','#7fd3a6'],'8-10':['🥕','#ffe6c7','#ffb866'],'10-12':['🍌','#fff3b8','#ffd93d'],'12-36':['🍝','#dcebff','#7db7ff']};
+var TYPE_UI={'plat':['🍽️','#ffb866'],'dessert':['🍓','#ff9fbd'],'goûter':['🍪','#ffd93d']};
+var CSS='.pe{font:17px/1.5 ui-rounded,"SF Pro Rounded","Nunito","Quicksand",system-ui,sans-serif;color:#4a3b52;max-width:980px;margin:0 auto;padding:14px}'+
+'.pe h2{margin:.2em 0 .4em;font-size:1.35rem;color:#7a4fb3}.pe h3{margin:.2em 0;font-size:1.1rem;color:#5b3f8c}.pe .hello{font-size:1.6rem;color:#ff7a59;margin:.1em 0 .3em}'+
+'.pe .warn{background:#fff6cf;border:2px dashed #ffd93d;border-radius:18px;padding:10px 14px;font-size:.88rem;margin:8px 0}.pe .tabs,.pe .chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}'+
+'.pe button,.pe select,.pe input,.pe textarea{font:inherit;min-height:40px}'+
+'.pe .tab{border:2px solid #e3d4f5;background:#f5ecff;color:#5b3f8c;border-radius:999px;padding:8px 18px;cursor:pointer;font-weight:700}.pe .tab[aria-pressed=true]{background:#9b6fe0;border-color:#7a4fb3;color:#fff}'+
+'.pe .chip{border:2px solid transparent;background:var(--c1,#eee);color:#4a3b52;border-radius:999px;padding:7px 16px;cursor:pointer;font-weight:600}.pe .chip[aria-pressed=true]{background:var(--c2,#ccc);border-color:#5b3f8c;font-weight:800}'+
+'.pe .chip.no{--c1:#fff;border-color:#f3c6c0}.pe .chip.no[aria-pressed=true]{background:#ff7a70;border-color:#c9362b;color:#fff}'+
+'.pe .card{background:#fff;border:2px solid #f0e6ff;border-left:8px solid var(--bd,#c9a8f0);border-radius:22px;padding:14px 16px;margin:12px 0;box-shadow:0 3px 0 #f0e6ff}.pe .meta{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}'+
+'.pe .tag{font-size:.82rem;background:#e6f7ee;color:#2d6b4a;border-radius:999px;padding:3px 12px;font-weight:600}.pe .tag.al{background:#ffe3df;color:#a02e22}.pe .tag.ty{background:#fff0d0;color:#8a5a00}.pe .al-msg{color:#b3261e;font-size:.9rem;margin:4px 0}'+
+'.pe ul.ing{margin:8px 0;padding-left:20px}.pe .hint{color:#7d6e89;font-size:.88rem}.pe .btn{border:2px solid #ff7a59;background:#ff7a59;color:#fff;border-radius:999px;padding:8px 20px;cursor:pointer;font-weight:700}.pe .btn.sec{background:#fff;color:#ff7a59}'+
+'.pe .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.pe table{border-collapse:collapse;width:100%}.pe td,.pe th{border-bottom:2px dotted #e3d4f5;padding:7px;text-align:left;font-size:.93rem}'+
+'.pe input[type=number]{width:84px}.pe textarea,.pe input[type=text],.pe select{width:100%;box-sizing:border-box;border:2px solid #e3d4f5;border-radius:14px;padding:6px 10px;background:#fffdf8}.pe label{font-weight:600;color:#5b3f8c}'+
+'.pe ol{padding-left:22px}';
 
 function mount(root,opts){
   opts=opts||{};
@@ -77,7 +83,8 @@ function mount(root,opts){
 
   function recipeCard(r){
     var age=ageOf(st.age),al=allergensOf(r),alerts=alertsFor(r,age),n=Number(st.kids[age.id])||0;
-    return '<article class="card"><h3>'+esc(r.titre)+'</h3><div class="meta"><span class="tag">dès '+r.min+' mois</span><span class="tag">'+esc(r.type)+'</span>'+
+    var tu=TYPE_UI[r.type]||['','#c9a8f0'];
+    return '<article class="card" style="--bd:'+tu[1]+'"><h3>'+tu[0]+' '+esc(r.titre)+'</h3><div class="meta"><span class="tag">dès '+r.min+' mois</span><span class="tag ty">'+esc(r.type)+'</span>'+
       (r.perso?'<span class="tag">ma recette</span>':'')+al.map(function(id){return'<span class="tag al">'+esc(D.allergenes.filter(function(a){return a.id===id})[0].label)+'</span>'}).join('')+'</div>'+
       alerts.map(function(m){return'<p class="al-msg">⚠ '+esc(m)+'</p>'}).join('')+
       '<ul class="ing">'+r.ing.map(function(i){var g=i[1]*age.facteur;return'<li>'+esc(i[0])+' : '+(i[1]?'≈ '+fmtG(g)+(n?' <span class="hint">('+fmtG(g*n)+' pour '+n+' enfant'+(n>1?'s':'')+')</span>':''):'<span class="hint">à doser</span>')+'</li>'}).join('')+'</ul>'+
@@ -86,8 +93,8 @@ function mount(root,opts){
       (r.perso?'<button class="btn sec" data-act="del" data-id="'+esc(r.id)+'">Supprimer</button>':'')+'</article>';
   }
   function tabRecettes(){
-    var age=ageOf(st.age),h='<div class="chips" role="group" aria-label="Âge">'+D.ages.map(function(a){return'<button class="chip" data-act="age" data-id="'+a.id+'" aria-pressed="'+(a.id===st.age)+'">'+esc(a.label)+'</button>'}).join('')+'</div>';
-    if(!age.facteur)return h+'<div class="card"><h3>'+esc(age.label)+'</h3><p>'+esc(age.texture)+'</p></div>';
+    var age=ageOf(st.age),h='<div class="chips" role="group" aria-label="Âge">'+D.ages.map(function(a){var u=AGE_UI[a.id]||['','#eee','#ccc'];return'<button class="chip" style="--c1:'+u[1]+';--c2:'+u[2]+'" data-act="age" data-id="'+a.id+'" aria-pressed="'+(a.id===st.age)+'">'+u[0]+' '+esc(a.label)+'</button>'}).join('')+'</div>';
+    if(!age.facteur)return h+'<div class="card"><h3>🍼 '+esc(age.label)+'</h3><p>'+esc(age.texture)+'</p></div>';
     h+='<p class="hint">Sans (exclure) :</p><div class="chips">'+D.allergenes.map(function(a){return'<button class="chip no" data-act="sans" data-id="'+a.id+'" aria-pressed="'+(st.sans.indexOf(a.id)>=0)+'">'+esc(a.label)+'</button>'}).join('')+'</div>'+
       '<input type="text" id="pe-q" placeholder="Rechercher une recette" value="'+esc(st.q)+'" aria-label="Rechercher une recette">'+
       '<div class="meta"><button class="btn sec" data-act="form">'+(st.form?'Fermer le formulaire':'＋ Ajouter ma recette')+'</button></div>'+(st.form?formHtml():'');
@@ -134,10 +141,10 @@ function mount(root,opts){
       '<div class="card"><h3>À éviter selon l\'âge</h3><ul>'+D.interdits.map(function(x){return'<li>'+esc(x.msg)+'</li>'}).join('')+'</ul></div>';
   }
   function render(){
-    var tabs=[['recettes','Recettes'],['portions','Portions'],['menus','Menus'],['regles','Règles']];
+    var tabs=[['recettes','🥣 Recettes'],['portions','⚖️ Portions'],['menus','🗓️ Menus'],['regles','📌 Règles']];
     var body=st.tab==='recettes'?tabRecettes():st.tab==='portions'?tabPortions():st.tab==='menus'?tabMenus():tabRegles();
     var focus=document.activeElement&&document.activeElement.id==='pe-q',pos=focus?document.activeElement.selectionStart:0;
-    root.innerHTML='<div class="pe"><h2>Petite enfance, 0 à 3 ans</h2><div class="warn">'+esc(D.avertissement)+'</div><div class="tabs" role="tablist">'+
+    root.innerHTML='<div class="pe"><h2 class="hello">🧸 Petite enfance, 0 à 3 ans</h2><div class="warn">'+esc(D.avertissement)+'</div><div class="tabs" role="tablist">'+
       tabs.map(function(t){return'<button class="tab" role="tab" data-act="tab" data-id="'+t[0]+'" aria-pressed="'+(st.tab===t[0])+'">'+t[1]+'</button>'}).join('')+'</div>'+body+'</div>';
     if(focus){var q=root.querySelector('#pe-q');if(q){q.focus();q.setSelectionRange(pos,pos)}}
   }
