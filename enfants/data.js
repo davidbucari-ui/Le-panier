@@ -491,7 +491,32 @@ recettes:[
  {id:'pe211',titre:'Écrasé de cabillaud, carottes et riz',min:10,type:'dîner',ing:[['cabillaud',25],['carotte',60],['riz',25],['huile de colza',3]],
   etapes:['Cuire le riz et les carottes.','Cuire le cabillaud à cœur, retirer toutes les arêtes.','Écraser les carottes, émietter le poisson.','Mélanger avec l\'huile.']},
  {id:'pe212',titre:'Fingers de courgette et de polenta',min:10,type:'dîner',ing:[['polenta',25],['courgette',50],['gruyère',5]],
-  etapes:['Cuire la polenta dans l\'eau sans sel.','Incorporer la courgette cuite et râpée et le gruyère.','Laisser prendre, couper en bâtonnets et les dorer à la poêle.','Laisser tiédir.']}
+  etapes:['Cuire la polenta dans l\'eau sans sel.','Incorporer la courgette cuite et râpée et le gruyère.','Laisser prendre, couper en bâtonnets et les dorer à la poêle.','Laisser tiédir.']},
+ {id:'pe213',titre:'Soupe de légumes d\'hiver et croûtons tendres',min:12,type:'dîner',ing:[['carotte',50],['poireau',40],['céleri-rave',30],['pomme de terre',40],['pain',10],['huile de colza',3]],
+  etapes:['Cuire les légumes en dés dans l\'eau sans sel.','Mouliner en laissant quelques petits morceaux.','Servir avec de petits dés de pain tendre.','Ajouter l\'huile hors du feu.']},
+ {id:'pe214',titre:'Gratin de macaronis aux courgettes',min:12,type:'dîner',ing:[['macaronis',35],['courgette',70],['fromage blanc',30],['gruyère',8]],
+  etapes:['Cuire les macaronis bien tendres dans l\'eau sans sel.','Cuire la courgette en petits dés.','Mélanger avec le fromage blanc.','Saupoudrer de gruyère et gratiner.']},
+ {id:'pe215',titre:'Omelette aux pommes de terre',min:12,type:'dîner',ing:[['oeuf',40],['pomme de terre',70],['huile d\'olive',3]],
+  etapes:['Cuire les pommes de terre en petits dés.','Verser l\'œuf battu et cuire à cœur des deux côtés.','Couper en petits carrés.']},
+ {id:'pe216',titre:'Purée de patate douce et poisson blanc',min:12,type:'dîner',ing:[['patate douce',90],['colin',25],['haricots verts',50],['huile de colza',3]],
+  etapes:['Cuire la patate douce et les haricots verts, écraser la patate douce.','Cuire le colin à cœur, retirer toutes les arêtes, émietter.','Couper les haricots verts petits et mélanger.']},
+ {id:'pe217',titre:'Riz aux lentilles corail et légumes',min:12,type:'dîner',ing:[['riz',25],['lentilles corail',20],['carotte',50],['courgette',40],['huile d\'olive',3]],
+  etapes:['Cuire riz et lentilles dans l\'eau sans sel.','Cuire les légumes en petits dés.','Mélanger et écraser légèrement.']},
+ {id:'pe218',titre:'Tarte fine courgette-ricotta',min:12,type:'dîner',ing:[['pâte brisée',25],['courgette',60],['ricotta',30],['oeuf',15]],
+  etapes:['Étaler la pâte dans un moule.','Garnir de courgette râpée essorée.','Verser la ricotta battue avec l\'œuf.','Cuire au four à 180 °C, 25 min (bien pris à cœur).']},
+ {id:'pe219',titre:'Quenelles de dinde maison et purée de carottes',min:12,type:'dîner',ing:[['dinde',30],['carotte',80],['pomme de terre',40],['huile de colza',3]],
+  etapes:['Former de petites boulettes de dinde hachée.','Cuire à la vapeur ou à l\'eau jusqu\'à cuisson à cœur.','Écraser carottes et pomme de terre en purée.','Servir les boulettes coupées en deux.']},
+ {id:'pe220',titre:'Soupe de pois chiches et légumes',min:12,type:'dîner',ing:[['pois chiches',30],['carotte',50],['courgette',50],['huile d\'olive',3]],
+  etapes:['Rincer les pois chiches et retirer les peaux.','Cuire avec les légumes 15 min dans l\'eau sans sel.','Mouliner grossièrement.','Ajouter l\'huile.']},
+ {id:'pe221',titre:'Semoule au thon et tomate douce',min:12,type:'dîner',ing:[['semoule',30],['thon',20],['tomate concassée',40],['courgette',40],['huile d\'olive',3]],
+  etapes:['Cuire tomate et courgette 15 min.','Cuire la semoule dans l\'eau sans sel.','Émietter le thon au naturel (sans arêtes).','Mélanger.']},
+ {id:'pe222',titre:'Gnocchis aux petits légumes',min:12,type:'dîner',ing:[['gnocchis',60],['courgette',50],['petits pois',30],['fromage frais',15]],
+  etapes:['Cuire les gnocchis dans l\'eau sans sel et les couper en quatre.','Cuire courgette et petits pois en petits dés.','Mélanger au fromage frais.']},
+ {id:'pe223',titre:'Poêlée de pommes de terre, brocoli et jambon blanc',min:12,type:'dîner',ing:[['pomme de terre',70],['brocoli',60],['jambon blanc',15],['huile d\'olive',3]],
+  etapes:['Cuire pommes de terre et brocoli, couper petits.','Hacher finement le jambon blanc (à teneur réduite en sel).','Réchauffer le tout à la poêle avec l\'huile.']},
+ {id:'pe224',titre:'Croque-légumes de pain tendre',min:12,type:'dîner',ing:[['pain',30],['courgette',40],['gruyère',10]],
+  etapes:['Cuire la courgette râpée et l\'essorer.','Garnir le pain de courgette et de gruyère.','Dorer à la poêle ou au four.','Couper en petits carrés.']}
+
 
 
 
