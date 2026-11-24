@@ -58,6 +58,7 @@ button{cursor:pointer}
 .brand{font-family:var(--display);font-weight:800;font-size:28px;letter-spacing:-.025em;margin:0;line-height:1}
 .brand span{color:var(--leaf)}
 .tabs{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+a.tab{text-decoration:none}
 .tab{border:0;background:transparent;padding:8px 14px;border-radius:999px;font-weight:600;color:var(--muted);display:inline-flex;align-items:center;gap:8px}
 .tab:hover{color:var(--ink)}
 .tab[aria-selected="true"]{background:var(--ink);color:var(--paper)}
@@ -405,6 +406,7 @@ a.btn.primary{color:var(--leaf-ink)}
       <button class="tab" role="tab" id="tab-stock" data-act="tab" data-t="stock">Stock</button>
       <button class="tab" role="tab" id="tab-recettes" data-act="tab" data-t="recettes">Recettes</button>
       <button class="tab" role="tab" id="tab-prix" data-act="tab" data-t="prix">Prix</button>
+      <a class="tab" id="tab-enfants" href="enfants/">Petite enfance</a>
     </nav>
     <div class="sync"><span id="sync" aria-live="polite"></span> <button class="mini" id="signout" data-act="signout" hidden>Se déconnecter</button><button class="mini" id="signin" data-act="auth-open" hidden>Se connecter</button></div>
   </div>
