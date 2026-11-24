@@ -82,6 +82,10 @@ fmts     : conditionnement d'un produit : c unités par lot × q·u de contenu (
 - Formulaire `#nr` : bloc « Photo » (`#nr-file`, état `NR_IMG`, `nrPhoto`) ; `saveNew` est asynchrone (envoi avant enregistrement ; en cas d'échec, le formulaire reste ouvert).
 - Carte : `rcHero` affiche la photo (150 px, pastilles par-dessus) ; si l'image ne charge pas (`onerror`), retour au bandeau de pastilles. Images de sites chargées avec `referrerpolicy="no-referrer"`.
 
+## Calories et protéines des recettes
+- Dans une recette **ouverte**, `nutBlock` affiche « ≈ N kcal · protéines · glucides · lipides par personne » (`nutOf`). Bouton « Calculer les calories » / « Compléter » (`nut-calc`, `nutCalc`) : une recherche Open Food Facts (`cgi/search.pl`, tri par produits les plus scannés) par ingrédient, **médiane** des 15 premiers produits (`nutFetch`), une requête toutes les 1,2 s (limite ~10/min) ; arrêt sur 429/503 ou réseau coupé.
+- Cache `lepanier-nut` (localStorage, propre à l'appareil, **hors `S`**, clé `nutKey(nom)`, `null` = rien trouvé). Poids : g/ml tels quels, c. à soupe 15 g, c. à café 5 g, gousse 4 g, pièces via `NUT_PIECE` (œuf, oignon, courgette…) ; `NUT_ZERO` (sel, épices, eau) ignorés. Ligne au poids inconnu = non comptée : « estimation sur X/N ingrédients ». Résultat approximatif (produits transformés mélangés) ; testé avec un faux `fetch` seulement.
+
 ## Écran Stock
 - Une ligne par article (`skRow`) : nom, boutons − / + (`stock-step`, pas de 1 pièce, 100 g/ml, 500 au-delà d'un kilo/litre), quantité modifiable, × (retrait avec confirmation par second toucher). Quantité vide = « dispo » (`q=0`, considéré disponible). Le − est désactivé au minimum (le retrait passe par ×).
 - Présentation : une carte par rayon (`.sk-group`, lignes dans `.sk-rows`, 2 colonnes à partir de 820 px), pastille illustrée par article (`itemIco` : emoji d'après le nom via `ITEM_ICO`, sinon icône du rayon), compteur − / + d'un seul tenant (`.sk-step`). Le format « lot de 1 » n'est pas affiché.
@@ -116,5 +120,5 @@ Il n'y a pas de suite de tests dans le dépôt. Méthode utilisée : **jsdom** a
 Dictionnaire : Open Food Facts (ODbL), codes Ciqual (Anses). Le crédit s'affiche en bas de page et dans le README ; le conserver.
 
 ## Pistes en attente
-- Valeurs nutritionnelles via les codes Ciqual (quand le fichier/site est disponible).
+- Valeurs nutritionnelles exactes via les codes Ciqual (le site Anses était en maintenance ; remplacé pour l'instant par Open Food Facts, voir ci-dessous).
 - Import de plusieurs tickets d'un coup (aujourd'hui : écriture ponctuelle en base).

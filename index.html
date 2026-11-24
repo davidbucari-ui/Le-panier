@@ -346,6 +346,7 @@ input[type=file]{padding:8px}
 a.btn{display:inline-flex;align-items:center;text-decoration:none;color:inherit}
 a.btn.primary{color:var(--leaf-ink)}
 #fo-go[aria-disabled="true"]{opacity:.45;pointer-events:none}
+.nut{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;font-size:.92rem;margin:8px 0}
 .ex-opts{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,.8fr) minmax(0,1fr);gap:8px;margin-top:8px}
 .ex-hist{margin-top:12px}
 .ex-hist:empty{display:none}
@@ -1035,6 +1036,78 @@ function ingChip(i,tag,extra){
   const ry=rayonOf(i.n,i.r),k=ckey(i.n),have=S.stock.some(s=>covers(s.n,k));
   return`<${tag} class="ing${have?' have':''}${extra&&extra.cls?' '+extra.cls:''}" style="${rcStyle(ry)}"${extra&&extra.attrs||''}${have?' title="En stock"':''}><span class="ii" aria-hidden="true">${itemIco(i.n,ry)}</span>${esc(ingLine(i))}${have?'<span class="sr">, en stock</span>':''}</${tag}>`;
 }
+/* ---------- valeurs nutritionnelles (estimation, Open Food Facts) ---------- */
+// valeur pour 100 g d'un ingrédient = médiane des produits les plus scannés pour ce nom ; mémorisée sur l'appareil
+// (lepanier-nut, non synchronisée) : {nomNormalisé: {k kcal, p protéines, c glucides, l lipides} | null si rien trouvé}
+let NUT={};try{NUT=JSON.parse(localStorage.getItem('lepanier-nut')||'{}')||{}}catch(e){}
+let NUT_BUSY=null;
+const saveNut=()=>{try{localStorage.setItem('lepanier-nut',JSON.stringify(NUT))}catch(e){}};
+const nutKey=s=>ingNorm(String(s||'').replace(/œ/gi,'oe')).replace(/\s+/g,' ').trim();
+const NUT_ZERO=/\b(sel|poivre|eau|epices?|herbes?|thym|laurier|persil|curry|paprika|cannelle|muscade|cumin|basilic|ciboulette|origan|piment)\b/;
+const NUT_PIECE=[[/\boeufs?\b/,55],[/\boignons?\b/,110],[/\bechalotes?\b/,30],[/\bcourgettes?\b/,200],[/\btomates?\b/,120],[/\bpommes? de terre\b/,150],[/\bcarottes?\b/,80],[/\bpoivrons?\b/,200],[/\baubergines?\b/,250],[/\bpoireaux?\b/,150],[/\bconcombres?\b/,300],[/\bcitrons?\b/,100],[/\bpommes?\b/,150],[/\bbananes?\b/,120],[/\bavocats?\b/,150],[/\b(?:filets?|blancs?) de poulet\b/,150],[/\bsteaks?\b/,125],[/\bsaucisses?\b/,80]];
+// poids en grammes d'une ligne d'ingrédient : 0 = négligeable, null = inconnu
+function nutGrams(i){
+  const k=nutKey(i.n),[q,u]=normQty(i.q,i.u);
+  if(NUT_ZERO.test(k))return 0;
+  if(!q)return null;
+  if(u==='g'||u==='ml')return q;
+  if(u==='c. à soupe')return q*15;
+  if(u==='c. à café')return q*5;
+  if(u==='gousse')return q*4;
+  if(u===''){const p=NUT_PIECE.find(x=>x[0].test(k));return p?q*p[1]:null}
+  return null;
+}
+const nutMed=a=>{a=a.filter(Number.isFinite).sort((x,y)=>x-y);return a.length?a[a.length>>1]:null};
+async function nutFetch(name){
+  const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),8000);
+  try{
+    const r=await fetch('https://world.openfoodfacts.org/cgi/search.pl?search_simple=1&action=process&json=1&page_size=15&sort_by=unique_scans_n&fields=nutriments&search_terms='+encodeURIComponent(name),{signal:ctl.signal});
+    if(r.status===429||r.status===503)return'limit';
+    if(!r.ok)return'err';
+    const j=await r.json();
+    const ps=((j&&j.products)||[]).map(p=>p.nutriments||{}).filter(n=>n['energy-kcal_100g']!==undefined&&n['proteins_100g']!==undefined);
+    if(ps.length<2)return null;
+    const f=key=>nutMed(ps.map(n=>Number(n[key])));
+    const v={k:f('energy-kcal_100g'),p:f('proteins_100g'),c:f('carbohydrates_100g'),l:f('fat_100g')};
+    return v.k===null?null:v;
+  }catch(e){return'err'}finally{clearTimeout(to)}
+}
+// total par personne ; miss = lignes non comptées ; need = lignes dont la valeur n'a pas encore été cherchée
+function nutOf(r){
+  let k=0,p=0,c=0,l=0;const miss=[],need=[];
+  for(const i of r.ingredients){
+    const g=nutGrams(i);if(g===0)continue;
+    const v=NUT[nutKey(i.n)];
+    if(g===null||!v){miss.push(i);if(g!==null&&v===undefined)need.push(i);continue}
+    k+=g*(v.k||0)/100;p+=g*(v.p||0)/100;c+=g*(v.c||0)/100;l+=g*(v.l||0)/100;
+  }
+  const n=Math.max(1,Number(r.servings)||1);
+  return{k:k/n,p:p/n,c:c/n,l:l/n,miss,need,counted:r.ingredients.length-miss.length};
+}
+function nutBlock(r){
+  if(!r.ingredients.length)return'';
+  const o=nutOf(r),busy=NUT_BUSY===r.id;
+  const btn=o.need.length||busy?`<button class="btn sm" data-act="nut-calc" data-id="${esc(r.id)}"${NUT_BUSY?' disabled':''}>${busy?'Calcul en cours…':o.counted?'Compléter':'Calculer les calories'}</button>`:'';
+  if(!o.counted)return`<div class="nut">${btn}<span class="hint">${o.need.length?'Valeurs Open Food Facts, réseau requis.':'Pas assez de données pour estimer cette recette.'}</span></div>`;
+  const r0=x=>Math.round(x);
+  return`<div class="nut"><span><b>≈ ${r0(o.k)} kcal</b> · ${r0(o.p)} g protéines · ${r0(o.c)} g glucides · ${r0(o.l)} g lipides <span class="hint">par personne</span></span>${o.miss.length?`<span class="hint">estimation sur ${o.counted}/${r.ingredients.length} ingrédients</span>`:''}${btn}</div>`;
+}
+async function nutCalc(id){
+  const r=allRec().find(x=>x.id===id);if(!r||NUT_BUSY)return;
+  const todo=new Map();nutOf(r).need.forEach(i=>todo.set(nutKey(i.n),i.n));
+  if(!todo.size)return;
+  NUT_BUSY=id;renderRecipes();
+  let stop='';
+  for(const [k,name] of todo){
+    const v=await nutFetch(name);
+    if(v==='limit'){stop='Open Food Facts limite les requêtes : réessayez dans une minute.';break}
+    if(v==='err'){stop='Open Food Facts est injoignable : vérifiez le réseau.';break}
+    NUT[k]=v;saveNut();renderRecipes();
+    await new Promise(res=>setTimeout(res,1200));   // la recherche est limitée à ~10 requêtes par minute
+  }
+  NUT_BUSY=null;renderRecipes();
+  if(stop)toast(stop);
+}
 function recipeCard(r){
   const open=OPEN.has(r.id),planned=S.plan[r.id]!=null;
   const [sh,st]=stockCover(r);
@@ -1046,6 +1119,7 @@ function recipeCard(r){
     <div class="meta">${r.time?`<span class="mono">${esc(r.time)} min</span>`:''}<span class="mono">${esc(r.servings)} pers.</span>${S.stock.length?`<span class="tag ${sh===st?'ok':''}">${sh}/${st} en stock</span>`:''}${(r.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}${r._by&&r._by!==sbUid&&r._au?`<span class="tag">par ${esc(r._au)}</span>`:''}${r.source==='ia'?'<span class="tag ia">Claude</span>':''}${r.source==='exemple'?'<span class="tag">Exemple</span>':''}${r.source==='site'?'<span class="tag">Site</span>':''}</div>
     <ul class="ings">${shown.map(i=>ingChip(i,'li')).join('')}${more>0?`<li class="ing more">+${more}</li>`:''}</ul>
     ${open&&r.steps&&r.steps.length?`<ol class="steps">${r.steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol>`:''}${open&&/^https?:\/\//i.test(r.url||'')?`<p class="hint" style="margin:0">Source : <a href="${esc(r.url)}" target="_blank" rel="noopener noreferrer">${esc((()=>{try{return new URL(r.url).hostname.replace(/^www\./,'')}catch(e){return r.url}})())}</a></p>`:''}
+    ${open?nutBlock(r):''}
     <div class="spacer"></div>
     <div class="row-actions">
       ${planned?`<div class="stepper"><button data-act="plan-minus" data-id="${esc(r.id)}" aria-label="Moins de personnes">−</button><span>${esc(S.plan[r.id])} pers.</span><button data-act="plan-plus" data-id="${esc(r.id)}" aria-label="Plus de personnes">+</button></div><button class="btn sm" data-act="plan-del" data-id="${esc(r.id)}">Retirer des courses</button>`
@@ -2202,6 +2276,7 @@ document.addEventListener('click',e=>{
     case 'sk-toggle':{const r=b.dataset.r,c=new Set(UI.skClosed||[]);c.has(r)?c.delete(r):c.add(r);UI.skClosed=[...c];saveUI();renderStock();break}
     case 'stock-clear':if(b.dataset.arm!=='1'){b.dataset.arm='1';b.textContent='Confirmer ?';setTimeout(()=>{if(b.isConnected){b.dataset.arm='';b.textContent='Vider le stock'}},3000)}else{S.stock=[];stockChanged();b.dataset.arm='';b.textContent='Vider le stock'}break;
     case 'cook':openCook(id);break;
+    case 'nut-calc':nutCalc(id);break;
     case 'ck-close':$('#ck').hidden=true;COOK=null;break;
     case 'ck-ok':confirmCook();break;
     case 'fo-open':{
