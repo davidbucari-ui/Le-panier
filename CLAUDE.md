@@ -119,6 +119,12 @@ Il n'y a pas de suite de tests dans le dépôt. Méthode utilisée : **jsdom** a
 ## Icône de l'application
 - `icons/` (192, 512, 180 pour iOS, favicon 32) + `manifest.webmanifest`, liés dans `<head>` de `index.html` (chemins relatifs, pour le sous-dossier GitHub Pages). Panier d'osier avec légumes sur fond vert, généré par IA, texte « Le Panier » ajouté en bas par script (police DejaVu Sans Bold) ; la même image sert d'icône « maskable » (le motif reste dans la zone sûre). Installation sur l'écran d'accueil à vérifier sur appareil.
 
+## Module Petite enfance 0-3 ans (`enfants/`, indépendant de Le Panier)
+- Module à part, pensé pour être intégré à l'application des crèches de David (application web HTML/JS) : `enfants/data.js` (données : tranches d'âge, 14 allergènes par mots-clés, aliments à éviter par âge, 15 recettes de départ, portions indicatives), `enfants/module.js` (logique pure + interface, sans dépendance, `PetiteEnfance.mount(el,{storageKey})`), `enfants/index.html` (page de démonstration, `…/Le-panier/enfants/`). Aucun lien avec `index.html` ni `S`.
+- Fonctions : recettes par âge (0-6 / 6-8 / 8-10 / 10-12 / 12-36 mois) et texture, filtre « sans » allergène, alertes d'âge (`alertsFor` : miel, sel, sucre, lait de vache, fruits à coque entiers, aliments ronds, cru, fromage au lait cru, poissons prédateurs), recettes perso (stockées dans `localStorage`, allergènes et alertes détectés d'après les noms), nombre d'enfants par tranche → quantités du groupe (`groupFactor` : portion de référence 12-36 mois × facteur d'âge 0,5 / 0,6 / 0,7 / 1), menus de la semaine (déjeuner, dessert, goûter) et liste de courses.
+- **Contenu non validé médicalement** : recettes, portions et règles d'âge rédigées de mémoire, avec avertissement affiché dans l'appli ; à faire valider (pédiatre, PMI, protocole de la crèche) avant tout usage réel. Une recette dont les ingrédients déclenchent une alerte n'est jamais proposée pour la tranche concernée ; une recette plus avancée que la tranche n'est pas proposée non plus.
+- Testé : logique en Node + parcours jsdom. Pas testé : appareil réel, intégration dans l'application des crèches.
+
 ## Sources et licences
 Dictionnaire : Open Food Facts (ODbL), codes Ciqual (Anses). Le crédit s'affiche en bas de page et dans le README ; le conserver.
 
