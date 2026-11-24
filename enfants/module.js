@@ -72,7 +72,15 @@ var CSS='.pe{font:17px/1.5 ui-rounded,"SF Pro Rounded","Nunito","Quicksand",syst
 '.pe ul.ing{margin:8px 0;padding-left:20px}.pe .hint{color:#7d6e89;font-size:.88rem}.pe .btn{border:2px solid #ff7a59;background:#ff7a59;color:#fff;border-radius:999px;padding:8px 20px;cursor:pointer;font-weight:700}.pe .btn.sec{background:#fff;color:#ff7a59}'+
 '.pe .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.pe table{border-collapse:collapse;width:100%}.pe td,.pe th{border-bottom:2px dotted #e3d4f5;padding:7px;text-align:left;font-size:.93rem}'+
 '.pe input[type=number]{width:84px}.pe textarea,.pe input[type=text],.pe select{width:100%;box-sizing:border-box;border:2px solid #e3d4f5;border-radius:14px;padding:6px 10px;background:#fffdf8}.pe label{font-weight:600;color:#5b3f8c}'+
-'.pe ol{padding-left:22px}';
+'.pe ol{padding-left:22px}'+
+'.pe .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:10px 0}'+
+'.pe .tile{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;min-height:118px;padding:10px 12px;background:#fff;border:2px solid #f0e6ff;border-top:6px solid var(--bd,#c9a8f0);border-radius:18px;box-shadow:0 3px 0 #f0e6ff;cursor:pointer;color:#4a3b52;font:inherit}'+
+'.pe .tile:hover,.pe .tile:focus-visible{border-color:var(--bd,#c9a8f0);transform:translateY(-1px)}.pe .tile .ico{font-size:1.9rem;line-height:1}'+
+'.pe .tile .tt{font-weight:700;font-size:.93rem;line-height:1.25;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}'+
+'.pe .tile .sub{margin-top:auto;font-size:.78rem;color:#7d6e89}.pe .tile .sub b{color:#a02e22;font-weight:700}'+
+'.pe .modal{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:12px}.pe .modal .back{position:absolute;inset:0;background:rgba(60,40,80,.55)}'+
+'.pe .modal .sheet{position:relative;background:#fffdf8;border-radius:24px;max-width:560px;width:100%;max-height:88vh;overflow:auto;padding:6px 16px 16px;box-shadow:0 10px 40px rgba(0,0,0,.35)}'+
+'.pe .modal .sheet .card{border-left-width:2px;box-shadow:none;margin:6px 0}.pe .modal .close{position:sticky;top:0;float:right;margin:8px 0 0 8px;border:2px solid #e3d4f5;background:#fff;border-radius:999px;padding:6px 14px;cursor:pointer;font-weight:700;color:#5b3f8c;z-index:1}';
 
 function menuText(menu,recs){ // menu de la semaine à transmettre aux parents
   var byId={};recs.forEach(function(r){byId[r.id]=r});
@@ -87,7 +95,7 @@ function menuText(menu,recs){ // menu de la semaine à transmettre aux parents
 function mount(root,opts){
   opts=opts||{};
   var KEY=opts.storageKey||'petite-enfance-v1';
-  var st={tab:'recettes',age:'6-8',sans:[],q:'',kids:{},menu:{},custom:[],form:false};
+  var st={tab:'recettes',age:'6-8',sans:[],q:'',kids:{},menu:{},custom:[],form:false,type:'',open:null};
   try{var s=JSON.parse(localStorage.getItem(KEY)||'null');if(s&&typeof s==='object'){st.age=s.age||st.age;st.kids=s.kids||{};if(st.age==='12-36')st.age='12-18';if(st.kids['12-36']!=null){st.kids['24-36']=(Number(st.kids['24-36'])||0)+(Number(st.kids['12-36'])||0);delete st.kids['12-36']}if(!ageOf(st.age))st.age='6-8';st.menu=s.menu||{};st.custom=Array.isArray(s.custom)?s.custom:[]}}catch(e){}
   var save=function(){try{localStorage.setItem(KEY,JSON.stringify({age:st.age,kids:st.kids,menu:st.menu,custom:st.custom}))}catch(e){}};
   var recs=function(){return D.recettes.concat(st.custom)};
@@ -105,19 +113,28 @@ function mount(root,opts){
       '<p class="hint">Texture à cet âge : '+esc(age.texture)+'</p>'+
       (r.perso?'<button class="btn sec" data-act="del" data-id="'+esc(r.id)+'">Supprimer</button>':'')+'</article>';
   }
+  function tile(r){
+    var age=ageOf(st.age),al=allergensOf(r),tu=TYPE_UI[r.type]||['','#c9a8f0'];
+    return'<button class="tile" style="--bd:'+tu[1]+'" data-act="open" data-id="'+esc(r.id)+'"><span class="ico" aria-hidden="true">'+tu[0]+'</span><span class="tt">'+esc(r.titre)+'</span><span class="sub">dès '+r.min+' mois'+(al.length?' · <b>'+al.length+' allergène'+(al.length>1?'s':'')+'</b>':'')+(r.perso?' · ma recette':'')+'</span></button>';
+  }
   function tabRecettes(){
     var age=ageOf(st.age),h='<div class="chips" role="group" aria-label="Âge">'+D.ages.map(function(a){var u=AGE_UI[a.id]||['','#eee','#ccc'];return'<button class="chip" style="--c1:'+u[1]+';--c2:'+u[2]+'" data-act="age" data-id="'+a.id+'" aria-pressed="'+(a.id===st.age)+'">'+u[0]+' '+esc(a.label)+'</button>'}).join('')+'</div>';
     if(!age.facteur)return h+'<div class="card"><h3>🍼 '+esc(age.label)+'</h3><p>'+esc(age.texture)+'</p></div>';
-    h+='<p class="hint">Sans (exclure) :</p><div class="chips">'+D.allergenes.map(function(a){return'<button class="chip no" data-act="sans" data-id="'+a.id+'" aria-pressed="'+(st.sans.indexOf(a.id)>=0)+'">'+esc(a.label)+'</button>'}).join('')+'</div>'+
+    h+='<div class="meta"><button class="btn sec" data-act="sans-toggle" aria-expanded="'+(!!st.sansOpen)+'">Sans allergène'+(st.sans.length?' ('+st.sans.length+' choisi'+(st.sans.length>1?'s':'')+')':'')+(st.sansOpen?' ▲':' ▼')+'</button></div>'+(st.sansOpen||st.sans.length?'<div class="chips">':'<div hidden>')+(st.sansOpen?D.allergenes.map(function(a){return'<button class="chip no" data-act="sans" data-id="'+a.id+'" aria-pressed="'+(st.sans.indexOf(a.id)>=0)+'">'+esc(a.label)+'</button>'}).join(''):st.sans.map(function(id){return'<button class="chip no" data-act="sans" data-id="'+id+'" aria-pressed="true">'+esc(D.allergenes.filter(function(a){return a.id===id})[0].label)+'</button>'}).join(''))+'</div>'+
       '<input type="text" id="pe-q" placeholder="Rechercher une recette" value="'+esc(st.q)+'" aria-label="Rechercher une recette">'+
       '<div class="meta"><button class="btn sec" data-act="form">'+(st.form?'Fermer le formulaire':'＋ Ajouter ma recette')+'</button></div>'+(st.form?formHtml():'');
-    var q=nk(st.q),list=recs().filter(function(r){
+    var q=nk(st.q),base=recs().filter(function(r){
       if(r.min>age.min)return false;
       if(alertsFor(r,age).length)return false;
       var al=allergensOf(r);if(st.sans.some(function(s){return al.indexOf(s)>=0}))return false;
       return !q||nk(r.titre).indexOf(q)>=0||r.ing.some(function(i){return nk(i[0]).indexOf(q)>=0});
     });
-    return h+'<p class="hint">'+list.length+' recette'+(list.length>1?'s':'')+' adaptée'+(list.length>1?'s':'')+' à '+esc(age.label)+'.</p>'+list.map(recipeCard).join('');
+    var TYPES=['petit-déjeuner','plat','dessert','goûter','dîner'],cnt={};base.forEach(function(r){cnt[r.type]=(cnt[r.type]||0)+1});
+    var list=st.type?base.filter(function(r){return r.type===st.type}):base;
+    h+='<div class="chips" role="group" aria-label="Type de repas"><button class="chip" data-act="type" data-id="" aria-pressed="'+(!st.type)+'">Tous ('+base.length+')</button>'+TYPES.filter(function(t){return cnt[t]}).map(function(t){var u=TYPE_UI[t]||['',''];return'<button class="chip" style="--c2:'+u[1]+'" data-act="type" data-id="'+t+'" aria-pressed="'+(st.type===t)+'">'+u[0]+' '+esc(t)+' ('+cnt[t]+')</button>'}).join('')+'</div>';
+    var opened=st.open&&recs().filter(function(r){return r.id===st.open})[0];
+    return h+'<p class="hint">'+list.length+' recette'+(list.length>1?'s':'')+' adaptée'+(list.length>1?'s':'')+' à '+esc(age.label)+'. Touchez une recette pour la lire.</p><div class="tiles">'+list.map(tile).join('')+'</div>'+
+      (opened?'<div class="modal" role="dialog" aria-modal="true" aria-label="'+esc(opened.titre)+'"><div class="back" data-act="close"></div><div class="sheet"><button class="close" data-act="close" aria-label="Fermer">✕ Fermer</button>'+recipeCard(opened)+'</div></div>':'');
   }
   function formHtml(){
     return '<div class="card"><h3>Ma recette</h3><label>Titre<input type="text" id="pf-t"></label><div class="grid"><label>À partir de (mois)<input type="number" id="pf-m" value="12" min="4" max="36"></label>'+
@@ -168,11 +185,15 @@ function mount(root,opts){
   }
   root.addEventListener('click',function(e){
     var b=e.target.closest&&e.target.closest('[data-act]');if(!b)return;var a=b.dataset.act,id=b.dataset.id;
-    if(a==='tab')st.tab=id;
-    else if(a==='age'){st.age=id;save()}
+    if(a==='tab'){st.tab=id;st.open=null}
+    else if(a==='open')st.open=id;
+    else if(a==='close')st.open=null;
+    else if(a==='type')st.type=id;
+    else if(a==='age'){st.age=id;st.open=null;save()}
     else if(a==='sans'){var i=st.sans.indexOf(id);if(i<0)st.sans.push(id);else st.sans.splice(i,1)}
+    else if(a==='sans-toggle')st.sansOpen=!st.sansOpen;
     else if(a==='form')st.form=!st.form;
-    else if(a==='del'){if(!confirm('Supprimer cette recette ?'))return;st.custom=st.custom.filter(function(r){return r.id!==id});Object.keys(st.menu).forEach(function(k){if(st.menu[k]===id)delete st.menu[k]});save()}
+    else if(a==='del'){if(!confirm('Supprimer cette recette ?'))return;st.custom=st.custom.filter(function(r){return r.id!==id});st.open=null;Object.keys(st.menu).forEach(function(k){if(st.menu[k]===id)delete st.menu[k]});save()}
     else if(a==='save-form'){
       var t=root.querySelector('#pf-t').value.trim(),m=Math.max(4,Math.min(36,parseInt(root.querySelector('#pf-m').value,10)||12)),
           lines=root.querySelector('#pf-i').value.split('\n').map(function(x){return x.trim()}).filter(Boolean);
@@ -193,6 +214,7 @@ function mount(root,opts){
     }
     render();
   });
+  if(typeof document!=='undefined')document.addEventListener('keydown',function(e){if(e.key==='Escape'&&st.open){st.open=null;render()}});
   root.addEventListener('input',function(e){
     if(e.target.id==='pe-q'){st.q=e.target.value;render()}
     else if(e.target.dataset&&e.target.dataset.kids){st.kids[e.target.dataset.kids]=Math.max(0,parseInt(e.target.value,10)||0);save()}
