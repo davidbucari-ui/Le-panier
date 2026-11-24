@@ -929,7 +929,7 @@ function matches(r){
   if(!F.with.every(w=>ingHit(r,w)))return false;
   if(excludedIn(r).length)return false;
   if(F.stockOnly){const [h,t]=stockCover(r);if(!t||h/t<0.7)return false}
-  if(UI.prot){const o=nutOf(r);if(!(o.counted&&o.k>0&&o.p>=(Number(UI.protG)||25)))return false}
+  if(UI.prot){const o=nutOf(r);if(!(o.ok&&o.p>=(Number(UI.protG)||25)))return false}
   return true;
 }
 function stockCover(r){return[r.ingredients.filter(i=>{const k=ckey(i.n);return S.stock.some(s=>covers(s.n,k))}).length,r.ingredients.length]}
@@ -1049,7 +1049,33 @@ let NUT_BUSY=null;
 const saveNut=()=>{try{localStorage.setItem('lepanier-nut',JSON.stringify(NUT))}catch(e){}};
 const nutKey=s=>ingNorm(String(s||'').replace(/œ/gi,'oe')).replace(/\s+/g,' ').trim();
 const NUT_ZERO=/\b(sel|poivre|eau|epices?|herbes?|thym|laurier|persil|curry|paprika|cannelle|muscade|cumin|basilic|ciboulette|origan|piment)\b/;
-const NUT_PIECE=[[/\boeufs?\b/,55],[/\boignons?\b/,110],[/\bechalotes?\b/,30],[/\bcourgettes?\b/,200],[/\btomates?\b/,120],[/\bpommes? de terre\b/,150],[/\bcarottes?\b/,80],[/\bpoivrons?\b/,200],[/\baubergines?\b/,250],[/\bpoireaux?\b/,150],[/\bconcombres?\b/,300],[/\bcitrons?\b/,100],[/\bpommes?\b/,150],[/\bbananes?\b/,120],[/\bavocats?\b/,150],[/\b(?:filets?|blancs?) de poulet\b/,150],[/\bsteaks?\b/,125],[/\bsaucisses?\b/,80]];
+// Table de référence (valeurs moyennes pour 100 g : kcal, protéines, glucides, lipides ; w = poids d'une pièce en g).
+// Valeurs approximatives saisies à la main (proches de Ciqual, mais ce n'est PAS le fichier officiel) ; produits secs (riz, pâtes,
+// quinoa, lentilles) comptés crus, pois chiches / haricots rouges et blancs comptés en conserve. Le premier motif qui correspond gagne.
+const NUT_REF=[
+ [/\b(?:filets?|blancs?|escalopes?|aiguillettes?) de poulet\b|\bpoulet (?:filet|blanc|escalope)/,110,23,0,1.5,150],[/\bpoulet\b/,170,19,0,10,150],
+ [/\bdinde\b/,110,24,0,1.5,150],[/\bsteaks? hache\b|\bboeuf hache\b/,200,19,0,14,125],[/\bboeuf\b|\bsteak\b/,170,21,0,9,125],[/\bveau\b/,130,21,0,5],
+ [/\bporc\b|\bfilet mignon\b/,140,21,0,6],[/\bjambon\b/,110,20,1,3,40],[/\blardons?\b/,250,17,0.5,20],[/\bsaucisses?\b/,280,14,1,25,80],[/\bagneau\b/,200,18,0,14],
+ [/\bsaumon\b/,200,20,0,13,120],[/\bthon\b/,115,26,0,1],[/\bcabillaud\b|\bcolin\b|\bpoisson\b|\bmerlu\b/,85,18,0,1,120],[/\bcrevettes?\b/,85,18,0,1],[/\bsardines?\b/,200,22,0,12],[/\bmaquereaux?\b/,220,18,0,16],
+ [/\boeufs?\b/,140,12.5,0.5,10,55],
+ [/\blait de coco\b/,180,1.7,3,18],[/\blait (?:d amande|de soja|d avoine)\b/,30,1,3,1.5],[/\blait\b/,46,3.3,4.8,1.6],
+ [/\bcreme (?:legere|allegee)\b/,160,2.8,4,15],[/\bcreme\b/,290,2.2,2.8,30],[/\bbeurre de cacahuetes?\b/,600,25,10,50],[/\bbeurre\b/,740,0.7,0.6,82],
+ [/\bfromage blanc\b/,75,8,3.5,3],[/\bskyr\b/,63,11,4,0.2],[/\byaourts? (?:grec|a la grecque)\b/,130,5.5,4,10],[/\b(?:yaourts?|yogourts?)\b/,55,4,6,2],[/\bricotta\b/,150,11,3,10],[/\bfeta\b/,265,14,1,21],
+ [/\bmozzarella\b/,250,18,1,19],[/\bparmesan\b/,390,33,0,28],[/\b(?:gruyere|emmental|comte)\b/,380,28,0,30],[/\bfromage de chevre\b|\bchevre\b/,220,14,2,17],[/\bfromage\b/,350,24,1,28],
+ [/\bquinoa\b/,368,14,64,6],[/\briz\b/,350,7,78,0.7],[/\bpates?\b|\bspaghettis?\b|\btagliatelles?\b|\bpenne\b|\bmacaronis?\b|\blasagnes?\b/,355,12.5,72,1.5],[/\bsemoule\b|\bcouscous\b/,360,12,73,1],[/\bboulgour\b/,350,11,70,1.5],
+ [/\bpommes? de terre\b/,80,2,17,0.1,150],[/\bpatates? douces?\b/,86,1.6,20,0.1,250],[/\bflocons? d avoine\b/,370,13,60,7],[/\bfarine\b/,350,10,73,1],[/\bpain\b/,270,9,50,3],[/\bma[iï]s\b/,90,3,16,1.5],
+ [/\blentilles?\b/,340,25,50,1.5],[/\bpois chiches?\b/,130,7.5,18,2.5],[/\bharicots? (?:rouges?|blancs?)\b/,100,7,13,0.5],[/\bharicots? verts?\b/,30,2,4,0.2],[/\bharicots?\b/,100,7,13,0.5],
+ [/\btofu\b/,125,13,2,7],[/\btempeh\b/,190,19,9,11],[/\bedamame\b/,120,12,9,5],[/\bpetits? pois\b/,80,5.5,11,0.5],[/\bseitan\b/,130,25,5,2],
+ [/\bcourgettes?\b/,18,1.5,2,0.3,200],[/\bcarottes?\b/,36,0.8,7,0.3,80],[/\boignons?\b/,40,1.2,7,0.2,110],[/\bechalotes?\b/,70,2.5,14,0.2,30],[/\bail\b/,130,6,24,0.5],
+ [/\btomates? concassees?\b|\bsauce tomate\b|\bcoulis\b/,30,1.4,5,0.3],[/\bconcentre de tomate\b/,80,4,14,0.5],[/\btomates?\b/,20,0.9,3.5,0.2,120],
+ [/\bpoivrons?\b/,28,1,5,0.3,200],[/\baubergines?\b/,25,1,4,0.2,250],[/\bchampignons?\b/,22,3,1,0.3],[/\bepinards?\b/,25,2.9,1,0.4],[/\bbrocolis?\b/,32,3,3,0.4],
+ [/\bchou[- ]?fleur\b/,25,2,3,0.3],[/\bchou\b/,25,1.5,4,0.2],[/\bpoireaux?\b/,30,2,5,0.3,150],[/\bconcombres?\b/,12,0.7,2,0.1,300],[/\bsalade\b|\bmesclun\b|\broquette\b/,15,1.3,2,0.2],
+ [/\bavocats?\b/,160,2,2,15,150],[/\b(?:courge|butternut|potimarron|potiron)\b/,38,1,8,0.1],[/\bcelerie\b/,18,0.8,2,0.2],[/\bbetteraves?\b/,40,1.5,8,0.1],[/\bfenouil\b/,25,1,4,0.2],[/\basperges?\b/,20,2.2,2,0.2],[/\blegumes?\b/,40,2.5,6,0.5],
+ [/\bpommes?\b/,52,0.3,12,0.2,150],[/\bbananes?\b/,90,1.2,20,0.3,120],[/\bcitrons?\b/,30,0.7,5,0.3,100],[/\boranges?\b/,45,1,9,0.2,150],
+ [/\bhuile\b/,900,0,0,100],[/\bsucre\b/,400,0,100,0],[/\bmiel\b/,300,0.4,75,0],[/\bnoix\b|\bnoisettes?\b/,650,15,7,63],[/\bamandes?\b/,600,21,7,52],[/\bcacahuetes?\b/,600,26,10,50],[/\bgraines?\b/,500,20,8,40],
+ [/\bsauce soja\b/,60,8,5,0],[/\bmoutarde\b/,100,6,6,6],[/\bmayonnaise\b/,700,1,1,78],[/\bketchup\b/,110,1,25,0.1],[/\bchocolat\b/,540,6,45,35]
+];
+const nutRef=k=>{const e=NUT_REF.find(x=>x[0].test(k));return e?{k:e[1],p:e[2],c:e[3],l:e[4],w:e[5]||0}:null};
 // poids en grammes d'une ligne d'ingrédient : 0 = négligeable, null = inconnu
 function nutGrams(i){
   const k=nutKey(i.n),[q,u]=normQty(i.q,i.u);
@@ -1059,7 +1085,9 @@ function nutGrams(i){
   if(u==='c. à soupe')return q*15;
   if(u==='c. à café')return q*5;
   if(u==='gousse')return q*4;
-  if(u===''){const p=NUT_PIECE.find(x=>x[0].test(k));return p?q*p[1]:null}
+  if(u==='tranche')return q*30;
+  if(u==='pincée')return q;
+  if(u===''){const r=nutRef(k);return r&&r.w?q*r.w:null}
   return null;
 }
 const nutMed=a=>{a=a.filter(Number.isFinite).sort((x,y)=>x-y);return a.length?a[a.length>>1]:null};
@@ -1088,28 +1116,31 @@ async function nutFetch(name){
   const v={k:f('energy-kcal_100g'),p:f('proteins_100g'),c:f('carbohydrates_100g'),l:f('fat_100g')};
   return v.k===null?null:v;
 }
-// total par personne ; miss = lignes non comptées ; need = lignes dont la valeur n'a pas encore été cherchée
+// total par personne ; miss = lignes non comptées ; need = lignes à chercher sur Open Food Facts ; ok = estimation assez complète
+const nutVal=i=>{const k=nutKey(i.n);return nutRef(k)||NUT[k]};
 function nutOf(r){
   let k=0,p=0,c=0,l=0;const miss=[],need=[];
   for(const i of r.ingredients){
     const g=nutGrams(i);if(g===0)continue;
-    const v=NUT[nutKey(i.n)];
+    const v=nutVal(i);
     if(g===null||!v){miss.push(i);if(g!==null&&v===undefined)need.push(i);continue}
     k+=g*(v.k||0)/100;p+=g*(v.p||0)/100;c+=g*(v.c||0)/100;l+=g*(v.l||0)/100;
   }
-  const n=Math.max(1,Number(r.servings)||1),zero=r.ingredients.filter(i=>nutGrams(i)===0).length;
-  return{k:k/n,p:p/n,c:c/n,l:l/n,miss,need,zero,counted:r.ingredients.length-zero-miss.length};
+  const n=Math.max(1,Number(r.servings)||1),zero=r.ingredients.filter(i=>nutGrams(i)===0).length,tot=r.ingredients.length-zero;
+  const counted=tot-miss.length;
+  return{k:k/n,p:p/n,c:c/n,l:l/n,miss,need,zero,tot,counted,ok:counted>0&&k>0&&counted/tot>=0.6};
 }
 function nutBlock(r){
   if(!r.ingredients.length)return'';
   const o=nutOf(r),busy=NUT_BUSY===r.id;
   const btn=o.need.length||busy?`<button class="btn sm" data-act="nut-calc" data-id="${esc(r.id)}"${NUT_BUSY?' disabled':''}>${busy?'Calcul en cours…':o.counted?'Compléter':'Calculer les calories'}</button>`:'';
-  if(!o.counted||!(o.k>0)){
-    const unk=o.miss.filter(i=>nutGrams(i)===null).map(i=>i.n);
-    return`<div class="nut">${btn}<span class="hint">${o.need.length?'Valeurs Open Food Facts, réseau requis.':'Estimation impossible : quantité inconnue ou produit introuvable'+(unk.length?' ('+esc(unk.slice(0,4).join(', '))+(unk.length>4?'…':'')+')':'')+'.'}</span></div>`;
+  if(!o.ok){
+    const unk=o.miss.map(i=>i.n);
+    const why=o.need.length?'Valeurs Open Food Facts, réseau requis.':'Estimation trop incomplète ('+o.counted+'/'+o.tot+' ingrédients comptés) : quantité inconnue ou produit introuvable'+(unk.length?' — '+esc(unk.slice(0,4).join(', '))+(unk.length>4?'…':''):'')+'.';
+    return`<div class="nut">${btn}<span class="hint">${why}</span></div>`;
   }
   const r0=x=>Math.round(x);
-  return`<div class="nut"><span><b>≈ ${r0(o.k)} kcal</b> · ${r0(o.p)} g protéines · ${r0(o.c)} g glucides · ${r0(o.l)} g lipides <span class="hint">par personne</span></span>${o.miss.length?`<span class="hint">estimation sur ${o.counted}/${r.ingredients.length-o.zero} ingrédients</span>`:''}${btn}</div>`;
+  return`<div class="nut"><span><b>≈ ${r0(o.k)} kcal</b> · ${r0(o.p)} g protéines · ${r0(o.c)} g glucides · ${r0(o.l)} g lipides <span class="hint">par personne</span></span>${o.miss.length?`<span class="hint">estimation sur ${o.counted}/${o.tot} ingrédients</span>`:''}${btn}</div>`;
 }
 let NUT_PROG='';
 async function nutRun(recs,busy){
@@ -1154,7 +1185,7 @@ function recipeCard(r){
 }
 function renderRecipes(){
   const all=allRec(),list=all.filter(matches),hidden=all.filter(r=>excludedIn(r).length).length;
-  if(UI.protSort)list.sort((a,b)=>{const x=nutOf(a),y=nutOf(b);return(y.counted&&y.k>0?y.p:-1)-(x.counted&&x.k>0?x.p:-1)});
+  if(UI.protSort)list.sort((a,b)=>{const x=nutOf(a),y=nutOf(b);return(y.ok?y.p:-1)-(x.ok?x.p:-1)});
   else if(UI.az)list.sort((a,b)=>(a.title||'').localeCompare(b.title||'','fr',{sensitivity:'base'}));
   $('#recipe-count').textContent=`${list.length} recette${list.length>1?'s':''} affichée${list.length>1?'s':''} sur ${all.length}`+(hidden?` · ${hidden} masquée${hidden>1?'s':''} par vos exclusions`:'');
   $('#recipe-list').innerHTML=list.length?list.map(recipeCard).join(''):`<div class="empty">${all.length?'Aucune recette ne correspond à ces filtres.':'Aucune recette pour le moment. Ajoutez la vôtre ou demandez des idées à Claude.'}</div>`;
