@@ -136,6 +136,7 @@ function mount(root,opts){
   function tabMenus(){
     var all=recs(),byId={};all.forEach(function(r){byId[r.id]=r});
     var h='<h2>Menus de la semaine</h2><p class="hint">Choisissez une recette par repas. Les quantités tiennent compte des enfants saisis dans l\'onglet Portions.</p>';
+    h+='<p><button class="btn" data-act="copy-menu">📋 Copier le menu pour les parents</button> <span class="hint" id="pe-copied2"></span></p><p class="hint">Le dîner est une suggestion pour les parents : il n\'est pas compté dans la liste de courses.</p>';
     JOURS.forEach(function(j){
       h+='<div class="card"><h3>'+j[1]+'</h3><div class="grid">'+REPAS.map(function(m){
         var key=j[0]+'-'+m[0],opts=all.filter(function(r){return m[2].indexOf(r.type)>=0});
@@ -150,7 +151,6 @@ function mount(root,opts){
     Object.keys(st.menu).forEach(function(k){var r=byId[st.menu[k]];if(r)allergensOf(r).forEach(function(a){al[a]=1})});
     h+=(sh.avertissements.length?'<div class="warn">'+sh.avertissements.map(function(w){return'<div>⚠ '+esc(w)+'</div>'}).join('')+'</div>':'');
     h+=Object.keys(al).length?'<p><b>Allergènes de la semaine :</b> '+Object.keys(al).map(function(id){return esc(D.allergenes.filter(function(a){return a.id===id})[0].label)}).join(', ')+'</p>':'';
-    h+='<p class="hint">Le dîner est une suggestion pour les parents : il n\'est pas compté dans la liste de courses.</p><p><button class="btn sec" data-act="copy-menu">Copier le menu pour les parents</button> <span class="hint" id="pe-copied2"></span></p>';
     h+='<h2>Liste de courses</h2>'+(sh.lignes.length?'<table>'+sh.lignes.map(function(l){return'<tr><td>'+esc(l.n)+'</td><td>'+(l.g?esc(fmtG(l.g)):'à doser')+'</td></tr>'}).join('')+'</table><p><button class="btn sec" data-act="copy">Copier la liste</button> <span class="hint" id="pe-copied"></span></p>':'<p class="hint">Aucun menu choisi, ou aucun enfant saisi.</p>');
     return h;
   }
