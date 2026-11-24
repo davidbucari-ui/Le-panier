@@ -659,7 +659,32 @@ recettes:[
  {id:'pe295',titre:'Cookies à la banane et à l\'avoine (sans sucre)',min:12,type:'goûter',ing:[['banane',60],['flocons d\'avoine',30],['huile d\'olive',3]],
   etapes:['Écraser la banane et mélanger aux flocons.','Former de petits palets.','Cuire au four à 180 °C, 15 min.','Laisser refroidir.']},
  {id:'pe296',titre:'Smoothie épais mangue-banane',min:12,type:'goûter',ing:[['mangue',50],['banane',40],['yaourt nature',70]],
-  etapes:['Mixer tous les ingrédients.','Servir à la cuillère ou dans un petit verre, assis.']}
+  etapes:['Mixer tous les ingrédients.','Servir à la cuillère ou dans un petit verre, assis.']},
+ {id:'pe297',titre:'Yaourt nature et salade de fruits en petits dés',min:18,type:'goûter',ing:[['yaourt nature',100],['pomme',30],['poire',30],['kiwi',20]],
+  etapes:['Éplucher les fruits et les couper en petits dés (rien de rond entier).','Mélanger au yaourt nature.']},
+ {id:'pe298',titre:'Sandwich tendre au fromage frais et concombre',min:18,type:'goûter',ing:[['pain',30],['fromage frais',15],['concombre',20]],
+  etapes:['Éplucher et épépiner le concombre, le râper finement.','Tartiner le pain de fromage frais, ajouter le concombre.','Couper en petits carrés.']},
+ {id:'pe299',titre:'Gaufres moelleuses à la banane',min:18,type:'goûter',ing:[['farine de blé',30],['banane',50],['oeuf',20],['lait',40]],
+  etapes:['Écraser la banane, mélanger avec œuf, lait et farine.','Cuire dans un gaufrier jusqu\'à dorure (bien cuit).','Laisser tiédir, couper en bâtonnets.']},
+ {id:'pe300',titre:'Barres de céréales maison aux pommes',min:18,type:'goûter',ing:[['flocons d\'avoine',35],['pomme',50],['banane',30]],
+  etapes:['Mixer pomme et banane.','Mélanger aux flocons et étaler dans un moule.','Cuire au four à 180 °C, 20 min.','Laisser refroidir et couper en barres.']},
+ {id:'pe301',titre:'Fromage blanc et mangue',min:18,type:'goûter',ing:[['fromage blanc',80],['mangue',50]],
+  etapes:['Couper la mangue bien mûre en petits dés.','Mélanger au fromage blanc nature.']},
+ {id:'pe302',titre:'Clafoutis à la poire sans sucre ajouté',min:18,type:'goûter',ing:[['poire',60],['oeuf',25],['lait',50],['farine de blé',20]],
+  etapes:['Mélanger œuf, lait et farine.','Disposer la poire en petits dés dans un moule.','Verser la pâte et cuire au four à 180 °C, 25 min.','Couper en petits morceaux.']},
+ {id:'pe303',titre:'Cake à la courgette et au fromage',min:18,type:'goûter',ing:[['courgette',50],['oeuf',20],['farine de blé',30],['gruyère',10],['huile d\'olive',5]],
+  etapes:['Râper la courgette et bien l\'essorer.','Mélanger avec œuf, farine, huile et gruyère.','Cuire au four à 180 °C, 30 min.','Laisser refroidir, couper en petits morceaux.']},
+ {id:'pe304',titre:'Tartine de purée d\'amande et de banane',min:18,type:'goûter',ing:[['pain',25],['purée d\'amande',5],['banane',40]],
+  etapes:['Étaler très finement la purée d\'amande.','Ajouter la banane en fines rondelles coupées en deux.','Couper en petits morceaux.']},
+ {id:'pe305',titre:'Pancakes à la pomme et à la cannelle',min:18,type:'goûter',ing:[['farine de blé',30],['yaourt nature',40],['oeuf',20],['pomme',40],['cannelle',1]],
+  etapes:['Mélanger farine, yaourt et œuf.','Ajouter la pomme râpée et une pointe de cannelle.','Cuire à la poêle 2 min de chaque côté.','Couper en petites parts.']},
+ {id:'pe306',titre:'Semoule au lait et à la compote',min:18,type:'goûter',ing:[['semoule',20],['lait',120],['pomme',40]],
+  etapes:['Chauffer le lait et verser la semoule en pluie, cuire 5 min.','Ajouter la compote de pomme sans sucre.','Laisser tiédir.']},
+ {id:'pe307',titre:'Smoothie bowl fraise-banane et flocons',min:18,type:'goûter',ing:[['fraises',40],['banane',50],['yaourt nature',80],['flocons d\'avoine',10]],
+  etapes:['Mixer fraises, banane et yaourt.','Verser dans un bol et parsemer de flocons.','Manger à la cuillère.']},
+ {id:'pe308',titre:'Biscuits sablés au yaourt et à la poudre d\'amandes',min:18,type:'goûter',ing:[['farine de blé',30],['yaourt nature',20],['poudre d\'amandes',10],['huile de colza',5]],
+  etapes:['Mélanger tous les ingrédients en pâte.','Étaler et découper de petits biscuits.','Cuire au four à 170 °C, 15 min.','Laisser refroidir.']}
+
 
 
 
