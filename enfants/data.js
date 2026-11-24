@@ -587,7 +587,32 @@ recettes:[
  {id:'pe259',titre:'Compote de pommes et coings',min:6,type:'goûter',ing:[['pomme',50],['coing',40]],
   etapes:['Éplucher et couper les fruits.','Cuire à feu doux 20 min avec un peu d\'eau.','Mixer très finement. Sans sucre ajouté.']},
  {id:'pe260',titre:'Crème de riz à la pomme',min:6,type:'goûter',ing:[['farine de riz',10],['lait infantile',150],['pomme',40]],
-  etapes:['Chauffer le lait infantile.','Verser la farine de riz en pluie et cuire 3 min.','Ajouter la pomme cuite et mixée.','Laisser tiédir.']}
+  etapes:['Chauffer le lait infantile.','Verser la farine de riz en pluie et cuire 3 min.','Ajouter la pomme cuite et mixée.','Laisser tiédir.']},
+ {id:'pe261',titre:'Yaourt nature, banane écrasée et flocons d\'avoine',min:8,type:'goûter',ing:[['yaourt nature',100],['banane',40],['flocons d\'avoine',10]],
+  etapes:['Écraser la banane à la fourchette.','Mélanger au yaourt nature.','Ajouter les flocons d\'avoine mixés finement.']},
+ {id:'pe262',titre:'Compote de pommes avec petits morceaux fondants',min:8,type:'goûter',ing:[['pomme',80],['poire',30]],
+  etapes:['Éplucher et couper les fruits en petits dés.','Cuire à feu doux jusqu\'à ce qu\'ils soient très fondants.','Écraser à la fourchette en laissant quelques petits morceaux. Sans sucre ajouté.']},
+ {id:'pe263',titre:'Fromage blanc à la mangue écrasée',min:8,type:'goûter',ing:[['fromage blanc',80],['mangue',50]],
+  etapes:['Écraser la mangue bien mûre à la fourchette.','Mélanger au fromage blanc nature.']},
+ {id:'pe264',titre:'Porridge de flocons d\'avoine à la poire',min:8,type:'goûter',ing:[['flocons d\'avoine',15],['lait infantile',150],['poire',40]],
+  etapes:['Chauffer le lait infantile avec les flocons 5 min en remuant.','Ajouter la poire cuite et écrasée.','Laisser tiédir.']},
+ {id:'pe265',titre:'Petit suisse et purée de pêches',min:8,type:'goûter',ing:[['petit suisse',60],['pêche',50]],
+  etapes:['Cuire la pêche épluchée et l\'écraser.','Mélanger au petit suisse nature (non sucré).']},
+ {id:'pe266',titre:'Bouillie de semoule au lait infantile et pomme',min:8,type:'goûter',ing:[['semoule',15],['lait infantile',150],['pomme',40]],
+  etapes:['Chauffer le lait infantile.','Verser la semoule en pluie et cuire 5 min.','Ajouter la pomme cuite et écrasée.','Laisser tiédir.']},
+ {id:'pe267',titre:'Banane écrasée au yaourt et à la cannelle',min:8,type:'goûter',ing:[['banane',60],['yaourt nature',80],['cannelle',1]],
+  etapes:['Écraser la banane à la fourchette.','Mélanger au yaourt avec une pointe de cannelle.']},
+ {id:'pe268',titre:'Salade de fruits cuits écrasés',min:8,type:'goûter',ing:[['pomme',40],['poire',40],['banane',30]],
+  etapes:['Cuire pomme et poire en dés très fondants.','Ajouter la banane.','Écraser à la fourchette. Sans sucre ajouté.']},
+ {id:'pe269',titre:'Crème dessert maison au lait infantile',min:8,type:'goûter',ing:[['lait infantile',150],['maïzena',5],['pomme',30]],
+  etapes:['Délayer la maïzena dans un peu de lait froid.','Chauffer le reste du lait, ajouter le mélange et cuire 3 min en remuant.','Ajouter la compote de pomme.','Laisser tiédir (sans sucre ajouté).']},
+ {id:'pe270',titre:'Purée de fruits rouges et yaourt',min:8,type:'goûter',ing:[['fraises',30],['framboises',20],['yaourt nature',80]],
+  etapes:['Mixer les fruits et passer au tamis pour retirer les pépins.','Mélanger au yaourt nature.']},
+ {id:'pe271',titre:'Pain tendre sans croûte et compote',min:8,type:'goûter',ing:[['pain',15],['pomme',50]],
+  etapes:['Retirer la croûte et griller légèrement le pain.','Couper en bâtonnets à saisir.','Servir avec une compote de pomme sans sucre.']},
+ {id:'pe272',titre:'Fingers de banane cuits à la vapeur',min:8,type:'goûter',ing:[['banane',70]],
+  etapes:['Couper la banane en bâtonnets.','Cuire à la vapeur 3 min pour qu\'elle soit tendre mais tienne.','Laisser tiédir : à saisir avec les doigts.']}
+
 
 
 
