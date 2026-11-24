@@ -683,7 +683,32 @@ recettes:[
  {id:'pe307',titre:'Smoothie bowl fraise-banane et flocons',min:18,type:'goûter',ing:[['fraises',40],['banane',50],['yaourt nature',80],['flocons d\'avoine',10]],
   etapes:['Mixer fraises, banane et yaourt.','Verser dans un bol et parsemer de flocons.','Manger à la cuillère.']},
  {id:'pe308',titre:'Biscuits sablés au yaourt et à la poudre d\'amandes',min:18,type:'goûter',ing:[['farine de blé',30],['yaourt nature',20],['poudre d\'amandes',10],['huile de colza',5]],
-  etapes:['Mélanger tous les ingrédients en pâte.','Étaler et découper de petits biscuits.','Cuire au four à 170 °C, 15 min.','Laisser refroidir.']}
+  etapes:['Mélanger tous les ingrédients en pâte.','Étaler et découper de petits biscuits.','Cuire au four à 170 °C, 15 min.','Laisser refroidir.']},
+ {id:'pe309',titre:'Yaourt nature, fruits frais et flocons d\'avoine',min:24,type:'goûter',ing:[['yaourt nature',100],['pomme',40],['banane',30],['flocons d\'avoine',10]],
+  etapes:['Couper les fruits en petits dés.','Mélanger au yaourt.','Parsemer de flocons d\'avoine.']},
+ {id:'pe310',titre:'Crêpes roulées au fromage frais et aux fruits',min:24,type:'goûter',ing:[['farine de blé',30],['lait',60],['oeuf',20],['fromage frais',15],['fraises',40]],
+  etapes:['Cuire de fines crêpes (farine, lait, œuf).','Tartiner de fromage frais et garnir de fraises en petits dés.','Rouler et couper en tronçons.']},
+ {id:'pe311',titre:'Gâteau au yaourt aux pommes',min:24,type:'goûter',ing:[['yaourt nature',60],['pomme',50],['oeuf',25],['farine de blé',40],['huile de colza',8]],
+  etapes:['Mélanger yaourt, œuf, huile et farine.','Ajouter la pomme en petits dés.','Cuire au four à 180 °C, 30 min.','Laisser refroidir, couper en parts.']},
+ {id:'pe312',titre:'Cookies à l\'avoine, banane et pépites de chocolat noir',min:24,type:'goûter',ing:[['flocons d\'avoine',35],['banane',60],['chocolat noir',8]],
+  etapes:['Écraser la banane et mélanger avec les flocons.','Ajouter le chocolat noir haché finement.','Former des palets et cuire au four à 180 °C, 15 min.']},
+ {id:'pe313',titre:'Brioche maison à la compote (sans sucre ajouté)',min:24,type:'goûter',ing:[['farine de blé',40],['oeuf',20],['lait',30],['pomme',40],['beurre',8]],
+  etapes:['Mélanger farine, œuf, lait, beurre fondu et compote.','Verser dans un petit moule.','Cuire au four à 180 °C, 25 min.','Couper en tranches.']},
+ {id:'pe314',titre:'Smoothie mangue-banane et tartine de fromage frais',min:24,type:'goûter',ing:[['mangue',50],['banane',40],['yaourt nature',60],['pain',20],['fromage frais',10]],
+  etapes:['Mixer mangue, banane et yaourt.','Tartiner le pain de fromage frais.','Servir le smoothie dans un verre, assis.']},
+ {id:'pe315',titre:'Muffins aux fruits rouges',min:24,type:'goûter',ing:[['framboises',30],['farine de blé',35],['oeuf',20],['yaourt nature',40],['huile de colza',5]],
+  etapes:['Mélanger œuf, yaourt, huile et farine.','Ajouter les framboises écrasées.','Cuire en moules à muffins 20 min à 180 °C.','Couper en petits morceaux.']},
+ {id:'pe316',titre:'Tartine de purée d\'amande, compote et cannelle',min:24,type:'goûter',ing:[['pain',30],['purée d\'amande',5],['pomme',50],['cannelle',1]],
+  etapes:['Étaler très finement la purée d\'amande sur le pain.','Ajouter la compote et une pointe de cannelle.','Couper en petits morceaux.']},
+ {id:'pe317',titre:'Pudding de pain à la poire',min:24,type:'goûter',ing:[['pain',30],['lait',80],['oeuf',20],['poire',50]],
+  etapes:['Faire tremper le pain dans le lait et l\'œuf battu.','Ajouter la poire en petits dés.','Cuire au four à 180 °C, 25 min (bien cuit à cœur).','Laisser tiédir.']},
+ {id:'pe318',titre:'Fromage blanc, kiwi et poudre de noisettes',min:24,type:'goûter',ing:[['fromage blanc',80],['kiwi',40],['poudre de noisettes',3]],
+  etapes:['Couper le kiwi épluché en petits dés.','Mélanger au fromage blanc.','Saupoudrer de poudre de noisettes (jamais de noisettes entières).']},
+ {id:'pe319',titre:'Crackers maison au gruyère et crudités tendres',min:24,type:'goûter',ing:[['farine de blé',30],['gruyère',15],['huile d\'olive',5],['concombre',30],['carotte',30]],
+  etapes:['Mélanger farine, gruyère râpé, huile et un peu d\'eau.','Étaler finement, découper en carrés et cuire à 180 °C, 12 min.','Servir avec concombre épluché et carotte râpée.']},
+ {id:'pe320',titre:'Panna cotta au yaourt et coulis de fraises',min:24,type:'goûter',ing:[['yaourt nature',100],['fraises',50],['agar-agar',1]],
+  etapes:['Chauffer un peu de yaourt avec l\'agar-agar 2 min, mélanger au reste du yaourt.','Laisser prendre au frais 2 h.','Mixer les fraises en coulis et verser dessus.']}
+
 
 
 
