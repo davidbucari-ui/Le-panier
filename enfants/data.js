@@ -5,13 +5,15 @@ g.PE_DATA={
 version:1,
 avertissement:"Base de départ indicative, rédigée sans validation médicale. À faire valider par un professionnel de santé (pédiatre, PMI) ou le protocole de votre crèche avant tout usage. Elle ne remplace pas leur avis.",
 
-/* Tranches d'âge. facteur = part de la portion de référence (12-36 mois). min/max en mois. */
+/* Tranches d'âge. facteur = part de la portion de référence (24-36 mois). min/max en mois. */
 ages:[
  {id:'0-6',label:'0 à 6 mois',min:0,max:6,facteur:0,texture:'Lait maternel ou infantile uniquement. Pas d\'aliment solide sans avis médical.'},
  {id:'6-8',label:'6 à 8 mois',min:6,max:8,facteur:0.5,texture:'Lisse : mixée très finement, sans morceaux.'},
  {id:'8-10',label:'8 à 10 mois',min:8,max:10,facteur:0.6,texture:'Mouliné ou écrasé à la fourchette.'},
  {id:'10-12',label:'10 à 12 mois',min:10,max:12,facteur:0.7,texture:'Écrasé avec de petits morceaux fondants ; bâtonnets tendres à saisir.'},
- {id:'12-36',label:'12 à 36 mois',min:12,max:36,facteur:1,texture:'Petits morceaux tendres, coupés ; viande hachée ou très tendre.'}
+ {id:'12-18',label:'12 à 18 mois',min:12,max:18,facteur:0.8,texture:'Petits morceaux tendres, coupés ; viande hachée ou très tendre ; premiers essais à la cuillère.'},
+ {id:'18-24',label:'18 à 24 mois',min:18,max:24,facteur:0.9,texture:'Morceaux coupés, viande tendre ; mange de plus en plus seul à la cuillère et à la fourchette.'},
+ {id:'24-36',label:'24 à 36 mois',min:24,max:36,facteur:1,texture:'Morceaux à croquer coupés selon les risques d\'étouffement ; autonomie aux couverts.'}
 ],
 
 /* Composition indicative d'un repas selon l'âge (grammes, à valider : GEMRCN / protocole de la crèche) */
@@ -19,7 +21,9 @@ portions:[
  {age:'6-8',legumes:'100 g',feculents:'30 g',viande:'10 g (ou ¼ d\'œuf)',fruit:'60 g'},
  {age:'8-10',legumes:'120 g',feculents:'40 g',viande:'15 g (ou ⅓ d\'œuf)',fruit:'70 g'},
  {age:'10-12',legumes:'130 g',feculents:'50 g',viande:'20 g (ou ½ œuf)',fruit:'80 g'},
- {age:'12-36',legumes:'150 g',feculents:'80 g (cuits)',viande:'25 g (ou ½ œuf)',fruit:'100 g'}
+ {age:'12-18',legumes:'120 g',feculents:'60 g (cuits)',viande:'20 g (ou ½ œuf)',fruit:'80 g'},
+ {age:'18-24',legumes:'135 g',feculents:'70 g (cuits)',viande:'22 g (ou ½ œuf)',fruit:'90 g'},
+ {age:'24-36',legumes:'150 g',feculents:'80 g (cuits)',viande:'25 g (ou ½ œuf)',fruit:'100 g'}
 ],
 
 /* 14 allergènes à déclaration obligatoire (UE). Détection par mots-clés dans le nom de l'ingrédient (sans accents). */
@@ -57,12 +61,12 @@ interdits:[
 /* Repères généraux affichés dans l'onglet Règles */
 regles:[
  {titre:'0 à 6 mois',items:['Lait maternel ou lait infantile uniquement.','La diversification ne commence pas avant 4 mois révolus, en général vers 6 mois, sur avis du médecin.']},
- {titre:'Textures par âge',items:['6-8 mois : lisse.','8-10 mois : mouliné, écrasé.','10-12 mois : petits morceaux fondants, bâtonnets tendres.','12-36 mois : petits morceaux, viande hachée ou très tendre.']},
+ {titre:'Textures par âge',items:['6-8 mois : lisse.','8-10 mois : mouliné, écrasé.','10-12 mois : petits morceaux fondants, bâtonnets tendres.','12-18 mois : petits morceaux tendres, viande hachée.','18-24 mois : morceaux coupés, viande tendre.','24-36 mois : morceaux à croquer coupés selon les risques d\'étouffement, autonomie aux couverts.']},
  {titre:'Cuisson et hygiène',items:['Viande, poisson et œufs toujours bien cuits à cœur.','Poisson : retirer toutes les arêtes.','Ne pas réchauffer plusieurs fois un plat ; jeter les restes de l\'assiette.']},
  {titre:'Allergènes',items:['Les 14 allergènes réglementaires sont détectés automatiquement d\'après le nom des ingrédients : vérifier toujours les étiquettes.','Un allergène nouveau s\'introduit en petite quantité, à la maison d\'abord, selon l\'avis du médecin et le protocole de la crèche.']}
 ],
 
-/* Recettes : ing = [nom, grammes] pour UNE portion de référence (12-36 mois) ; min = âge minimal en mois. */
+/* Recettes : ing = [nom, grammes] pour UNE portion de référence (24-36 mois) ; min = âge minimal en mois. */
 recettes:[
  {id:'pe1',titre:'Purée de carottes et pommes de terre',min:6,type:'plat',ing:[['carotte',100],['pomme de terre',50],['huile de colza',3]],
   etapes:['Éplucher et couper les légumes.','Cuire à la vapeur ou à l\'eau jusqu\'à tendreté.','Mixer avec un peu d\'eau de cuisson selon la texture voulue.','Ajouter l\'huile de colza hors du feu.']},

@@ -58,7 +58,7 @@ function shopping(menu,recs,kids){ // {lignes:[{n,g}], avertissements:[...]}
 }
 
 /* ---------- interface ---------- */
-var AGE_UI={'0-6':['🍼','#ffe0ea','#ff9fbd'],'6-8':['🥄','#d6f2e4','#7fd3a6'],'8-10':['🥕','#ffe6c7','#ffb866'],'10-12':['🍌','#fff3b8','#ffd93d'],'12-36':['🍝','#dcebff','#7db7ff']};
+var AGE_UI={'0-6':['🍼','#ffe0ea','#ff9fbd'],'6-8':['🥄','#d6f2e4','#7fd3a6'],'8-10':['🥕','#ffe6c7','#ffb866'],'10-12':['🍌','#fff3b8','#ffd93d'],'12-18':['🍝','#dcebff','#7db7ff'],'18-24':['🥦','#e3dcff','#a590ff'],'24-36':['🍗','#ffdcf0','#ff8fcf']};
 var TYPE_UI={'plat':['🍽️','#ffb866'],'dîner':['🌙','#a99af0'],'dessert':['🍓','#ff9fbd'],'goûter':['🍪','#ffd93d']};
 var CSS='.pe{font:17px/1.5 ui-rounded,"SF Pro Rounded","Nunito","Quicksand",system-ui,sans-serif;color:#4a3b52;max-width:980px;margin:0 auto;padding:14px}'+
 '.pe h2{margin:.2em 0 .4em;font-size:1.35rem;color:#7a4fb3}.pe h3{margin:.2em 0;font-size:1.1rem;color:#5b3f8c}.pe .hello{font-size:1.6rem;color:#ff7a59;margin:.1em 0 .3em}'+
@@ -88,7 +88,7 @@ function mount(root,opts){
   opts=opts||{};
   var KEY=opts.storageKey||'petite-enfance-v1';
   var st={tab:'recettes',age:'6-8',sans:[],q:'',kids:{},menu:{},custom:[],form:false};
-  try{var s=JSON.parse(localStorage.getItem(KEY)||'null');if(s&&typeof s==='object'){st.age=s.age||st.age;st.kids=s.kids||{};st.menu=s.menu||{};st.custom=Array.isArray(s.custom)?s.custom:[]}}catch(e){}
+  try{var s=JSON.parse(localStorage.getItem(KEY)||'null');if(s&&typeof s==='object'){st.age=s.age||st.age;st.kids=s.kids||{};if(st.age==='12-36')st.age='12-18';if(st.kids['12-36']!=null){st.kids['24-36']=(Number(st.kids['24-36'])||0)+(Number(st.kids['12-36'])||0);delete st.kids['12-36']}if(!ageOf(st.age))st.age='6-8';st.menu=s.menu||{};st.custom=Array.isArray(s.custom)?s.custom:[]}}catch(e){}
   var save=function(){try{localStorage.setItem(KEY,JSON.stringify({age:st.age,kids:st.kids,menu:st.menu,custom:st.custom}))}catch(e){}};
   var recs=function(){return D.recettes.concat(st.custom)};
   var JOURS=[['lun','Lundi'],['mar','Mardi'],['mer','Mercredi'],['jeu','Jeudi'],['ven','Vendredi']];
@@ -122,7 +122,7 @@ function mount(root,opts){
   function formHtml(){
     return '<div class="card"><h3>Ma recette</h3><label>Titre<input type="text" id="pf-t"></label><div class="grid"><label>À partir de (mois)<input type="number" id="pf-m" value="12" min="4" max="36"></label>'+
       '<label>Type<select id="pf-ty"><option>plat</option><option>dessert</option><option>goûter</option></select></label></div>'+
-      '<label>Ingrédients pour une portion de 12-36 mois (une ligne chacun, ex. « 100 g carotte »)<textarea id="pf-i" rows="5"></textarea></label>'+
+      '<label>Ingrédients pour une portion de 24-36 mois (une ligne chacun, ex. « 100 g carotte »)<textarea id="pf-i" rows="5"></textarea></label>'+
       '<label>Étapes (une par ligne)<textarea id="pf-e" rows="4"></textarea></label><p id="pf-msg" class="al-msg" role="alert"></p><button class="btn" data-act="save-form">Enregistrer</button></div>';
   }
   function tabPortions(){
@@ -130,7 +130,7 @@ function mount(root,opts){
       D.ages.filter(function(a){return a.facteur}).map(function(a){return'<label>'+esc(a.label)+'<input type="number" min="0" max="200" data-kids="'+a.id+'" value="'+(Number(st.kids[a.id])||0)+'"></label>'}).join('')+'</div>'+
       '<h2>Composition indicative d\'un repas</h2><table><tr><th>Âge</th><th>Légumes</th><th>Féculents</th><th>Viande, poisson, œuf</th><th>Fruit</th></tr>'+
       D.portions.map(function(p){return'<tr><td>'+esc(ageOf(p.age).label)+'</td><td>'+esc(p.legumes)+'</td><td>'+esc(p.feculents)+'</td><td>'+esc(p.viande)+'</td><td>'+esc(p.fruit)+'</td></tr>'}).join('')+'</table>'+
-      '<p class="hint">Valeurs indicatives, à ajuster selon votre protocole. Les quantités des recettes sont calculées pour 12-36 mois puis réduites (6-8 mois : ×0,5 ; 8-10 : ×0,6 ; 10-12 : ×0,7).</p>';
+      '<p class="hint">Valeurs indicatives, à ajuster selon votre protocole. Les quantités des recettes sont calculées pour 24-36 mois puis réduites (6-8 mois : ×0,5 ; 8-10 : ×0,6 ; 10-12 : ×0,7 ; 12-18 : ×0,8 ; 18-24 : ×0,9).</p>';
     return h;
   }
   function tabMenus(){
