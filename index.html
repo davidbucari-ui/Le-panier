@@ -1058,19 +1058,30 @@ function nutGrams(i){
   return null;
 }
 const nutMed=a=>{a=a.filter(Number.isFinite).sort((x,y)=>x-y);return a.length?a[a.length>>1]:null};
-async function nutFetch(name){
-  const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),8000);
+// une source : renvoie la liste des produits {nutriments} ou une chaîne d'erreur ('limit', 'err:motif')
+async function nutGet(url,pick){
+  const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),20000);
   try{
-    const r=await fetch('https://world.openfoodfacts.org/cgi/search.pl?search_simple=1&action=process&json=1&page_size=15&sort_by=unique_scans_n&fields=nutriments&search_terms='+encodeURIComponent(name),{signal:ctl.signal});
-    if(r.status===429||r.status===503)return'limit';
-    if(!r.ok)return'err';
-    const j=await r.json();
-    const ps=((j&&j.products)||[]).map(p=>p.nutriments||{}).filter(n=>n['energy-kcal_100g']!==undefined&&n['proteins_100g']!==undefined);
-    if(ps.length<2)return null;
-    const f=key=>nutMed(ps.map(n=>Number(n[key])));
-    const v={k:f('energy-kcal_100g'),p:f('proteins_100g'),c:f('carbohydrates_100g'),l:f('fat_100g')};
-    return v.k===null?null:v;
-  }catch(e){return'err'}finally{clearTimeout(to)}
+    const r=await fetch(url,{signal:ctl.signal});
+    if(r.status===429)return'limit';
+    if(!r.ok)return'err:HTTP '+r.status;
+    return pick(await r.json());
+  }catch(e){return e&&e.name==='AbortError'?'err:trop long (20 s)':'err:réseau ou accès refusé'}finally{clearTimeout(to)}
+}
+async function nutFetch(name){
+  const q=encodeURIComponent(name);
+  // 1) recherche classique (lente par moments) ; 2) moteur de recherche récent d'Open Food Facts
+  let ps=await nutGet('https://world.openfoodfacts.org/cgi/search.pl?search_simple=1&action=process&json=1&page_size=15&sort_by=unique_scans_n&fields=nutriments&search_terms='+q,j=>(j&&j.products)||[]);
+  if(typeof ps==='string'&&ps!=='limit'){
+    const alt=await nutGet('https://search.openfoodfacts.org/search?page_size=15&fields=nutriments&q='+q,j=>(j&&(j.hits||j.products))||[]);
+    if(Array.isArray(alt))ps=alt;
+  }
+  if(typeof ps==='string')return ps;
+  const ns=ps.map(p=>p.nutriments||{}).filter(n=>n['energy-kcal_100g']!==undefined&&n['proteins_100g']!==undefined);
+  if(ns.length<2)return null;
+  const f=key=>nutMed(ns.map(n=>Number(n[key])));
+  const v={k:f('energy-kcal_100g'),p:f('proteins_100g'),c:f('carbohydrates_100g'),l:f('fat_100g')};
+  return v.k===null?null:v;
 }
 // total par personne ; miss = lignes non comptées ; need = lignes dont la valeur n'a pas encore été cherchée
 function nutOf(r){
@@ -1104,7 +1115,7 @@ async function nutCalc(id){
   for(const [k,name] of todo){
     const v=await nutFetch(name);
     if(v==='limit'){stop='Open Food Facts limite les requêtes : réessayez dans une minute.';break}
-    if(v==='err'){stop='Open Food Facts est injoignable : vérifiez le réseau.';break}
+    if(typeof v==='string'&&v.startsWith('err:')){stop='Open Food Facts est injoignable ('+v.slice(4)+').';break}
     NUT[k]=v;saveNut();renderRecipes();
     await new Promise(res=>setTimeout(res,1200));   // la recherche est limitée à ~10 requêtes par minute
   }
