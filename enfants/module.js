@@ -35,10 +35,17 @@ function parseLine(l){ // « 100 g carotte », « 2 cl d'huile », « sel » →
 }
 var VPO=/\b(poulet|dinde|boeuf|veau|porc|jambon|lardons?|saumon|thon|cabillaud|colin|poisson|crevettes?|oeufs?|steak|agneau|saucisses?)\b/;
 function hasVPO(r){return r.ing.some(function(i){return VPO.test(nk(i[0]))})} // viande, poisson ou œuf
-function groupFactor(r,kids){ // somme(nb enfants × facteur) des tranches auxquelles la recette convient ; + enfants non concernés
+var DAIRY=/\b(yaourts?|fromage blanc|petits? suisses?|lait(?! de coco)|fromage frais|kefir|creme|gruyere|comte)\b/,CEREAL=/\b(semoule|flocons?|farine|pain|riz|pates?|biscuits?|galette|boulgour|quinoa|polenta|brioche|maizena)\b/;
+function famOf(r){ // famille d'un goûter : laitage, céréale ou fruit (r.fam l'emporte ; sinon d'après le premier ingrédient)
+  if(r.fam)return r.fam;
+  var t=r.ing&&r.ing[0]?nk(r.ing[0][0]):'';
+  return DAIRY.test(t)?'laitage':CEREAL.test(t)?'cereale':'fruit';
+}
+function inRange(a,range){return range==='lt18'?a.min<18:range==='ge18'?a.min>=18:true} // goûter : < 18 mois = laitage + fruit/céréale ; dès 18 mois = un seul goûter
+function groupFactor(r,kids,range){ // somme(nb enfants × facteur) des tranches auxquelles la recette convient ; + enfants non concernés
   var f=0,bad=[];
   D.ages.forEach(function(a){
-    var n=Number(kids[a.id])||0;if(!n||!a.facteur)return;
+    var n=Number(kids[a.id])||0;if(!n||!a.facteur||!inRange(a,range))return;
     if(r.min<=a.min&&!alertsFor(r,a).length)f+=n*a.facteur;else bad.push({age:a,n:n});
   });
   return{f:f,bad:bad};
@@ -49,9 +56,9 @@ function shopping(menu,recs,kids){ // {lignes:[{n,g}], avertissements:[...]}
   Object.keys(menu).forEach(function(slot){
     var r=byId[menu[slot]];if(!r)return;
     if(/-(din|pdj)$/.test(slot))return; // le petit-déjeuner et le dîner sont proposés aux parents : pas servi à la crèche, pas dans la liste de courses
-    var gf=groupFactor(r,kids);
+    var gf=groupFactor(r,kids,/-(gla|gfr)$/.test(slot)?'lt18':/-gou$/.test(slot)?'ge18':'');
     gf.bad.forEach(function(b){warn.push(r.titre+' ('+slot.split('-').slice(0,1)+') ne convient pas aux '+b.age.label+' ('+b.n+' enfant'+(b.n>1?'s':'')+').')});
-    r.ing.forEach(function(i){var k=nk(i[0]);names[k]=names[k]||i[0];tot[k]=(tot[k]||0)+i[1]*gf.f});
+    r.ing.forEach(function(i){if(!gf.f&&i[1]>0)return;var k=nk(i[0]);names[k]=names[k]||i[0];tot[k]=(tot[k]||0)+i[1]*gf.f});
   });
   var lignes=Object.keys(tot).sort().map(function(k){return{n:names[k],g:tot[k]}});
   return{lignes:lignes,avertissements:warn};
@@ -60,11 +67,12 @@ function shopping(menu,recs,kids){ // {lignes:[{n,g}], avertissements:[...]}
 /* ---------- interface ---------- */
 var AGE_UI={'0-6':['🍼','#ffe0ea','#ff9fbd'],'6-8':['🥄','#d6f2e4','#7fd3a6'],'8-10':['🥕','#ffe6c7','#ffb866'],'10-12':['🍌','#fff3b8','#ffd93d'],'12-18':['🍝','#dcebff','#7db7ff'],'18-24':['🥦','#e3dcff','#a590ff'],'24-36':['🍗','#ffdcf0','#ff8fcf']};
 var ING_EMO=[[/\b(carottes?)\b/,'🥕'],[/\b(patates? douces?)\b/,'🍠'],[/\bpommes? de terre\b/,'🥔'],[/\b(courgettes?|concombres?)\b/,'🥒'],[/\b(brocolis?|chou-?fleur|choux?)\b/,'🥦'],[/\b(epinards?|blettes?|salade)\b/,'🥬'],[/\b(petits? pois|haricots? verts?|fenouil|poireaux?|navets?|panais|celeri[- ]?rave)\b/,'🌱'],[/\btomates?\b/,'🍅'],[/\baubergines?\b/,'🍆'],[/\bpoivrons?\b/,'🫑'],[/\bmais\b/,'🌽'],[/\bchampignons?\b/,'🍄'],[/\b(potiron|potimarron|butternut|courge)\b/,'🎃'],[/\bavocats?\b/,'🥑'],
-[/\b(pommes?)\b/,'🍎'],[/\b(poires?|coings?)\b/,'🍐'],[/\bbananes?\b/,'🍌'],[/\b(fraises?|framboises?)\b/,'🍓'],[/\bmangues?\b/,'🥭'],[/\b(peches?|abricots?)\b/,'🍑'],[/\boranges?\b/,'🍊'],[/\bkiwis?\b/,'🥝'],[/\bmelons?\b/,'🍈'],[/\bpruneaux\b/,'🍇'],
+[/\b(pommes?)\b/,'🍎'],[/\b(poires?|coings?)\b/,'🍐'],[/\bbananes?\b/,'🍌'],[/\b(fraises?|framboises?)\b/,'🍓'],[/\bmangues?\b/,'🥭'],[/\b(peches?|abricots?)\b/,'🍑'],[/\b(oranges?|mandarines?|clementines?)\b/,'🍊'],[/\bkiwis?\b/,'🥝'],[/\bmelons?\b/,'🍈'],[/\bpruneaux\b/,'🍇'],
 [/\b(poulet|dinde)\b/,'🍗'],[/\b(boeuf|veau|steak)\b/,'🥩'],[/\b(jambon|saucisse)/,'🥓'],[/\b(saumon|cabillaud|colin|merlu|thon|poisson)\b/,'🐟'],[/\boeufs?\b/,'🥚'],
 [/\briz\b/,'🍚'],[/\b(pates?|spaghettis?|macaronis?|gnocchis?|lasagnes?|vermicelles?)\b/,'🍝'],[/\b(semoule|boulgour|quinoa|couscous|polenta|flocons?)\b/,'🌾'],[/\b(pain|chapelure|brioche)\b/,'🍞'],[/\bgalette\b/,'🌯'],[/\b(lentilles?|pois chiches?|haricots? (?:rouges?|blancs?))\b/,'🫘'],[/\bchocolat\b/,'🍫'],[/\b(amandes?|noisettes?)\b/,'🌰'],
 [/\b(yaourts?|fromage blanc|petits? suisses?|lait|creme)\b/,'🥛'],[/\b(fromage frais|gruyere|mozzarella|ricotta|comte)\b/,'🧀']];
 function emojisOf(r,n){ // jusqu'à n pastilles d'après les ingrédients (dans l'ordre de la recette)
+  if(r.emo)return r.emo.slice(0,n);
   var out=[];(r.ing||[]).forEach(function(i){
     var t=nk(i[0]);
     for(var k=0;k<ING_EMO.length;k++)if(ING_EMO[k][0].test(t)){if(out.indexOf(ING_EMO[k][1])<0&&out.length<n)out.push(ING_EMO[k][1]);break}
@@ -101,7 +109,7 @@ var CSS='.pe{font:17px/1.5 ui-rounded,"SF Pro Rounded","Nunito","Quicksand",syst
 
 function menuText(menu,recs){ // menu de la semaine à transmettre aux parents
   var byId={};recs.forEach(function(r){byId[r.id]=r});
-  var J=[['lun','Lundi'],['mar','Mardi'],['mer','Mercredi'],['jeu','Jeudi'],['ven','Vendredi']],R=[['pdj','Petit-déjeuner conseillé à la maison'],['dej','Déjeuner'],['des','Dessert'],['gou','Goûter'],['din','Dîner conseillé à la maison']];
+  var J=[['lun','Lundi'],['mar','Mardi'],['mer','Mercredi'],['jeu','Jeudi'],['ven','Vendredi']],R=[['pdj','Petit-déjeuner conseillé à la maison'],['dej','Déjeuner'],['des','Dessert'],['gla','Goûter < 18 mois : laitage'],['gfr','Goûter < 18 mois : fruit ou céréale'],['gou','Goûter (dès 18 mois)'],['din','Dîner conseillé à la maison']];
   var out=['Menu de la semaine'];
   J.forEach(function(j){
     var l=R.map(function(m){var r=byId[menu[j[0]+'-'+m[0]]];return r?'  '+m[1]+' : '+r.titre:''}).filter(Boolean);
@@ -132,7 +140,7 @@ function mount(root,opts){
   var save=function(){st.rev=Date.now();try{localStorage.setItem(KEY,JSON.stringify(snap()))}catch(e){}push()};
   var recs=function(){return D.recettes.concat(st.custom)};
   var JOURS=[['lun','Lundi'],['mar','Mardi'],['mer','Mercredi'],['jeu','Jeudi'],['ven','Vendredi']];
-  var REPAS=[['pdj','Petit-déjeuner (suggestion aux parents)',['petit-déjeuner']],['dej','Déjeuner',['plat']],['des','Dessert',['dessert']],['gou','Goûter',['goûter','dessert']],['din','Dîner (suggestion aux parents)',['dîner','plat']]];
+  var REPAS=[['pdj','Petit-déjeuner (suggestion aux parents)',['petit-déjeuner']],['dej','Déjeuner',['plat']],['des','Dessert',['dessert']],['gla','Goûter < 18 mois : laitage',['goûter','dessert'],['laitage'],1],['gfr','Goûter < 18 mois : fruit ou céréale',['goûter','dessert'],['fruit','cereale'],1],['gou','Goûter (dès 18 mois)',['goûter','dessert']],['din','Dîner (suggestion aux parents)',['dîner','plat']]];
 
   function recipeCard(r){
     var age=ageOf(st.age),al=allergensOf(r),alerts=alertsFor(r,age),n=Number(st.kids[age.id])||0;
@@ -141,7 +149,7 @@ function mount(root,opts){
     return '<article class="card" style="--bd:'+tu[1]+'"><div class="hero" aria-hidden="true">'+em.map(function(e,i){return'<span style="--i:'+i+'">'+e+'</span>'}).join('')+'</div><h3>'+tu[0]+' '+esc(r.titre)+'</h3><div class="meta"><span class="tag">dès '+r.min+' mois</span><span class="tag ty">'+esc(r.type)+'</span>'+
       (r.perso?'<span class="tag">ma recette</span>':'')+al.map(function(id){return'<span class="tag al">'+esc(D.allergenes.filter(function(a){return a.id===id})[0].label)+'</span>'}).join('')+'</div>'+
       alerts.map(function(m){return'<p class="al-msg">⚠ '+esc(m)+'</p>'}).join('')+
-      '<ul class="ing">'+r.ing.map(function(i){var g=i[1]*age.facteur;return'<li>'+esc(i[0])+' : '+(i[1]?'≈ '+fmtG(g)+(n?' <span class="hint">('+fmtG(g*n)+' pour '+n+' enfant'+(n>1?'s':'')+')</span>':''):'<span class="hint">à doser</span>')+'</li>'}).join('')+'</ul>'+
+      (r.ing.length?'':'<p class="hint">Aucun ingrédient à prévoir.</p>')+'<ul class="ing">'+r.ing.map(function(i){var g=i[1]*age.facteur;return'<li>'+esc(i[0])+' : '+(i[1]?'≈ '+fmtG(g)+(n?' <span class="hint">('+fmtG(g*n)+' pour '+n+' enfant'+(n>1?'s':'')+')</span>':''):'<span class="hint">à doser</span>')+'</li>'}).join('')+'</ul>'+
       '<ol>'+(r.etapes||[]).map(function(e){return'<li>'+esc(e)+'</li>'}).join('')+'</ol>'+
       '<p class="hint">Texture à cet âge : '+esc(age.texture)+'</p>'+
       (r.perso?'<button class="btn sec" data-act="del" data-id="'+esc(r.id)+'">Supprimer</button>':'')+'</article>';
@@ -186,10 +194,10 @@ function mount(root,opts){
   function tabMenus(){
     var all=recs(),byId={};all.forEach(function(r){byId[r.id]=r});
     var h='<h2>Menus de la semaine</h2><p class="hint">Choisissez une recette par repas. Les quantités tiennent compte des enfants saisis dans l\'onglet Portions.</p>';
-    h+='<p><button class="btn" data-act="copy-menu">📋 Copier le menu pour les parents</button> <span class="hint" id="pe-copied2"></span></p><p class="hint">Le petit-déjeuner et le dîner sont des suggestions pour les parents : ils ne sont pas comptés dans la liste de courses.</p>';
+    h+='<p><button class="btn" data-act="copy-menu">📋 Copier le menu pour les parents</button> <span class="hint" id="pe-copied2"></span></p><p class="hint">Le petit-déjeuner et le dîner sont des suggestions pour les parents : ils ne sont pas comptés dans la liste de courses.</p><p class="hint">Goûter : avant 18 mois, il se compose de deux éléments (un laitage et un fruit ou une céréale) ; dès 18 mois, un seul goûter.</p>';
     JOURS.forEach(function(j){
       h+='<div class="card"><h3>'+j[1]+'</h3><div class="grid">'+REPAS.map(function(m){
-        var key=j[0]+'-'+m[0],opts=all.filter(function(r){return m[2].indexOf(r.type)>=0});
+        var key=j[0]+'-'+m[0],opts=all.filter(function(r){return m[2].indexOf(r.type)>=0&&(!m[3]||m[3].indexOf(famOf(r))>=0)&&(!m[4]||r.min<18)});
         if(m[0]==='din')opts.sort(function(a,b){return(b.type==='dîner')-(a.type==='dîner')});
         return'<label>'+m[1]+'<select data-slot="'+key+'"><option value="">—</option>'+opts.map(function(r){return'<option value="'+esc(r.id)+'"'+(st.menu[key]===r.id?' selected':'')+'>'+(m[0]==='din'&&!hasVPO(r)?'🌱 ':'')+esc(r.titre)+' (dès '+r.min+' m)</option>'}).join('')+'</select></label>';
       }).join('')+'</div>';
@@ -269,5 +277,5 @@ function mount(root,opts){
   }
   return{state:st,render:render};
 }
-g.PetiteEnfance={hasVPO:hasVPO,mount:mount,nk:nk,allergensOf:allergensOf,alertsFor:alertsFor,parseLine:parseLine,groupFactor:groupFactor,shopping:shopping,menuText:menuText,data:D};
+g.PetiteEnfance={famOf:famOf,hasVPO:hasVPO,mount:mount,nk:nk,allergensOf:allergensOf,alertsFor:alertsFor,parseLine:parseLine,groupFactor:groupFactor,shopping:shopping,menuText:menuText,data:D};
 })(typeof window!=='undefined'?window:globalThis);

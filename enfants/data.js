@@ -707,7 +707,36 @@ recettes:[
  {id:'pe319',titre:'Crackers maison au gruyère et crudités tendres',min:24,type:'goûter',ing:[['farine de blé',30],['gruyère',15],['huile d\'olive',5],['concombre',30],['carotte',30]],
   etapes:['Mélanger farine, gruyère râpé, huile et un peu d\'eau.','Étaler finement, découper en carrés et cuire à 180 °C, 12 min.','Servir avec concombre épluché et carotte râpée.']},
  {id:'pe320',titre:'Panna cotta au yaourt et coulis de fraises',min:24,type:'goûter',ing:[['yaourt nature',100],['fraises',50],['agar-agar',1]],
-  etapes:['Chauffer un peu de yaourt avec l\'agar-agar 2 min, mélanger au reste du yaourt.','Laisser prendre au frais 2 h.','Mixer les fraises en coulis et verser dessus.']}
+  etapes:['Chauffer un peu de yaourt avec l\'agar-agar 2 min, mélanger au reste du yaourt.','Laisser prendre au frais 2 h.','Mixer les fraises en coulis et verser dessus.']},
+ {id:'pe321',titre:'Lait maternel (tétée ou lait exprimé)',min:6,type:'goûter',fam:'laitage',emo:['🤱'],ing:[],
+  etapes:['Tétée, ou lait maternel exprimé et conservé selon les règles d\'hygiène de la crèche.','Réchauffer au bain-marie si besoin, jamais au micro-ondes.']},
+ {id:'pe322',titre:'Biberon de lait infantile',min:6,type:'goûter',ing:[['lait infantile',210]],
+  etapes:['Préparer le biberon selon les indications du fabricant.','Vérifier la température sur le poignet.','Jeter ce qui reste après le repas.']},
+ {id:'pe323',titre:'Lait de croissance',min:10,type:'goûter',ing:[['lait de croissance',200]],
+  etapes:['Préparer ou servir tiède dans un biberon ou un verre adapté.','Jeter ce qui reste après le repas.']},
+ {id:'pe324',titre:'Yaourt nature',min:6,type:'goûter',ing:[['yaourt nature',125]],
+  etapes:['Servir tel quel, à la cuillère, sans sucre ajouté.']},
+ {id:'pe325',titre:'Fromage blanc nature',min:6,type:'goûter',ing:[['fromage blanc',100]],
+  etapes:['Servir tel quel, à la cuillère, sans sucre ajouté.']},
+ {id:'pe326',titre:'Petit suisse nature',min:8,type:'goûter',ing:[['petit suisse',60]],
+  etapes:['Servir nature, non sucré, à la cuillère.']},
+ {id:'pe327',titre:'Petits dés de fromage',min:12,type:'goûter',fam:'laitage',ing:[['gruyère',15]],
+  etapes:['Couper le fromage en tout petits dés ou le râper.','Préférer un fromage à pâte pressée au lait pasteurisé.']},
+ {id:'pe328',titre:'Banane écrasée',min:6,type:'goûter',ing:[['banane',60]],
+  etapes:['Écraser la banane bien mûre à la fourchette, ou la mixer pour les plus petits.']},
+ {id:'pe329',titre:'Poire mûre écrasée',min:6,type:'goûter',ing:[['poire',80]],
+  etapes:['Éplucher la poire bien mûre et l\'écraser, ou la mixer pour les plus petits.']},
+ {id:'pe330',titre:'Compote de pommes nature',min:6,type:'goûter',ing:[['pomme',100]],
+  etapes:['Éplucher, couper et cuire la pomme à feu doux avec un peu d\'eau.','Mixer ou écraser selon l\'âge. Sans sucre ajouté.']},
+ {id:'pe331',titre:'Biscuit pour bébé à fondre',min:8,type:'goûter',ing:[['biscuit bébé',10]],
+  etapes:['Choisir un biscuit qui fond dans la bouche, sans morceaux durs.','Faire manger assis, sous surveillance.']},
+ {id:'pe332',titre:'Pain tendre grillé en bâtonnets',min:10,type:'goûter',ing:[['pain',20]],
+  etapes:['Retirer la croûte, griller légèrement.','Couper en bâtonnets à saisir.']},
+ {id:'pe333',titre:'Dés de pêche mûre',min:12,type:'goûter',ing:[['pêche',80]],
+  etapes:['Éplucher la pêche bien mûre.','Couper en petits dés tendres.']},
+ {id:'pe334',titre:'Quartiers de mandarine pelés',min:12,type:'goûter',ing:[['mandarine',60]],
+  etapes:['Retirer les peaux blanches et les pépins.','Couper chaque quartier en deux.']}
+
 
 
 
