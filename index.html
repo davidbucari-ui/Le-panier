@@ -1710,7 +1710,7 @@ function finishImport(d,url){
 /* ---------- trouver une recette en ligne ---------- */
 // ingrédients de base qu'on ne choisit pas comme point de départ d'une recette
 const FO_SKIP=/\b(sel|poivre|eau|huile|vinaigre|farine|sucre|cafe|the|capsules?|epices?|levure|bicarbonate|moutarde|ketchup|mayonnaise|lait)\b/;
-let FO_SEL=null;
+let FO_SEL=null,FO_FROM=[];
 // terme de recherche : vos mots, coupés à la plus longue partie initiale connue du dictionnaire
 // (« poulet pac fermier j » → « poulet ») ; on ne prend pas le nom générique : « pâtes » deviendrait « pâte »
 function foTerm(name){
@@ -1721,6 +1721,7 @@ function foTerm(name){
 function foItems(){
   const m=new Map();
   for(const st of S.stock){const t=foTerm(st.n),k=norm(t);if(!k||m.has(k))continue;m.set(k,{t,k,r:rayonOf(st.n,st.r),skip:FO_SKIP.test(k)})}
+  for(const w of FO_FROM){const t=foTerm(w),k=norm(t);if(k&&!m.has(k))m.set(k,{t,k,r:rayonOf(t,''),skip:false})}   // ingrédients saisis dans les filtres, même hors stock
   return[...m.values()];
 }
 function foUrl(terms,site){
@@ -1744,7 +1745,7 @@ function foMine(terms){
 function foUpdate(){
   const terms=foTerms(),go=$('#fo-go'),n=terms.length;
   const mine=foMine(terms);
-  $('#fo-mine').innerHTML=!n?'<p class="hint" style="margin:0">Choisissez des ingrédients pour voir les recettes qui les utilisent.</p>':mine.length?mine.map(({r,hit,miss})=>`<div class="fo-rec"><div><b>${esc(r.title)}</b><p class="hint">${hit}/${n} ingrédient${n>1?'s':''} choisi${n>1?'s':''}${miss?` · ${miss} à acheter`:' · rien à acheter'}</p></div><button class="btn sm" data-act="fo-open" data-id="${esc(r.id)}">Voir</button></div>`).join(''):'<p class="hint" style="margin:0">Aucune recette enregistrée n\'utilise ces ingrédients : cherchez en ligne ci-dessous.</p>';
+  $('#fo-mine').innerHTML=!n?'<p class="hint" style="margin:0">Choisissez des ingrédients pour voir les recettes qui les utilisent.</p>':mine.length?mine.map(({r,hit,miss})=>`<div class="fo-rec"><div><b>${esc(r.title)}</b><p class="hint">${hit}/${n} ingrédient${n>1?'s':''} choisi${n>1?'s':''}${miss?` · ${miss} à acheter`:' · rien à acheter'}</p></div><button class="btn sm" data-act="fo-view" data-id="${esc(r.id)}">Voir</button></div>`).join(''):'<p class="hint" style="margin:0">Aucune recette enregistrée n\'utilise ces ingrédients : cherchez en ligne ci-dessous.</p>';
   go.href=n?foUrl(terms,$('#fo-site').value):'#';go.setAttribute('aria-disabled',String(!n));
   $('#fo-count').textContent=!n?'Choisissez au moins un ingrédient.':n>5?`${n} choisis : au-delà de 5, les résultats se raréfient.`:`${n} ingrédient${n>1?'s':''} choisi${n>1?'s':''}.`;
   $('#fo-chips').querySelectorAll('.fchip').forEach(b=>b.setAttribute('aria-pressed',String(FO_SEL.has(b.dataset.t))));
@@ -2203,8 +2204,15 @@ document.addEventListener('click',e=>{
     case 'cook':openCook(id);break;
     case 'ck-close':$('#ck').hidden=true;COOK=null;break;
     case 'ck-ok':confirmCook();break;
-    case 'fo-open':$('#fo-msg').textContent='';$('#fo').hidden=false;foRender();break
-    case 'fo-open':{$('#fo').hidden=true;OPEN.add(b.dataset.id);renderRecipes();const el=document.getElementById('rc-'+b.dataset.id);if(el)el.scrollIntoView({block:'start'});break}
+    case 'fo-open':{
+      $('#fo-msg').textContent='';
+      FO_FROM=F.with.slice();
+      if(FO_FROM.length||F.text.trim()){ // reprend les filtres de l'écran Recettes
+        FO_SEL=new Set(FO_FROM.map(foTerm));
+        $('#fo-extra').value=F.text.trim();
+      }
+      $('#fo').hidden=false;foRender();break}
+    case 'fo-view':{$('#fo').hidden=true;OPEN.add(b.dataset.id);renderRecipes();const el=document.getElementById('rc-'+b.dataset.id);if(el)el.scrollIntoView({block:'start'});break}
     case 'fo-close':$('#fo').hidden=true;break
     case 'fo-tog':{const t=b.dataset.t;FO_SEL.has(t)?FO_SEL.delete(t):FO_SEL.add(t);foUpdate();break}
     case 'fo-paste':(async()=>{
