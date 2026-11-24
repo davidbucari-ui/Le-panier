@@ -443,7 +443,32 @@ recettes:[
  {id:'pe187',titre:'Bouillie de légumes et flocons de riz',min:6,type:'dîner',ing:[['carotte',60],['courgette',50],['farine de riz',10],['huile de colza',3]],
   etapes:['Cuire carotte et courgette, mixer très finement.','Délayer la farine de riz dans un peu d\'eau de cuisson et cuire 3 min.','Mélanger aux légumes, ajouter l\'huile.']},
  {id:'pe188',titre:'Purée de petits pois et poulet',min:6,type:'dîner',ing:[['petits pois',60],['blanc de poulet',20],['pomme de terre',40],['huile de colza',3]],
-  etapes:['Cuire petits pois et pomme de terre.','Cuire le poulet à cœur.','Mixer très finement et passer au tamis.','Ajouter l\'huile.']}
+  etapes:['Cuire petits pois et pomme de terre.','Cuire le poulet à cœur.','Mixer très finement et passer au tamis.','Ajouter l\'huile.']},
+ {id:'pe189',titre:'Écrasé de courgettes, pommes de terre et fromage frais',min:8,type:'dîner',ing:[['courgette',80],['pomme de terre',60],['fromage frais',15]],
+  etapes:['Cuire les légumes épluchés à la vapeur.','Écraser à la fourchette.','Incorporer le fromage frais hors du feu.']},
+ {id:'pe190',titre:'Soupe de légumes et vermicelles fins',min:8,type:'dîner',ing:[['carotte',50],['courgette',50],['vermicelles',15],['huile de colza',3]],
+  etapes:['Cuire les légumes dans l\'eau sans sel.','Ajouter les vermicelles 4 min avant la fin.','Mouliner grossièrement.','Ajouter l\'huile hors du feu.']},
+ {id:'pe191',titre:'Écrasé de patate douce et lentilles corail',min:8,type:'dîner',ing:[['patate douce',80],['lentilles corail',25],['huile d\'olive',3]],
+  etapes:['Cuire la patate douce à la vapeur.','Cuire les lentilles dans l\'eau sans sel 15 min.','Écraser ensemble à la fourchette.','Ajouter l\'huile.']},
+ {id:'pe192',titre:'Velouté de potiron et fromage blanc',min:8,type:'dîner',ing:[['potiron',100],['pomme de terre',40],['fromage blanc',20]],
+  etapes:['Cuire potiron et pomme de terre dans l\'eau sans sel.','Mouliner avec un peu d\'eau de cuisson.','Incorporer le fromage blanc hors du feu.']},
+ {id:'pe193',titre:'Semoule et épinards à la ricotta',min:8,type:'dîner',ing:[['semoule',30],['épinards',60],['ricotta',20],['huile d\'olive',3]],
+  etapes:['Cuire la semoule dans l\'eau sans sel.','Cuire les épinards et les hacher finement.','Mélanger avec la ricotta et l\'huile.']},
+ {id:'pe194',titre:'Purée de brocoli, pommes de terre et dinde',min:8,type:'dîner',ing:[['brocoli',70],['pomme de terre',50],['dinde',20],['huile de colza',3]],
+  etapes:['Cuire les légumes à la vapeur.','Cuire la dinde à cœur et la hacher finement.','Écraser à la fourchette avec la viande.','Ajouter l\'huile.']},
+ {id:'pe195',titre:'Flan de légumes à l\'œuf',min:8,type:'dîner',ing:[['carotte',60],['courgette',40],['oeuf',25]],
+  etapes:['Cuire les légumes à la vapeur et les mixer.','Mélanger avec l\'œuf battu.','Cuire au four à 180 °C, 25 min (bien pris à cœur).','Écraser ou couper en petits morceaux fondants.']},
+ {id:'pe196',titre:'Écrasé de haricots blancs et courgette',min:8,type:'dîner',ing:[['haricots blancs',40],['courgette',70],['huile d\'olive',3]],
+  etapes:['Rincer les haricots blancs et retirer les peaux.','Cuire la courgette épluchée.','Écraser à la fourchette avec l\'huile.']},
+ {id:'pe197',titre:'Soupe de poireaux, pommes de terre et fromage',min:8,type:'dîner',ing:[['poireau',60],['pomme de terre',60],['gruyère',5]],
+  etapes:['Cuire les légumes dans l\'eau sans sel.','Mouliner grossièrement.','Incorporer le gruyère râpé hors du feu.']},
+ {id:'pe198',titre:'Riz doux aux carottes et petits pois',min:8,type:'dîner',ing:[['riz',30],['carotte',50],['petits pois',40],['huile de colza',3]],
+  etapes:['Cuire le riz bien tendre dans l\'eau sans sel.','Cuire carottes et petits pois.','Écraser légèrement les légumes à la fourchette.','Mélanger avec le riz et l\'huile.']},
+ {id:'pe199',titre:'Écrasé de cabillaud et pommes de terre',min:8,type:'dîner',ing:[['cabillaud',25],['pomme de terre',70],['haricots verts',50],['huile de colza',3]],
+  etapes:['Cuire pommes de terre et haricots verts.','Cuire le cabillaud à cœur, retirer toutes les arêtes.','Écraser à la fourchette.','Ajouter l\'huile.']},
+ {id:'pe200',titre:'Pâtes alphabet au potiron',min:8,type:'dîner',ing:[['pâtes',25],['potiron',80],['gruyère',5]],
+  etapes:['Cuire de très petites pâtes bien tendres dans l\'eau sans sel.','Cuire le potiron et l\'écraser.','Mélanger avec le gruyère râpé.']}
+
 
 
 
