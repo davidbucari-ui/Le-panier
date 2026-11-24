@@ -563,7 +563,32 @@ recettes:[
  {id:'pe247',titre:'Burger maison de dinde et légumes rôtis',min:24,type:'dîner',ing:[['dinde',35],['pain',30],['courgette',40],['carotte',50],['huile d\'olive',5]],
   etapes:['Former un petit steak de dinde hachée et le cuire à cœur.','Rôtir carotte et courgette en bâtonnets au four à 200 °C, 20 min.','Servir dans un petit pain, coupé en petits morceaux.']},
  {id:'pe248',titre:'Croque-monsieur au four et soupe de légumes',min:24,type:'dîner',ing:[['pain',30],['jambon blanc',15],['gruyère',10],['carotte',40],['poireau',30]],
-  etapes:['Cuire carotte et poireau dans l\'eau sans sel et mixer en soupe.','Garnir le pain de jambon blanc et de gruyère, dorer au four.','Couper en petits carrés.']}
+  etapes:['Cuire carotte et poireau dans l\'eau sans sel et mixer en soupe.','Garnir le pain de jambon blanc et de gruyère, dorer au four.','Couper en petits carrés.']},
+ {id:'pe249',titre:'Compote de pommes et poires',min:6,type:'goûter',ing:[['pomme',60],['poire',50]],
+  etapes:['Éplucher et couper les fruits.','Cuire à feu doux avec un peu d\'eau 10 min.','Mixer très finement. Sans sucre ajouté.']},
+ {id:'pe250',titre:'Purée de banane et pomme cuite',min:6,type:'goûter',ing:[['banane',50],['pomme',50]],
+  etapes:['Cuire la pomme épluchée à feu doux.','Ajouter la banane et mixer très finement.','Servir tiède ou frais.']},
+ {id:'pe251',titre:'Bouillie de lait infantile et riz à la pêche',min:6,type:'goûter',ing:[['farine de riz',10],['lait infantile',150],['pêche',40]],
+  etapes:['Chauffer le lait infantile.','Verser la farine de riz en pluie et cuire 3 min en remuant.','Ajouter la pêche cuite et mixée.','Laisser tiédir.']},
+ {id:'pe252',titre:'Yaourt nature et compote de poires',min:6,type:'goûter',ing:[['yaourt nature',80],['poire',50]],
+  etapes:['Cuire la poire à feu doux et la mixer finement.','Mélanger au yaourt nature (non sucré).']},
+ {id:'pe253',titre:'Purée de mangue',min:6,type:'goûter',ing:[['mangue',80]],
+  etapes:['Éplucher et dénoyauter la mangue bien mûre.','Mixer très finement.','Servir sans cuisson, sans sucre ajouté.']},
+ {id:'pe254',titre:'Compote de pommes et abricots',min:6,type:'goûter',ing:[['pomme',60],['abricot',40]],
+  etapes:['Éplucher et couper les fruits.','Cuire à feu doux avec un peu d\'eau 10 min.','Mixer très finement. Sans sucre ajouté.']},
+ {id:'pe255',titre:'Bouillie de semoule fine à la banane',min:6,type:'goûter',ing:[['semoule',10],['lait infantile',150],['banane',30]],
+  etapes:['Chauffer le lait infantile.','Verser la semoule fine en pluie et cuire 5 min en remuant.','Ajouter la banane écrasée finement.','Laisser tiédir.']},
+ {id:'pe256',titre:'Fromage blanc et purée de pommes',min:6,type:'goûter',ing:[['fromage blanc',70],['pomme',50]],
+  etapes:['Cuire la pomme en compote et la mixer très finement.','Laisser refroidir.','Mélanger au fromage blanc nature.']},
+ {id:'pe257',titre:'Compote de poires et bananes',min:6,type:'goûter',ing:[['poire',60],['banane',40]],
+  etapes:['Cuire la poire épluchée à feu doux.','Ajouter la banane et mixer très finement.','Sans sucre ajouté.']},
+ {id:'pe258',titre:'Purée de melon',min:6,type:'goûter',ing:[['melon',80]],
+  etapes:['Retirer pépins et peau.','Mixer très finement.','Servir frais, sans sucre ajouté.']},
+ {id:'pe259',titre:'Compote de pommes et coings',min:6,type:'goûter',ing:[['pomme',50],['coing',40]],
+  etapes:['Éplucher et couper les fruits.','Cuire à feu doux 20 min avec un peu d\'eau.','Mixer très finement. Sans sucre ajouté.']},
+ {id:'pe260',titre:'Crème de riz à la pomme',min:6,type:'goûter',ing:[['farine de riz',10],['lait infantile',150],['pomme',40]],
+  etapes:['Chauffer le lait infantile.','Verser la farine de riz en pluie et cuire 3 min.','Ajouter la pomme cuite et mixée.','Laisser tiédir.']}
+
 
 
 
