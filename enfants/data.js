@@ -515,7 +515,32 @@ recettes:[
  {id:'pe223',titre:'Poêlée de pommes de terre, brocoli et jambon blanc',min:12,type:'dîner',ing:[['pomme de terre',70],['brocoli',60],['jambon blanc',15],['huile d\'olive',3]],
   etapes:['Cuire pommes de terre et brocoli, couper petits.','Hacher finement le jambon blanc (à teneur réduite en sel).','Réchauffer le tout à la poêle avec l\'huile.']},
  {id:'pe224',titre:'Croque-légumes de pain tendre',min:12,type:'dîner',ing:[['pain',30],['courgette',40],['gruyère',10]],
-  etapes:['Cuire la courgette râpée et l\'essorer.','Garnir le pain de courgette et de gruyère.','Dorer à la poêle ou au four.','Couper en petits carrés.']}
+  etapes:['Cuire la courgette râpée et l\'essorer.','Garnir le pain de courgette et de gruyère.','Dorer à la poêle ou au four.','Couper en petits carrés.']},
+ {id:'pe225',titre:'Soupe de tomate, riz et fromage râpé',min:18,type:'dîner',ing:[['tomate concassée',80],['carotte',40],['riz',25],['gruyère',8]],
+  etapes:['Cuire tomate et carotte 20 min.','Ajouter le riz et cuire 12 min.','Mouliner légèrement.','Parsemer de gruyère râpé.']},
+ {id:'pe226',titre:'Omelette aux champignons et fines herbes',min:18,type:'dîner',ing:[['oeuf',50],['champignons',40],['persil',2],['huile d\'olive',3]],
+  etapes:['Faire revenir les champignons émincés finement 5 min.','Verser l\'œuf battu et cuire à cœur (aucune partie liquide).','Parsemer de persil, couper en petites bandes.']},
+ {id:'pe227',titre:'Gratin de courge et de pommes de terre',min:18,type:'dîner',ing:[['butternut',80],['pomme de terre',60],['fromage blanc',30],['gruyère',8]],
+  etapes:['Cuire courge et pomme de terre en tranches.','Disposer dans un plat avec le fromage blanc.','Saupoudrer de gruyère et gratiner 15 min.']},
+ {id:'pe228',titre:'Pâtes à la crème de courgette et au jambon',min:18,type:'dîner',ing:[['pâtes',40],['courgette',70],['jambon blanc',15],['fromage frais',15]],
+  etapes:['Cuire les pâtes dans l\'eau sans sel.','Cuire la courgette et la mixer avec le fromage frais.','Ajouter le jambon blanc coupé finement.','Napper les pâtes.']},
+ {id:'pe229',titre:'Galettes de quinoa et de légumes',min:18,type:'dîner',ing:[['quinoa',25],['carotte',40],['courgette',40],['oeuf',15],['huile d\'olive',3]],
+  etapes:['Cuire le quinoa dans l\'eau sans sel.','Mélanger avec légumes râpés et œuf.','Former des galettes et dorer à la poêle des deux côtés.','Laisser tiédir.']},
+ {id:'pe230',titre:'Saumon, purée de patate douce et petits pois',min:18,type:'dîner',ing:[['saumon',30],['patate douce',90],['petits pois',40],['huile de colza',3]],
+  etapes:['Cuire la patate douce et l\'écraser en purée.','Cuire les petits pois.','Cuire le saumon à cœur, retirer toutes les arêtes.','Émietter le saumon et servir avec les légumes.']},
+ {id:'pe231',titre:'Poulet en sauce douce et boulgour',min:18,type:'dîner',ing:[['blanc de poulet',30],['carotte',50],['boulgour',30],['crème fraîche',10]],
+  etapes:['Cuire le poulet en dés avec la carotte dans l\'eau sans sel.','Ajouter la crème fraîche hors du feu.','Cuire le boulgour dans l\'eau sans sel.','Servir en petits morceaux.']},
+ {id:'pe232',titre:'Lentilles vertes et légumes poêlés',min:18,type:'dîner',ing:[['lentilles vertes',35],['courgette',50],['carotte',40],['huile d\'olive',3]],
+  etapes:['Cuire les lentilles 25 min dans l\'eau sans sel.','Poêler les légumes en petits dés.','Mélanger et écraser légèrement.']},
+ {id:'pe233',titre:'Croque tendre dinde-fromage',min:18,type:'dîner',ing:[['pain',30],['dinde',15],['gruyère',10]],
+  etapes:['Garnir le pain de dinde cuite hachée et de gruyère.','Dorer à la poêle ou au four.','Couper en petits carrés.']},
+ {id:'pe234',titre:'Soupe de légumes verts et pâtes',min:18,type:'dîner',ing:[['poireau',40],['courgette',50],['haricots verts',40],['pâtes',20],['huile de colza',3]],
+  etapes:['Cuire les légumes dans l\'eau sans sel.','Ajouter de petites pâtes 8 min avant la fin.','Mouliner grossièrement.','Ajouter l\'huile hors du feu.']},
+ {id:'pe235',titre:'Riz doux aux œufs brouillés et petits pois',min:18,type:'dîner',ing:[['riz',35],['oeuf',40],['petits pois',35],['carotte',30]],
+  etapes:['Cuire le riz dans l\'eau sans sel.','Cuire carottes et petits pois, couper petit.','Cuire l\'œuf brouillé à cœur.','Mélanger.']},
+ {id:'pe236',titre:'Tortilla de courgettes et ricotta',min:18,type:'dîner',ing:[['oeuf',40],['courgette',60],['ricotta',20],['huile d\'olive',3]],
+  etapes:['Cuire la courgette râpée 5 min.','Mélanger avec l\'œuf et la ricotta.','Cuire à la poêle des deux côtés (bien cuite).','Couper en petits carrés.']}
+
 
 
 
