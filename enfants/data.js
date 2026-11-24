@@ -635,7 +635,32 @@ recettes:[
  {id:'pe283',titre:'Bâtonnets de pain grillé et purée d\'avocat',min:10,type:'goûter',ing:[['pain',20],['avocat',40]],
   etapes:['Griller légèrement le pain tendre et le couper en bâtonnets.','Écraser l\'avocat bien mûr.','Servir à tremper.']},
  {id:'pe284',titre:'Riz au lait infantile et pomme',min:10,type:'goûter',ing:[['riz',15],['lait infantile',150],['pomme',40]],
-  etapes:['Cuire le riz dans le lait infantile 20 min à feu doux en remuant.','Ajouter la pomme cuite et écrasée.','Laisser tiédir.']}
+  etapes:['Cuire le riz dans le lait infantile 20 min à feu doux en remuant.','Ajouter la pomme cuite et écrasée.','Laisser tiédir.']},
+ {id:'pe285',titre:'Yaourt nature, compote maison et flocons d\'avoine',min:12,type:'goûter',ing:[['yaourt nature',100],['pomme',50],['flocons d\'avoine',10]],
+  etapes:['Cuire la pomme en compote, sans sucre.','Mélanger au yaourt nature.','Parsemer de flocons d\'avoine.']},
+ {id:'pe286',titre:'Tartine de fromage frais et fraises écrasées',min:12,type:'goûter',ing:[['pain',25],['fromage frais',15],['fraises',40]],
+  etapes:['Tartiner le pain tendre de fromage frais.','Écraser les fraises et les étaler.','Couper en petits carrés.']},
+ {id:'pe287',titre:'Muffins à la banane et aux flocons d\'avoine',min:12,type:'goûter',ing:[['banane',60],['flocons d\'avoine',30],['oeuf',20],['yaourt nature',30]],
+  etapes:['Écraser la banane, ajouter œuf, yaourt et flocons.','Verser dans des moules à muffins.','Cuire au four à 180 °C, 20 min.','Laisser refroidir et couper en petits morceaux.']},
+ {id:'pe288',titre:'Pain perdu à la pomme',min:12,type:'goûter',ing:[['pain',30],['lait',40],['oeuf',20],['pomme',40]],
+  etapes:['Battre l\'œuf avec le lait.','Tremper le pain et le dorer à la poêle des deux côtés (œuf bien cuit).','Servir avec de la pomme cuite en petits dés.']},
+ {id:'pe289',titre:'Fromage blanc, poire et poudre de noisettes',min:12,type:'goûter',ing:[['fromage blanc',80],['poire',50],['poudre de noisettes',3]],
+  etapes:['Cuire la poire en petits dés très tendres.','Mélanger au fromage blanc.','Saupoudrer de poudre de noisettes (jamais de noisettes entières).']},
+ {id:'pe290',titre:'Crêpes fines à la banane',min:12,type:'goûter',ing:[['farine de blé',25],['lait',50],['oeuf',15],['banane',40]],
+  etapes:['Mélanger farine, lait et œuf.','Cuire de fines crêpes à la poêle.','Garnir de banane écrasée.','Couper en bandes.']},
+ {id:'pe291',titre:'Cake moelleux aux carottes',min:12,type:'goûter',ing:[['carotte',40],['oeuf',20],['farine de blé',25],['yaourt nature',30],['huile de colza',5]],
+  etapes:['Râper finement la carotte.','Mélanger avec œuf, yaourt, huile et farine.','Cuire au four à 180 °C, 30 min.','Laisser refroidir, couper en petits morceaux.']},
+ {id:'pe292',titre:'Riz au lait de vache et compote',min:12,type:'goûter',ing:[['riz',20],['lait',120],['pomme',40]],
+  etapes:['Cuire le riz dans le lait 20 min à feu doux en remuant.','Ajouter la compote de pomme sans sucre.','Laisser tiédir.']},
+ {id:'pe293',titre:'Bâtonnets de pain grillé et houmous doux',min:12,type:'goûter',ing:[['pain',25],['pois chiches',30],['huile d\'olive',3],['citron',2]],
+  etapes:['Mixer les pois chiches avec l\'huile, le citron et un peu d\'eau.','Griller légèrement le pain et le couper en bâtonnets.','Servir à tremper.']},
+ {id:'pe294',titre:'Salade de fruits cuits et yaourt',min:12,type:'goûter',ing:[['pomme',40],['poire',40],['yaourt nature',80]],
+  etapes:['Cuire pomme et poire en petits dés très fondants.','Laisser refroidir.','Servir avec le yaourt nature.']},
+ {id:'pe295',titre:'Cookies à la banane et à l\'avoine (sans sucre)',min:12,type:'goûter',ing:[['banane',60],['flocons d\'avoine',30],['huile d\'olive',3]],
+  etapes:['Écraser la banane et mélanger aux flocons.','Former de petits palets.','Cuire au four à 180 °C, 15 min.','Laisser refroidir.']},
+ {id:'pe296',titre:'Smoothie épais mangue-banane',min:12,type:'goûter',ing:[['mangue',50],['banane',40],['yaourt nature',70]],
+  etapes:['Mixer tous les ingrédients.','Servir à la cuillère ou dans un petit verre, assis.']}
+
 
 
 
