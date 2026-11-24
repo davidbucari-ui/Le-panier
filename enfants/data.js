@@ -611,7 +611,32 @@ recettes:[
  {id:'pe271',titre:'Pain tendre sans croûte et compote',min:8,type:'goûter',ing:[['pain',15],['pomme',50]],
   etapes:['Retirer la croûte et griller légèrement le pain.','Couper en bâtonnets à saisir.','Servir avec une compote de pomme sans sucre.']},
  {id:'pe272',titre:'Fingers de banane cuits à la vapeur',min:8,type:'goûter',ing:[['banane',70]],
-  etapes:['Couper la banane en bâtonnets.','Cuire à la vapeur 3 min pour qu\'elle soit tendre mais tienne.','Laisser tiédir : à saisir avec les doigts.']}
+  etapes:['Couper la banane en bâtonnets.','Cuire à la vapeur 3 min pour qu\'elle soit tendre mais tienne.','Laisser tiédir : à saisir avec les doigts.']},
+ {id:'pe273',titre:'Yaourt nature, poire en petits morceaux fondants',min:10,type:'goûter',ing:[['yaourt nature',100],['poire',50]],
+  etapes:['Cuire la poire en petits dés très fondants.','Laisser refroidir.','Mélanger au yaourt nature (non sucré).']},
+ {id:'pe274',titre:'Pain tendre au fromage frais et pomme cuite',min:10,type:'goûter',ing:[['pain',20],['fromage frais',15],['pomme',50]],
+  etapes:['Cuire la pomme en compote épaisse.','Tartiner le pain tendre de fromage frais, puis de compote.','Couper en bâtonnets à saisir.']},
+ {id:'pe275',titre:'Galettes de banane et de flocons d\'avoine',min:10,type:'goûter',ing:[['banane',60],['flocons d\'avoine',25],['oeuf',10]],
+  etapes:['Écraser la banane, ajouter flocons et œuf.','Cuire à la poêle antiadhésive 2 min de chaque côté (bien cuit).','Laisser tiédir, couper en bâtonnets.']},
+ {id:'pe276',titre:'Fromage blanc et dés de pêche fondants',min:10,type:'goûter',ing:[['fromage blanc',80],['pêche',50]],
+  etapes:['Cuire la pêche épluchée en petits dés très tendres.','Laisser refroidir.','Mélanger au fromage blanc nature.']},
+ {id:'pe277',titre:'Biscuits à la banane et à la poire',min:10,type:'goûter',ing:[['banane',50],['poire',30],['flocons d\'avoine',30]],
+  etapes:['Écraser banane et poire cuite, mélanger aux flocons.','Former de petits palets plats.','Cuire au four à 180 °C, 15 min.','Laisser refroidir : doivent fondre en bouche.']},
+ {id:'pe278',titre:'Bouillie de semoule, lait et mangue',min:10,type:'goûter',ing:[['semoule',15],['lait infantile',150],['mangue',40]],
+  etapes:['Chauffer le lait infantile.','Verser la semoule en pluie et cuire 5 min en remuant.','Ajouter la mangue écrasée.','Laisser tiédir.']},
+ {id:'pe279',titre:'Petit suisse nature et purée de fraises',min:10,type:'goûter',ing:[['petit suisse',60],['fraises',40]],
+  etapes:['Laver les fraises et les écraser à la fourchette.','Mélanger au petit suisse nature (non sucré).']},
+ {id:'pe280',titre:'Muffins aux pommes sans sucre ajouté',min:10,type:'goûter',ing:[['pomme',50],['flocons d\'avoine',20],['oeuf',15],['yaourt nature',30]],
+  etapes:['Mixer les flocons, mélanger avec yaourt et œuf.','Ajouter la pomme râpée.','Cuire en moules à muffins 20 min à 180 °C.','Laisser refroidir, émietter selon l\'âge.']},
+ {id:'pe281',titre:'Crêpe fine à la compote',min:10,type:'goûter',ing:[['farine de blé',20],['lait',40],['oeuf',15],['pomme',40]],
+  etapes:['Mélanger farine, lait et œuf.','Cuire une crêpe fine à la poêle.','Garnir de compote de pomme sans sucre.','Couper en petites bandes.']},
+ {id:'pe282',titre:'Kiwi et banane écrasés au fromage blanc',min:10,type:'goûter',ing:[['kiwi',30],['banane',40],['fromage blanc',70]],
+  etapes:['Écraser le kiwi épluché et la banane à la fourchette.','Mélanger au fromage blanc nature.']},
+ {id:'pe283',titre:'Bâtonnets de pain grillé et purée d\'avocat',min:10,type:'goûter',ing:[['pain',20],['avocat',40]],
+  etapes:['Griller légèrement le pain tendre et le couper en bâtonnets.','Écraser l\'avocat bien mûr.','Servir à tremper.']},
+ {id:'pe284',titre:'Riz au lait infantile et pomme',min:10,type:'goûter',ing:[['riz',15],['lait infantile',150],['pomme',40]],
+  etapes:['Cuire le riz dans le lait infantile 20 min à feu doux en remuant.','Ajouter la pomme cuite et écrasée.','Laisser tiédir.']}
+
 
 
 
