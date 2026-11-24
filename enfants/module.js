@@ -96,9 +96,24 @@ function menuText(menu,recs){ // menu de la semaine à transmettre aux parents
 function mount(root,opts){
   opts=opts||{};
   var KEY=opts.storageKey||'petite-enfance-v1';
-  var st={tab:'recettes',age:'6-8',sans:[],q:'',kids:{},menu:{},custom:[],form:false,type:'',open:null,warnOpen:false};
-  try{var s=JSON.parse(localStorage.getItem(KEY)||'null');if(s&&typeof s==='object'){st.age=s.age||st.age;st.kids=s.kids||{};if(st.age==='12-36')st.age='12-18';if(st.kids['12-36']!=null){st.kids['24-36']=(Number(st.kids['24-36'])||0)+(Number(st.kids['12-36'])||0);delete st.kids['12-36']}if(!ageOf(st.age))st.age='6-8';st.menu=s.menu||{};st.custom=Array.isArray(s.custom)?s.custom:[]}}catch(e){}
-  var save=function(){try{localStorage.setItem(KEY,JSON.stringify({age:st.age,kids:st.kids,menu:st.menu,custom:st.custom}))}catch(e){}};
+  var st={tab:'recettes',age:'6-8',sans:[],q:'',kids:{},menu:{},custom:[],form:false,type:'',open:null,warnOpen:false,rev:0,sync:''};
+  var apply=function(s){ // reprend un état lu (local ou distant), en tolérant les anciens formats
+    if(!s||typeof s!=='object')return;
+    st.age=s.age||st.age;st.kids=s.kids||{};
+    if(st.age==='12-36')st.age='12-18';
+    if(st.kids['12-36']!=null){st.kids['24-36']=(Number(st.kids['24-36'])||0)+(Number(st.kids['12-36'])||0);delete st.kids['12-36']}
+    if(!ageOf(st.age))st.age='6-8';
+    st.menu=s.menu||{};st.custom=Array.isArray(s.custom)?s.custom:[];st.rev=Number(s.rev)||0;
+  };
+  try{apply(JSON.parse(localStorage.getItem(KEY)||'null'))}catch(e){}
+  var snap=function(){return{age:st.age,kids:st.kids,menu:st.menu,custom:st.custom,rev:st.rev}};
+  var sync=opts.sync&&typeof opts.sync.load==='function'&&typeof opts.sync.save==='function'?opts.sync:null,timer=0;
+  var setSync=function(t){st.sync=t;var el=root.querySelector&&root.querySelector('#pe-sync');if(el)el.textContent=t};
+  var push=function(){ // envoi différé : une seule écriture après une série de modifications
+    if(!sync)return;clearTimeout(timer);
+    timer=setTimeout(function(){setSync('☁ Enregistrement…');Promise.resolve(sync.save(snap())).then(function(){setSync('☁ Sauvegardé')},function(){setSync('☁ Hors connexion : sauvegardé sur cet appareil')})},800);
+  };
+  var save=function(){st.rev=Date.now();try{localStorage.setItem(KEY,JSON.stringify(snap()))}catch(e){}push()};
   var recs=function(){return D.recettes.concat(st.custom)};
   var JOURS=[['lun','Lundi'],['mar','Mardi'],['mer','Mercredi'],['jeu','Jeudi'],['ven','Vendredi']];
   var REPAS=[['pdj','Petit-déjeuner (suggestion aux parents)',['petit-déjeuner']],['dej','Déjeuner',['plat']],['des','Dessert',['dessert']],['gou','Goûter',['goûter','dessert']],['din','Dîner (suggestion aux parents)',['dîner','plat']]];
@@ -180,7 +195,7 @@ function mount(root,opts){
     var tabs=[['recettes','🥣 Recettes'],['portions','⚖️ Portions'],['menus','🗓️ Menus'],['regles','📌 Règles']];
     var body=st.tab==='recettes'?tabRecettes():st.tab==='portions'?tabPortions():st.tab==='menus'?tabMenus():tabRegles();
     var focus=document.activeElement&&document.activeElement.id==='pe-q',pos=focus?document.activeElement.selectionStart:0;
-    root.innerHTML='<div class="pe"><h2 class="hello">🧸 Petite enfance, 0 à 3 ans</h2><div class="warn'+(st.warnOpen?' open':'')+'"><button class="wb" data-act="warn" aria-expanded="'+st.warnOpen+'">⚠ Contenu non validé médicalement · '+(st.warnOpen?'Masquer ▲':'Lire ▼')+'</button><span class="wl">'+esc(D.avertissement)+'</span></div><div class="tabs" role="tablist">'+
+    root.innerHTML='<div class="pe"><h2 class="hello">🧸 Petite enfance, 0 à 3 ans</h2><div class="warn'+(st.warnOpen?' open':'')+'"><button class="wb" data-act="warn" aria-expanded="'+st.warnOpen+'">⚠ Contenu non validé médicalement · '+(st.warnOpen?'Masquer ▲':'Lire ▼')+'</button><span class="wl">'+esc(D.avertissement)+'</span></div>'+(sync?'<p class="hint" id="pe-sync" style="margin:2px 0">'+esc(st.sync)+'</p>':'')+'<div class="tabs" role="tablist">'+
       tabs.map(function(t){return'<button class="tab" role="tab" data-act="tab" data-id="'+t[0]+'" aria-pressed="'+(st.tab===t[0])+'">'+t[1]+'</button>'}).join('')+'</div>'+body+'</div>';
     if(focus){var q=root.querySelector('#pe-q');if(q){q.focus();q.setSelectionRange(pos,pos)}}
   }
@@ -226,6 +241,15 @@ function mount(root,opts){
   });
   if(typeof document!=='undefined'&&!document.getElementById('pe-css')){var s=document.createElement('style');s.id='pe-css';s.textContent=CSS;document.head.appendChild(s)}
   render();
+  if(sync){ // au démarrage : on garde l'état le plus récent (celui de l'appareil ou celui du compte)
+    setSync('☁ Synchronisation…');
+    Promise.resolve(sync.load()).then(function(r){
+      if(r===false){setSync('☁ Non connecté : données gardées sur cet appareil. Connectez-vous dans Le Panier pour les sauvegarder.');return}
+      if(r&&r.data&&Number(r.data.rev||r.rev)>st.rev){apply(Object.assign({},r.data,{rev:r.data.rev||r.rev}));try{localStorage.setItem(KEY,JSON.stringify(snap()))}catch(e){}render();setSync('☁ Sauvegardé')}
+      else if(st.rev||st.custom.length||Object.keys(st.menu).length||Object.keys(st.kids).length){if(!st.rev)st.rev=Date.now();push()}
+      else setSync('☁ Sauvegardé');
+    },function(){setSync('☁ Hors connexion : données gardées sur cet appareil')});
+  }
   return{state:st,render:render};
 }
 g.PetiteEnfance={hasVPO:hasVPO,mount:mount,nk:nk,allergensOf:allergensOf,alertsFor:alertsFor,parseLine:parseLine,groupFactor:groupFactor,shopping:shopping,menuText:menuText,data:D};

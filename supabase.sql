@@ -165,3 +165,26 @@ alter publication supabase_realtime add table public.shared_recipes;
 drop policy if exists "photos de recettes : lire les siennes" on storage.objects;
 create policy "photos de recettes : lire (tous les membres)" on storage.objects
   for select to authenticated using (bucket_id = 'recettes');
+
+-- ============================================================
+-- Petite enfance (enfants/) : recettes perso, menus et effectifs de chaque utilisateur.
+-- Une ligne par utilisateur, comme app_state. rev = heure de la dernière modification (ms) :
+-- l'état le plus récent gagne. Ne contient aucun nom d'enfant : seulement des effectifs par tranche d'âge.
+-- ============================================================
+create table if not exists public.enfants_etat (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  data jsonb not null default '{}'::jsonb,
+  rev bigint not null default 0,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.enfants_etat enable row level security;
+
+create policy "lecture de ses données petite enfance" on public.enfants_etat
+  for select to authenticated using ((select auth.uid()) = user_id);
+create policy "ajout de ses données petite enfance" on public.enfants_etat
+  for insert to authenticated with check ((select auth.uid()) = user_id);
+create policy "modification de ses données petite enfance" on public.enfants_etat
+  for update to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
+create policy "suppression de ses données petite enfance" on public.enfants_etat
+  for delete to authenticated using ((select auth.uid()) = user_id);

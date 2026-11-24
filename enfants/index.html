@@ -10,7 +10,33 @@
 <p style="margin:0;padding:10px 12px"><a href="../" style="color:#7a4fb3;font:700 15px system-ui,sans-serif;text-decoration:none">← Retour à Le Panier</a></p>
 <div id="pe"></div>
 <script src="data.js?v=21"></script>
-<script src="module.js?v=9"></script>
-<script>PetiteEnfance.mount(document.getElementById('pe'));</script>
+<script src="module.js?v=10"></script>
+<script>
+/* Sauvegarde facultative dans le compte Le Panier (table enfants_etat). Sans connexion ou sans réseau, le module marche comme avant, sur cet appareil. */
+(function(){
+var SB={url:'https://uwowtbninyoylwqgrqby.supabase.co',key:'sb_publishable_xmqViYU0OOWSGRBf5FHW-A_SYVNuUHt'}; // clé publique par conception
+var el=document.getElementById('pe');
+function go(sync){PetiteEnfance.mount(el,sync?{sync:sync}:{})}
+var s=document.createElement('script');
+s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js';
+s.onerror=function(){go(null)};
+s.onload=function(){
+  var sb;try{sb=window.supabase.createClient(SB.url,SB.key)}catch(e){return go(null)}
+  var uid=function(){return sb.auth.getSession().then(function(r){return r.data&&r.data.session?r.data.session.user.id:null})};
+  go({
+    load:function(){return uid().then(function(id){
+      if(!id)return false;
+      return sb.from('enfants_etat').select('data,rev').eq('user_id',id).maybeSingle().then(function(r){
+        if(r.error)throw r.error;return r.data?{data:r.data.data,rev:Number(r.data.rev)||0}:null});
+    })},
+    save:function(data){return uid().then(function(id){
+      if(!id)throw new Error('non connecté');
+      return sb.from('enfants_etat').upsert({user_id:id,data:data,rev:data.rev,updated_at:new Date().toISOString()}).then(function(r){if(r.error)throw r.error});
+    })}
+  });
+};
+document.head.appendChild(s);
+})();
+</script>
 </body>
 </html>
