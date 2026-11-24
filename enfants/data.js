@@ -467,7 +467,32 @@ recettes:[
  {id:'pe199',titre:'Écrasé de cabillaud et pommes de terre',min:8,type:'dîner',ing:[['cabillaud',25],['pomme de terre',70],['haricots verts',50],['huile de colza',3]],
   etapes:['Cuire pommes de terre et haricots verts.','Cuire le cabillaud à cœur, retirer toutes les arêtes.','Écraser à la fourchette.','Ajouter l\'huile.']},
  {id:'pe200',titre:'Pâtes alphabet au potiron',min:8,type:'dîner',ing:[['pâtes',25],['potiron',80],['gruyère',5]],
-  etapes:['Cuire de très petites pâtes bien tendres dans l\'eau sans sel.','Cuire le potiron et l\'écraser.','Mélanger avec le gruyère râpé.']}
+  etapes:['Cuire de très petites pâtes bien tendres dans l\'eau sans sel.','Cuire le potiron et l\'écraser.','Mélanger avec le gruyère râpé.']},
+ {id:'pe201',titre:'Écrasé de poulet, courgettes et semoule',min:10,type:'dîner',ing:[['blanc de poulet',20],['courgette',60],['semoule',30],['huile d\'olive',3]],
+  etapes:['Cuire la semoule dans l\'eau sans sel.','Cuire la courgette épluchée et le poulet à cœur.','Effilocher le poulet, écraser la courgette à la fourchette.','Mélanger avec l\'huile.']},
+ {id:'pe202',titre:'Omelette fondante aux petits légumes',min:10,type:'dîner',ing:[['oeuf',40],['carotte',40],['courgette',40],['huile d\'olive',3]],
+  etapes:['Cuire les légumes râpés 5 min à la poêle.','Verser l\'œuf battu et cuire à cœur (aucune partie liquide).','Couper en bâtonnets à saisir.']},
+ {id:'pe203',titre:'Pâtes tendres à la ricotta et aux épinards',min:10,type:'dîner',ing:[['pâtes',35],['épinards',50],['ricotta',25],['huile d\'olive',3]],
+  etapes:['Cuire de petites pâtes bien tendres dans l\'eau sans sel.','Cuire les épinards et les hacher finement.','Mélanger avec la ricotta.','Couper les pâtes en petits morceaux.']},
+ {id:'pe204',titre:'Gratin de patate douce et fromage blanc',min:10,type:'dîner',ing:[['patate douce',100],['fromage blanc',30],['gruyère',5]],
+  etapes:['Cuire la patate douce en dés.','Écraser grossièrement avec le fromage blanc.','Saupoudrer de gruyère et gratiner 10 min au four.']},
+ {id:'pe205',titre:'Soupe de lentilles vertes et carottes mouliné',min:10,type:'dîner',ing:[['lentilles vertes',25],['carotte',60],['poireau',30],['huile de colza',3]],
+  etapes:['Cuire les lentilles 25 min dans l\'eau sans sel.','Ajouter carotte et poireau en dés, cuire 15 min.','Mouliner grossièrement.','Ajouter l\'huile.']},
+ {id:'pe206',titre:'Riz au saumon et brocoli',min:10,type:'dîner',ing:[['riz',30],['saumon',25],['brocoli',60],['huile de colza',3]],
+  etapes:['Cuire le riz bien tendre dans l\'eau sans sel.','Cuire brocoli et saumon à cœur, retirer toutes les arêtes.','Écraser le brocoli, émietter le saumon.','Mélanger.']},
+ {id:'pe207',titre:'Galettes de pommes de terre et petits pois',min:10,type:'dîner',ing:[['pomme de terre',70],['petits pois',30],['oeuf',15],['huile d\'olive',3]],
+  etapes:['Cuire pommes de terre et petits pois, écraser grossièrement.','Mélanger avec l\'œuf.','Former de petites galettes et dorer à la poêle des deux côtés.','Laisser tiédir : à saisir avec les doigts.']},
+ {id:'pe208',titre:'Boulgour aux légumes d\'été',min:10,type:'dîner',ing:[['boulgour',25],['courgette',50],['aubergine',40],['tomate concassée',30],['huile d\'olive',3]],
+  etapes:['Éplucher et couper petits aubergine et courgette.','Cuire avec la tomate 20 min, écraser légèrement.','Cuire le boulgour dans l\'eau sans sel.','Mélanger.']},
+ {id:'pe209',titre:'Quinoa à la courge et aux pois chiches',min:10,type:'dîner',ing:[['quinoa',20],['butternut',70],['pois chiches',25],['huile d\'olive',3]],
+  etapes:['Rincer le quinoa et le cuire dans l\'eau sans sel 12 min.','Cuire le butternut à la vapeur.','Rincer les pois chiches et retirer les peaux, écraser.','Mélanger le tout.']},
+ {id:'pe210',titre:'Velouté de champignons et pommes de terre',min:10,type:'dîner',ing:[['champignons',50],['pomme de terre',70],['fromage frais',10]],
+  etapes:['Cuire champignons et pomme de terre dans l\'eau sans sel.','Mouliner.','Incorporer le fromage frais hors du feu.']},
+ {id:'pe211',titre:'Écrasé de cabillaud, carottes et riz',min:10,type:'dîner',ing:[['cabillaud',25],['carotte',60],['riz',25],['huile de colza',3]],
+  etapes:['Cuire le riz et les carottes.','Cuire le cabillaud à cœur, retirer toutes les arêtes.','Écraser les carottes, émietter le poisson.','Mélanger avec l\'huile.']},
+ {id:'pe212',titre:'Fingers de courgette et de polenta',min:10,type:'dîner',ing:[['polenta',25],['courgette',50],['gruyère',5]],
+  etapes:['Cuire la polenta dans l\'eau sans sel.','Incorporer la courgette cuite et râpée et le gruyère.','Laisser prendre, couper en bâtonnets et les dorer à la poêle.','Laisser tiédir.']}
+
 
 
 
