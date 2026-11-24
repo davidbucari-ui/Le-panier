@@ -48,7 +48,7 @@ function shopping(menu,recs,kids){ // {lignes:[{n,g}], avertissements:[...]}
   recs.forEach(function(r){byId[r.id]=r});
   Object.keys(menu).forEach(function(slot){
     var r=byId[menu[slot]];if(!r)return;
-    if(/-din$/.test(slot))return; // le dîner est proposé aux parents : pas servi à la crèche, pas dans la liste de courses
+    if(/-(din|pdj)$/.test(slot))return; // le petit-déjeuner et le dîner sont proposés aux parents : pas servi à la crèche, pas dans la liste de courses
     var gf=groupFactor(r,kids);
     gf.bad.forEach(function(b){warn.push(r.titre+' ('+slot.split('-').slice(0,1)+') ne convient pas aux '+b.age.label+' ('+b.n+' enfant'+(b.n>1?'s':'')+').')});
     r.ing.forEach(function(i){var k=nk(i[0]);names[k]=names[k]||i[0];tot[k]=(tot[k]||0)+i[1]*gf.f});
@@ -59,7 +59,7 @@ function shopping(menu,recs,kids){ // {lignes:[{n,g}], avertissements:[...]}
 
 /* ---------- interface ---------- */
 var AGE_UI={'0-6':['🍼','#ffe0ea','#ff9fbd'],'6-8':['🥄','#d6f2e4','#7fd3a6'],'8-10':['🥕','#ffe6c7','#ffb866'],'10-12':['🍌','#fff3b8','#ffd93d'],'12-18':['🍝','#dcebff','#7db7ff'],'18-24':['🥦','#e3dcff','#a590ff'],'24-36':['🍗','#ffdcf0','#ff8fcf']};
-var TYPE_UI={'plat':['🍽️','#ffb866'],'dîner':['🌙','#a99af0'],'dessert':['🍓','#ff9fbd'],'goûter':['🍪','#ffd93d']};
+var TYPE_UI={'plat':['🍽️','#ffb866'],'dîner':['🌙','#a99af0'],'dessert':['🍓','#ff9fbd'],'goûter':['🍪','#ffd93d'],'petit-déjeuner':['☀️','#ffcf8a']};
 var CSS='.pe{font:17px/1.5 ui-rounded,"SF Pro Rounded","Nunito","Quicksand",system-ui,sans-serif;color:#4a3b52;max-width:980px;margin:0 auto;padding:14px}'+
 '.pe h2{margin:.2em 0 .4em;font-size:1.35rem;color:#7a4fb3}.pe h3{margin:.2em 0;font-size:1.1rem;color:#5b3f8c}.pe .hello{font-size:1.6rem;color:#ff7a59;margin:.1em 0 .3em}'+
 '.pe .warn{background:#fff6cf;border:2px dashed #ffd93d;border-radius:18px;padding:10px 14px;font-size:.88rem;margin:8px 0}.pe .tabs,.pe .chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}'+
@@ -76,7 +76,7 @@ var CSS='.pe{font:17px/1.5 ui-rounded,"SF Pro Rounded","Nunito","Quicksand",syst
 
 function menuText(menu,recs){ // menu de la semaine à transmettre aux parents
   var byId={};recs.forEach(function(r){byId[r.id]=r});
-  var J=[['lun','Lundi'],['mar','Mardi'],['mer','Mercredi'],['jeu','Jeudi'],['ven','Vendredi']],R=[['dej','Déjeuner'],['des','Dessert'],['gou','Goûter'],['din','Dîner conseillé à la maison']];
+  var J=[['lun','Lundi'],['mar','Mardi'],['mer','Mercredi'],['jeu','Jeudi'],['ven','Vendredi']],R=[['pdj','Petit-déjeuner conseillé à la maison'],['dej','Déjeuner'],['des','Dessert'],['gou','Goûter'],['din','Dîner conseillé à la maison']];
   var out=['Menu de la semaine'];
   J.forEach(function(j){
     var l=R.map(function(m){var r=byId[menu[j[0]+'-'+m[0]]];return r?'  '+m[1]+' : '+r.titre:''}).filter(Boolean);
@@ -92,7 +92,7 @@ function mount(root,opts){
   var save=function(){try{localStorage.setItem(KEY,JSON.stringify({age:st.age,kids:st.kids,menu:st.menu,custom:st.custom}))}catch(e){}};
   var recs=function(){return D.recettes.concat(st.custom)};
   var JOURS=[['lun','Lundi'],['mar','Mardi'],['mer','Mercredi'],['jeu','Jeudi'],['ven','Vendredi']];
-  var REPAS=[['dej','Déjeuner',['plat']],['des','Dessert',['dessert']],['gou','Goûter',['goûter','dessert']],['din','Dîner (suggestion aux parents)',['dîner','plat']]];
+  var REPAS=[['pdj','Petit-déjeuner (suggestion aux parents)',['petit-déjeuner']],['dej','Déjeuner',['plat']],['des','Dessert',['dessert']],['gou','Goûter',['goûter','dessert']],['din','Dîner (suggestion aux parents)',['dîner','plat']]];
 
   function recipeCard(r){
     var age=ageOf(st.age),al=allergensOf(r),alerts=alertsFor(r,age),n=Number(st.kids[age.id])||0;
@@ -121,7 +121,7 @@ function mount(root,opts){
   }
   function formHtml(){
     return '<div class="card"><h3>Ma recette</h3><label>Titre<input type="text" id="pf-t"></label><div class="grid"><label>À partir de (mois)<input type="number" id="pf-m" value="12" min="4" max="36"></label>'+
-      '<label>Type<select id="pf-ty"><option>plat</option><option>dessert</option><option>goûter</option></select></label></div>'+
+      '<label>Type<select id="pf-ty"><option>plat</option><option>dessert</option><option>goûter</option><option>petit-déjeuner</option><option>dîner</option></select></label></div>'+
       '<label>Ingrédients pour une portion de 24-36 mois (une ligne chacun, ex. « 100 g carotte »)<textarea id="pf-i" rows="5"></textarea></label>'+
       '<label>Étapes (une par ligne)<textarea id="pf-e" rows="4"></textarea></label><p id="pf-msg" class="al-msg" role="alert"></p><button class="btn" data-act="save-form">Enregistrer</button></div>';
   }
@@ -136,7 +136,7 @@ function mount(root,opts){
   function tabMenus(){
     var all=recs(),byId={};all.forEach(function(r){byId[r.id]=r});
     var h='<h2>Menus de la semaine</h2><p class="hint">Choisissez une recette par repas. Les quantités tiennent compte des enfants saisis dans l\'onglet Portions.</p>';
-    h+='<p><button class="btn" data-act="copy-menu">📋 Copier le menu pour les parents</button> <span class="hint" id="pe-copied2"></span></p><p class="hint">Le dîner est une suggestion pour les parents : il n\'est pas compté dans la liste de courses.</p>';
+    h+='<p><button class="btn" data-act="copy-menu">📋 Copier le menu pour les parents</button> <span class="hint" id="pe-copied2"></span></p><p class="hint">Le petit-déjeuner et le dîner sont des suggestions pour les parents : ils ne sont pas comptés dans la liste de courses.</p>';
     JOURS.forEach(function(j){
       h+='<div class="card"><h3>'+j[1]+'</h3><div class="grid">'+REPAS.map(function(m){
         var key=j[0]+'-'+m[0],opts=all.filter(function(r){return m[2].indexOf(r.type)>=0});
