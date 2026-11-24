@@ -59,6 +59,18 @@ function shopping(menu,recs,kids){ // {lignes:[{n,g}], avertissements:[...]}
 
 /* ---------- interface ---------- */
 var AGE_UI={'0-6':['🍼','#ffe0ea','#ff9fbd'],'6-8':['🥄','#d6f2e4','#7fd3a6'],'8-10':['🥕','#ffe6c7','#ffb866'],'10-12':['🍌','#fff3b8','#ffd93d'],'12-18':['🍝','#dcebff','#7db7ff'],'18-24':['🥦','#e3dcff','#a590ff'],'24-36':['🍗','#ffdcf0','#ff8fcf']};
+var ING_EMO=[[/\b(carottes?)\b/,'🥕'],[/\b(patates? douces?)\b/,'🍠'],[/\bpommes? de terre\b/,'🥔'],[/\b(courgettes?|concombres?)\b/,'🥒'],[/\b(brocolis?|chou-?fleur|choux?)\b/,'🥦'],[/\b(epinards?|blettes?|salade)\b/,'🥬'],[/\b(petits? pois|haricots? verts?|fenouil|poireaux?|navets?|panais|celeri[- ]?rave)\b/,'🌱'],[/\btomates?\b/,'🍅'],[/\baubergines?\b/,'🍆'],[/\bpoivrons?\b/,'🫑'],[/\bmais\b/,'🌽'],[/\bchampignons?\b/,'🍄'],[/\b(potiron|potimarron|butternut|courge)\b/,'🎃'],[/\bavocats?\b/,'🥑'],
+[/\b(pommes?)\b/,'🍎'],[/\b(poires?|coings?)\b/,'🍐'],[/\bbananes?\b/,'🍌'],[/\b(fraises?|framboises?)\b/,'🍓'],[/\bmangues?\b/,'🥭'],[/\b(peches?|abricots?)\b/,'🍑'],[/\boranges?\b/,'🍊'],[/\bkiwis?\b/,'🥝'],[/\bmelons?\b/,'🍈'],[/\bpruneaux\b/,'🍇'],
+[/\b(poulet|dinde)\b/,'🍗'],[/\b(boeuf|veau|steak)\b/,'🥩'],[/\b(jambon|saucisse)/,'🥓'],[/\b(saumon|cabillaud|colin|merlu|thon|poisson)\b/,'🐟'],[/\boeufs?\b/,'🥚'],
+[/\briz\b/,'🍚'],[/\b(pates?|spaghettis?|macaronis?|gnocchis?|lasagnes?|vermicelles?)\b/,'🍝'],[/\b(semoule|boulgour|quinoa|couscous|polenta|flocons?)\b/,'🌾'],[/\b(pain|chapelure|brioche)\b/,'🍞'],[/\bgalette\b/,'🌯'],[/\b(lentilles?|pois chiches?|haricots? (?:rouges?|blancs?))\b/,'🫘'],[/\bchocolat\b/,'🍫'],[/\b(amandes?|noisettes?)\b/,'🌰'],
+[/\b(yaourts?|fromage blanc|petits? suisses?|lait|creme)\b/,'🥛'],[/\b(fromage frais|gruyere|mozzarella|ricotta|comte)\b/,'🧀']];
+function emojisOf(r,n){ // jusqu'à n pastilles d'après les ingrédients (dans l'ordre de la recette)
+  var out=[];(r.ing||[]).forEach(function(i){
+    var t=nk(i[0]);
+    for(var k=0;k<ING_EMO.length;k++)if(ING_EMO[k][0].test(t)){if(out.indexOf(ING_EMO[k][1])<0&&out.length<n)out.push(ING_EMO[k][1]);break}
+  });
+  return out;
+}
 var TYPE_UI={'plat':['🍽️','#ffb866'],'dîner':['🌙','#a99af0'],'dessert':['🍓','#ff9fbd'],'goûter':['🍪','#ffd93d'],'petit-déjeuner':['☀️','#ffcf8a']};
 var CSS='.pe{font:17px/1.5 ui-rounded,"SF Pro Rounded","Nunito","Quicksand",system-ui,sans-serif;color:#4a3b52;max-width:980px;margin:0 auto;padding:14px}'+
 '.pe h2{margin:.2em 0 .4em;font-size:1.35rem;color:#7a4fb3}.pe h3{margin:.2em 0;font-size:1.1rem;color:#5b3f8c}.pe .hello{font-size:1.6rem;color:#ff7a59;margin:.1em 0 .3em}'+
@@ -78,10 +90,14 @@ var CSS='.pe{font:17px/1.5 ui-rounded,"SF Pro Rounded","Nunito","Quicksand",syst
 '.pe .tile{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;min-height:118px;padding:10px 12px;background:#fff;border:2px solid #f0e6ff;border-top:6px solid var(--bd,#c9a8f0);border-radius:18px;box-shadow:0 3px 0 #f0e6ff;cursor:pointer;color:#4a3b52;font:inherit}'+
 '.pe .tile:hover,.pe .tile:focus-visible{border-color:var(--bd,#c9a8f0);transform:translateY(-1px)}.pe .tile .ico{font-size:1.9rem;line-height:1}'+
 '.pe .tile .tt{font-weight:700;font-size:.93rem;line-height:1.25;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}'+
+'.pe .tile{padding:0;overflow:hidden;border-top-width:2px;gap:0}.pe .tile .band{width:100%;box-sizing:border-box;height:62px;display:flex;align-items:center;justify-content:center;gap:2px;font-size:1.9rem;line-height:1;background:var(--bd,#c9a8f0);background:linear-gradient(135deg,color-mix(in srgb,var(--bd,#c9a8f0) 30%,#fff),color-mix(in srgb,var(--bd,#c9a8f0) 70%,#fff))}'+
+'.pe .tile .band span{filter:drop-shadow(0 2px 2px rgba(0,0,0,.18))}.pe .tile .tt,.pe .tile .sub{padding:0 12px}.pe .tile .tt{margin-top:8px}.pe .tile .sub{padding-bottom:10px;margin-top:6px}'+
+'.pe .hero{display:flex;align-items:center;justify-content:center;gap:6px;height:130px;margin:-6px -16px 8px;border-radius:24px 24px 0 0;font-size:3.1rem;background:var(--bd,#c9a8f0);background:linear-gradient(135deg,color-mix(in srgb,var(--bd,#c9a8f0) 25%,#fff),color-mix(in srgb,var(--bd,#c9a8f0) 75%,#fff));position:relative;overflow:hidden}'+
+'.pe .hero span{filter:drop-shadow(0 3px 3px rgba(0,0,0,.2));transform:rotate(calc((var(--i) - 1.5)*6deg))}.pe .hero:before{content:"";position:absolute;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.35);right:-60px;top:-90px}'+
 '.pe .tile .sub{margin-top:auto;font-size:.78rem;color:#7d6e89}.pe .tile .sub b{color:#a02e22;font-weight:700}'+
 '.pe .modal{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:12px}.pe .modal .back{position:absolute;inset:0;background:rgba(60,40,80,.55)}'+
 '.pe .modal .sheet{position:relative;background:#fffdf8;border-radius:24px;max-width:560px;width:100%;max-height:88vh;overflow:auto;padding:6px 16px 16px;box-shadow:0 10px 40px rgba(0,0,0,.35)}'+
-'.pe .modal .sheet .card{border-left-width:2px;box-shadow:none;margin:6px 0}.pe .modal .close{position:sticky;top:0;float:right;margin:8px 0 0 8px;border:2px solid #e3d4f5;background:#fff;border-radius:999px;padding:6px 14px;cursor:pointer;font-weight:700;color:#5b3f8c;z-index:1}';
+'.pe .modal .sheet .card{border-left-width:2px;box-shadow:none;margin:6px 0}.pe .modal .sheet{padding:0}.pe .modal .sheet .card{margin:0;border:0;border-radius:24px;padding:0 20px 18px;background:transparent}.pe .modal .sheet .hero{margin:0 -20px 12px;border-radius:0;height:150px;font-size:3.6rem}.pe .modal .close{position:absolute;top:10px;right:10px;float:none;margin:0;background:rgba(255,255,255,.92)}.pe .modal .close{border:2px solid #e3d4f5;background:#fff;border-radius:999px;padding:6px 14px;cursor:pointer;font-weight:700;color:#5b3f8c;z-index:2}';
 
 function menuText(menu,recs){ // menu de la semaine à transmettre aux parents
   var byId={};recs.forEach(function(r){byId[r.id]=r});
@@ -121,7 +137,8 @@ function mount(root,opts){
   function recipeCard(r){
     var age=ageOf(st.age),al=allergensOf(r),alerts=alertsFor(r,age),n=Number(st.kids[age.id])||0;
     var tu=TYPE_UI[r.type]||['','#c9a8f0'];
-    return '<article class="card" style="--bd:'+tu[1]+'"><h3>'+tu[0]+' '+esc(r.titre)+'</h3><div class="meta"><span class="tag">dès '+r.min+' mois</span><span class="tag ty">'+esc(r.type)+'</span>'+
+    var em=emojisOf(r,4);if(!em.length)em=[tu[0]];
+    return '<article class="card" style="--bd:'+tu[1]+'"><div class="hero" aria-hidden="true">'+em.map(function(e,i){return'<span style="--i:'+i+'">'+e+'</span>'}).join('')+'</div><h3>'+tu[0]+' '+esc(r.titre)+'</h3><div class="meta"><span class="tag">dès '+r.min+' mois</span><span class="tag ty">'+esc(r.type)+'</span>'+
       (r.perso?'<span class="tag">ma recette</span>':'')+al.map(function(id){return'<span class="tag al">'+esc(D.allergenes.filter(function(a){return a.id===id})[0].label)+'</span>'}).join('')+'</div>'+
       alerts.map(function(m){return'<p class="al-msg">⚠ '+esc(m)+'</p>'}).join('')+
       '<ul class="ing">'+r.ing.map(function(i){var g=i[1]*age.facteur;return'<li>'+esc(i[0])+' : '+(i[1]?'≈ '+fmtG(g)+(n?' <span class="hint">('+fmtG(g*n)+' pour '+n+' enfant'+(n>1?'s':'')+')</span>':''):'<span class="hint">à doser</span>')+'</li>'}).join('')+'</ul>'+
@@ -131,7 +148,7 @@ function mount(root,opts){
   }
   function tile(r){
     var age=ageOf(st.age),al=allergensOf(r),tu=TYPE_UI[r.type]||['','#c9a8f0'];
-    return'<button class="tile" style="--bd:'+tu[1]+'" data-act="open" data-id="'+esc(r.id)+'"><span class="ico" aria-hidden="true">'+tu[0]+'</span><span class="tt">'+esc(r.titre)+'</span><span class="sub">dès '+r.min+' mois'+(al.length?' · <b>'+al.length+' allergène'+(al.length>1?'s':'')+'</b>':'')+(r.perso?' · ma recette':'')+'</span></button>';
+    return'<button class="tile" style="--bd:'+tu[1]+'" data-act="open" data-id="'+esc(r.id)+'"><span class="band" aria-hidden="true">'+(emojisOf(r,3).length?emojisOf(r,3):[tu[0]]).map(function(e){return'<span>'+e+'</span>'}).join('')+'</span><span class="tt">'+esc(r.titre)+'</span><span class="sub">dès '+r.min+' mois'+(al.length?' · <b>'+al.length+' allergène'+(al.length>1?'s':'')+'</b>':'')+(r.perso?' · ma recette':'')+'</span></button>';
   }
   function tabRecettes(){
     var age=ageOf(st.age),h='<div class="chips" role="group" aria-label="Âge">'+D.ages.map(function(a){var u=AGE_UI[a.id]||['','#eee','#ccc'];return'<button class="chip" style="--c1:'+u[1]+';--c2:'+u[2]+'" data-act="age" data-id="'+a.id+'" aria-pressed="'+(a.id===st.age)+'">'+u[0]+' '+esc(a.label)+'</button>'}).join('')+'</div>';
