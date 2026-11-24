@@ -73,6 +73,7 @@ var CSS='.pe{font:17px/1.5 ui-rounded,"SF Pro Rounded","Nunito","Quicksand",syst
 '.pe .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.pe table{border-collapse:collapse;width:100%}.pe td,.pe th{border-bottom:2px dotted #e3d4f5;padding:7px;text-align:left;font-size:.93rem}'+
 '.pe input[type=number]{width:84px}.pe textarea,.pe input[type=text],.pe select{width:100%;box-sizing:border-box;border:2px solid #e3d4f5;border-radius:14px;padding:6px 10px;background:#fffdf8}.pe label{font-weight:600;color:#5b3f8c}'+
 '.pe ol{padding-left:22px}'+
+'.pe .warn .wb{display:none}@media(max-width:600px){.pe .warn{padding:6px 12px;font-size:.8rem;margin:6px 0}.pe .warn .wb{display:block;width:100%;min-height:32px;border:0;background:none;text-align:left;font-weight:700;color:#7a5a00;padding:0;cursor:pointer}.pe .warn .wl{display:none;margin-top:4px}.pe .warn.open .wl{display:block}.pe .hello{font-size:1.3rem}.pe .chip{padding:5px 12px}.pe .tab{padding:6px 14px}}'+
 '.pe .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:10px 0}'+
 '.pe .tile{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;min-height:118px;padding:10px 12px;background:#fff;border:2px solid #f0e6ff;border-top:6px solid var(--bd,#c9a8f0);border-radius:18px;box-shadow:0 3px 0 #f0e6ff;cursor:pointer;color:#4a3b52;font:inherit}'+
 '.pe .tile:hover,.pe .tile:focus-visible{border-color:var(--bd,#c9a8f0);transform:translateY(-1px)}.pe .tile .ico{font-size:1.9rem;line-height:1}'+
@@ -95,7 +96,7 @@ function menuText(menu,recs){ // menu de la semaine à transmettre aux parents
 function mount(root,opts){
   opts=opts||{};
   var KEY=opts.storageKey||'petite-enfance-v1';
-  var st={tab:'recettes',age:'6-8',sans:[],q:'',kids:{},menu:{},custom:[],form:false,type:'',open:null};
+  var st={tab:'recettes',age:'6-8',sans:[],q:'',kids:{},menu:{},custom:[],form:false,type:'',open:null,warnOpen:false};
   try{var s=JSON.parse(localStorage.getItem(KEY)||'null');if(s&&typeof s==='object'){st.age=s.age||st.age;st.kids=s.kids||{};if(st.age==='12-36')st.age='12-18';if(st.kids['12-36']!=null){st.kids['24-36']=(Number(st.kids['24-36'])||0)+(Number(st.kids['12-36'])||0);delete st.kids['12-36']}if(!ageOf(st.age))st.age='6-8';st.menu=s.menu||{};st.custom=Array.isArray(s.custom)?s.custom:[]}}catch(e){}
   var save=function(){try{localStorage.setItem(KEY,JSON.stringify({age:st.age,kids:st.kids,menu:st.menu,custom:st.custom}))}catch(e){}};
   var recs=function(){return D.recettes.concat(st.custom)};
@@ -179,7 +180,7 @@ function mount(root,opts){
     var tabs=[['recettes','🥣 Recettes'],['portions','⚖️ Portions'],['menus','🗓️ Menus'],['regles','📌 Règles']];
     var body=st.tab==='recettes'?tabRecettes():st.tab==='portions'?tabPortions():st.tab==='menus'?tabMenus():tabRegles();
     var focus=document.activeElement&&document.activeElement.id==='pe-q',pos=focus?document.activeElement.selectionStart:0;
-    root.innerHTML='<div class="pe"><h2 class="hello">🧸 Petite enfance, 0 à 3 ans</h2><div class="warn">'+esc(D.avertissement)+'</div><div class="tabs" role="tablist">'+
+    root.innerHTML='<div class="pe"><h2 class="hello">🧸 Petite enfance, 0 à 3 ans</h2><div class="warn'+(st.warnOpen?' open':'')+'"><button class="wb" data-act="warn" aria-expanded="'+st.warnOpen+'">⚠ Contenu non validé médicalement · '+(st.warnOpen?'Masquer ▲':'Lire ▼')+'</button><span class="wl">'+esc(D.avertissement)+'</span></div><div class="tabs" role="tablist">'+
       tabs.map(function(t){return'<button class="tab" role="tab" data-act="tab" data-id="'+t[0]+'" aria-pressed="'+(st.tab===t[0])+'">'+t[1]+'</button>'}).join('')+'</div>'+body+'</div>';
     if(focus){var q=root.querySelector('#pe-q');if(q){q.focus();q.setSelectionRange(pos,pos)}}
   }
@@ -188,6 +189,7 @@ function mount(root,opts){
     if(a==='tab'){st.tab=id;st.open=null}
     else if(a==='open')st.open=id;
     else if(a==='close')st.open=null;
+    else if(a==='warn')st.warnOpen=!st.warnOpen;
     else if(a==='type')st.type=id;
     else if(a==='age'){st.age=id;st.open=null;save()}
     else if(a==='sans'){var i=st.sans.indexOf(id);if(i<0)st.sans.push(id);else st.sans.splice(i,1)}
