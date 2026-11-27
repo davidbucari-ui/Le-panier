@@ -76,6 +76,9 @@ fmts     : conditionnement d'un produit : c unités par lot × q·u de contenu (
 ## Écran Recettes
 - Carte : bandeau `rcHero` (jusqu'à 4 pastilles `itemIco` des ingrédients principaux — hors ingrédients de base `ING_BASIC` sauf pour compléter —, couleur du rayon du premier, badge « Dans la liste · N pers. »). Ingrédients en pastilles `ingChip` (icône, couleur du rayon via `rayonOf`, contour vert + ✓ si couvert par le stock, `covers`). Même rendu pour les idées de Claude (`proposalCard`, pastilles cliquables pour exclure).
 
+## Thèmes de recettes
+- Champ `r.tags` (déjà existant, rempli par les idées de Claude) = thèmes. Formulaire `#nr` : champ « Thèmes » (`#nr-tags`, virgules) + pastilles de suggestion (`TH_BASE` + thèmes déjà utilisés, `nrTagSug`) ; lu par `nrTagsGet` (dédoublonné par `norm`, 8 max). Écran Recettes : barre `#th-tabs` (`renderThemes`, « Toutes » + un onglet par thème avec son nombre), filtre `F.theme` (clé `norm`, éphémère) appliqué dans `matches`. Aucune nouvelle clé de `S`. Testé en jsdom.
+
 ## Photos de recettes
 - Champ `r.img` d'une recette : `'https://…'` (image du site, renvoyée par l'Edge Function `import-recette` depuis le JSON-LD `image`/`thumbnailUrl`, sinon `og:image` ; https seulement) ou `'sb:<uid>/<recette>-<date>.jpg'` (photo perso). Rien d'autre n'est affiché (`imgSrc`).
 - Photos perso : espace de stockage Supabase **privé** `recettes` (migration `photos_recettes`, un dossier par utilisateur, 2 Mo max, jpeg/webp/png). Réduites dans le navigateur à 900 px, JPEG 0,82 (`shrinkPhoto`) ; affichées par liens signés valables 7 jours (`createSignedUrls`, groupés, en mémoire `IMG_URL`). Ancienne photo supprimée quand elle est remplacée, retirée, ou quand la recette est supprimée (`photoDel`). Bouton masqué hors connexion.

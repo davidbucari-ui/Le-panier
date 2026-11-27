@@ -444,6 +444,7 @@ a.btn.primary{color:var(--leaf-ink)}
       <button class="btn" data-act="tab" data-t="idees">Idées de Claude</button>
       <span class="hint" id="recipe-count"></span>
     </div>
+    <div class="pr-tabs" id="th-tabs" role="tablist" aria-label="Thèmes de recettes" hidden style="margin-top:12px"></div>
     <div class="grid" id="recipe-list"></div>
   </section>
 
@@ -663,6 +664,9 @@ a.btn.primary{color:var(--leaf-ink)}
     <div class="field"><label for="nr-ing">Ingrédients (collez ou tapez, un par ligne)</label>
       <textarea id="nr-ing" placeholder="400 g courgettes&#10;2 oignons&#10;1 c. à soupe huile d'olive&#10;sel"></textarea>
       <span class="hint" id="nr-count" aria-live="polite"></span></div>
+    <div class="field"><label for="nr-tags">Thèmes (séparés par des virgules)</label>
+      <input type="text" id="nr-tags" autocomplete="off" placeholder="ex. rapide, végétarien, dessert">
+      <div class="row-actions" id="nr-tagsug" style="margin-top:6px"></div></div>
     <div class="field nr-photo"><span class="nr-lbl">Photo (facultatif)</span>
       <div class="nr-ph"><div class="nr-prev" id="nr-prev" hidden><img id="nr-img" alt="Photo de la recette" referrerpolicy="no-referrer"></div>
         <div class="row-actions"><label class="btn" id="nr-file-btn" for="nr-file">📷 Prendre ou choisir une photo</label><input type="file" id="nr-file" accept="image/*" hidden><button type="button" class="btn danger" data-act="nr-img-del" id="nr-img-del" hidden>Retirer la photo</button></div>
@@ -809,7 +813,7 @@ function fixCats(o){const r={};if(!o||typeof o!=='object'||Array.isArray(o))retu
 function fixFmts(o){const r={};if(!o||typeof o!=='object'||Array.isArray(o))return r;for(const [k,e] of Object.entries(o)){if(!e||!e.n||!(Number(e.q)>0))continue;r[k]={n:String(e.n),c:Math.max(1,Math.round(Number(e.c))||1),q:Number(e.q),u:e.u==='g'||e.u==='ml'?e.u:'',l:String(e.l||'').slice(0,20),s:['user','ticket','scan'].includes(e.s)?e.s:'ticket'}}return r}
 let S;
 try{const raw=localStorage.getItem(LS);S=raw?fix(JSON.parse(raw)):fresh()}catch(e){S=fresh()}
-const F={text:'',with:[],stockOnly:false};      // filtres éphémères
+const F={text:'',with:[],stockOnly:false,theme:''};      // filtres éphémères
 const A={use:[],results:[],notice:null};    // idées de Claude
 const OPEN=new Set();
 let pushed=false,docRef=null,saveTimer=null,saving=false,again=false,dirty=false,loadTimer=null,sampleNs=null,tab='recettes';
@@ -929,6 +933,7 @@ function excludedIn(r){return S.exclude.filter(x=>ingHit(r,x))}
 function matches(r){
   if(F.text&&!norm(r.title).includes(norm(F.text)))return false;
   if(!F.with.every(w=>ingHit(r,w)))return false;
+  if(F.theme&&!(r.tags||[]).some(t=>norm(t)===F.theme))return false;
   if(excludedIn(r).length)return false;
   if(F.stockOnly){const [h,t]=stockCover(r);if(!t||h/t<0.7)return false}
   if(UI.prot){const o=nutOf(r);if(!(o.ok&&o.p>=(Number(UI.protG)||25)))return false}
@@ -1185,8 +1190,23 @@ function recipeCard(r){
     </div>
   </article>`;
 }
+const TH_BASE=['Rapide','Végétarien','Familial','Dessert','Plat d\'hiver','Été','Fêtes','Enfants'];
+function themesOf(all){
+  const m=new Map();
+  all.forEach(r=>(r.tags||[]).forEach(t=>{const k=norm(t);if(!k)return;const e=m.get(k)||{k,l:String(t).trim(),n:0};e.n++;m.set(k,e)}));
+  return[...m.values()].sort((a,b)=>b.n-a.n||a.l.localeCompare(b.l,'fr',{sensitivity:'base'}));
+}
+function renderThemes(all){
+  const tb=$('#th-tabs'),th=themesOf(all);
+  if(F.theme&&!th.some(t=>t.k===F.theme))F.theme='';
+  tb.hidden=!th.length;if(!th.length){tb.innerHTML='';return}
+  const sl=tb.scrollLeft;
+  tb.innerHTML=[['','Toutes',all.length]].concat(th.map(t=>[t.k,t.l,t.n])).map(([k,l,n])=>`<button type="button" class="tab" role="tab" data-act="th-pick" data-k="${esc(k)}" aria-selected="${F.theme===k}">${esc(l)} <span class="badge">${n}</span></button>`).join('');
+  tb.scrollLeft=sl;
+}
 function renderRecipes(){
-  const all=allRec(),list=all.filter(matches),hidden=all.filter(r=>excludedIn(r).length).length;
+  const all=allRec();renderThemes(all);
+  const list=all.filter(matches),hidden=all.filter(r=>excludedIn(r).length).length;
   if(UI.protSort)list.sort((a,b)=>{const x=nutOf(a),y=nutOf(b);return(y.ok?y.p:-1)-(x.ok?x.p:-1)});
   else if(UI.az)list.sort((a,b)=>(a.title||'').localeCompare(b.title||'','fr',{sensitivity:'base'}));
   $('#recipe-count').textContent=`${list.length} recette${list.length>1?'s':''} affichée${list.length>1?'s':''} sur ${all.length}`+(hidden?` · ${hidden} masquée${hidden>1?'s':''} par vos exclusions`:'');
@@ -1944,6 +1964,7 @@ $('#pr-d').value=todayISO();
 $('#ex-ray').addEventListener('change',exSearch);
 $('#ex-q').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const v=e.target.value;if(v.trim()){exAdd(v);e.target.value='';exSearch()}}});
 $('#ck-por').addEventListener('input',renderCook);
+$('#nr-tags').addEventListener('input',nrTagSug);
 $('#f-az').checked=!!UI.az;
 $('#f-az').addEventListener('change',e=>{UI.az=e.target.checked;saveUI();renderRecipes()});
 $('#f-stock').addEventListener('change',e=>{F.stockOnly=e.target.checked;renderRecipes()});
@@ -2296,6 +2317,8 @@ document.addEventListener('click',e=>{
     case 'plan-plus':planChange(id,()=>{S.plan[id]=Math.min(30,(S.plan[id]||1)+1)});break;
     case 'del-recipe':if(b.dataset.arm!=='1'){b.dataset.arm='1';b.textContent='Confirmer ?';setTimeout(()=>{if(b.isConnected){b.dataset.arm='';b.textContent='Supprimer'}},3000)}else{(async()=>{const gone=findRec(id);if(!gone||!canEdit(gone))return;if(gone._by){const {error}=await sb.from('shared_recipes').delete().eq('id',id);if(error){toast('Suppression impossible ('+(error.message||error)+').');return}CR=CR.filter(r=>r.id!==id)}else S.recipes=S.recipes.filter(r=>r.id!==id);photoDel(gone.img);delete S.plan[id];delete S.days[id];OPEN.delete(id);persist();renderRecipes();renderCourses()})()}break;
     case 'new-recipe':openForm(null);break;
+    case 'th-pick':F.theme=b.dataset.k||'';renderRecipes();break;
+    case 'nr-tag':{const t=b.dataset.t,k=norm(t),cur=nrTagsGet();const i=cur.findIndex(x=>norm(x)===k);if(i>=0)cur.splice(i,1);else cur.push(t);$('#nr-tags').value=cur.join(', ');nrTagSug();break}
     case 'edit-recipe':openForm(findRec(id));break;
     case 'nr-cancel':$('#nr').hidden=true;PENDING_URL='';break;
     case 'nr-img-del':NR_IMG.removed=true;NR_IMG.file=null;$('#nr-file').value='';nrPhoto();break;
@@ -2460,11 +2483,22 @@ function openForm(r,isNew){
   $('#nr-serv').value=r?r.servings:4;
   $('#nr-time').value=r?r.time:30;
   $('#nr-ing').value=r?r.ingredients.map(ingLine).join('\n'):'';
+  $('#nr-tags').value=r?(r.tags||[]).join(', '):'';nrTagSug();
   $('#nr-steps').value=r?(r.steps||[]).join('\n'):'';
   $('#nr-more').open=!!r;nrCount();
   if(NR_IMG.preview)URL.revokeObjectURL(NR_IMG.preview);
   NR_IMG={cur:r&&r.img||'',file:null,removed:false,preview:''};$('#nr-file').value='';nrPhoto();
   $('#nr-msg').textContent='';$('#nr').hidden=false;$('#nr-title').focus();
+}
+function nrTagsGet(){
+  const seen=new Set(),out=[];
+  $('#nr-tags').value.split(/[,;]/).map(t=>t.trim().slice(0,30)).forEach(t=>{const k=norm(t);if(k&&!seen.has(k)){seen.add(k);out.push(t)}});
+  return out.slice(0,8);
+}
+function nrTagSug(){
+  const cur=new Set(nrTagsGet().map(norm)),seen=new Set(),all=[];
+  TH_BASE.concat(themesOf(allRec()).map(t=>t.l)).forEach(t=>{const k=norm(t);if(!seen.has(k)){seen.add(k);all.push(t)}});
+  $('#nr-tagsug').innerHTML=all.map(t=>`<button type="button" class="btn sm" data-act="nr-tag" data-t="${esc(t)}" aria-pressed="${cur.has(norm(t))}"${cur.has(norm(t))?' style="font-weight:700"':''}>${cur.has(norm(t))?'✓ ':''}${esc(t)}</button>`).join('');
 }
 function nrCount(){
   const n=$('#nr-ing').value.split('\n').map(parseLine).filter(Boolean).length;
@@ -2493,11 +2527,11 @@ async function saveNew(addToList){
     if(old){
       if(!canEdit(old))throw new Error('recette d\'un autre membre');
       ings.forEach(i=>{const o=old.ingredients.find(x=>norm(x.n)===norm(i.n));if(o&&o.r)i.r=o.r});
-      const upd={...old,title,time,servings,ingredients:ings,steps,img:img||undefined};
+      const upd={...old,title,time,servings,tags:nrTagsGet(),ingredients:ings,steps,img:img||undefined};
       if(old._by)await crSave(upd);
       Object.assign(old,upd);rid=old.id;
       if(S.plan[old.id]!=null&&!S.plan[old.id])S.plan[old.id]=servings;
-    }else{rid=rid0;await addRec({id:rid,title,time,servings,tags:[],source:PENDING_URL?'site':'manuel',url:PENDING_URL||undefined,img:img||undefined,ingredients:ings,steps})}
+    }else{rid=rid0;await addRec({id:rid,title,time,servings,tags:nrTagsGet(),source:PENDING_URL?'site':'manuel',url:PENDING_URL||undefined,img:img||undefined,ingredients:ings,steps})}
   }catch(e){$('#nr-msg').textContent='Enregistrement impossible ('+(e.message||e)+'). Vérifiez la connexion et réessayez.';return}
   if(addToList)S.plan[rid]=S.plan[rid]||servings;
   persist();$('#nr').hidden=true;EDIT=null;PENDING_URL='';renderRecipes();renderCourses();
